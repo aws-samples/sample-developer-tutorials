@@ -95,7 +95,7 @@ aws iam attach-role-policy \
     --policy-arn "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 
 # Wait for role propagation
-sleep 10
+sleep 15
 
 echo "Creating Lambda function..."
 
