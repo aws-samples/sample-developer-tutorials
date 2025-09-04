@@ -1,36 +1,36 @@
 # API Gateway Lambda Integration Tutorial
 
-AWS CLIを使用してLambdaプロキシ統合でREST APIを作成するチュートリアルです。
+This tutorial demonstrates how to create a REST API with Lambda proxy integration using the AWS CLI.
 
-## ファイル
+## Files
 
-- `apigateway-lambda-integration.md` - ステップバイステップのチュートリアル
-- `apigateway-lambda-integration.sh` - 自動実行スクリプト
+- `apigateway-lambda-integration.md` - Step-by-step tutorial
+- `apigateway-lambda-integration.sh` - Automated execution script
 
-## 実行方法
+## Usage
 
-### チュートリアルに従って手動実行
+### Manual execution following the tutorial
 ```bash
-# チュートリアルを読んで手動でコマンドを実行
+# Read the tutorial and execute commands manually
 cat apigateway-lambda-integration.md
 ```
 
-### スクリプトで自動実行
+### Automated execution with script
 ```bash
-# 全手順を自動実行
+# Execute all steps automatically
 chmod +x apigateway-lambda-integration.sh
 ./apigateway-lambda-integration.sh
 ```
 
-## 前提条件
+## Prerequisites
 
-- AWS CLI設定済み
-- 適切なIAM権限
+- AWS CLI configured
+- Appropriate IAM permissions
 
-## 作成されるリソース
+## Resources Created
 
-- Lambda関数
+- Lambda function
 - API Gateway REST API
-- IAMロール
+- IAM role
 
-スクリプト実行後、すべてのリソースは自動的にクリーンアップされます。
+All resources are automatically cleaned up after script execution.
