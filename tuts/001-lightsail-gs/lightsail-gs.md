@@ -14,9 +14,9 @@ Before you begin this tutorial, make sure you have the following:
 ### Cost considerations
 
 The resources you create in this tutorial will incur the following approximate costs if left running:
-- Lightsail nano instance: $5.00 USD per month (~$0.0068 per hour)
-- 8 GB additional storage: $0.80 USD per month (~$0.0011 per hour)
-- Instance snapshot: ~$1.00 USD per month for a 20 GB snapshot (~$0.0014 per hour)
+- Lightsail nano instance: $5.00 USD per month (approximately $0.0068 per hour)
+- 8 GB additional storage: $0.80 USD per month (approximately $0.0011 per hour)
+- Instance snapshot: approximately $1.00 USD per month for a 20 GB snapshot (approximately $0.0014 per hour)
 
 The total cost for running this tutorial for one hour is approximately $0.0093 USD. The tutorial includes cleanup instructions to help you avoid ongoing charges. New Lightsail customers may be eligible for the free tier, which includes the $5 USD plan free for one month (up to 750 hours).
 

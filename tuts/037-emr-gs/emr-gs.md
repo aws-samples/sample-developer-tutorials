@@ -15,7 +15,7 @@ Before you begin this tutorial, make sure you have the following:
 
 This tutorial creates AWS resources that will incur charges. The estimated cost for running this tutorial for one hour is approximately $0.20 USD (in the US East region), which includes:
 
-- EMR cluster with 3 m5.xlarge instances: ~$0.19/hour
+- EMR cluster with 3 m5.xlarge instances: approximately $0.19/hour
 - S3 storage and requests: <$0.01/hour
 
 To minimize costs, make sure to follow the cleanup instructions at the end of the tutorial to terminate all resources.
@@ -326,7 +326,7 @@ Step 1.
 
 **Connect via SSH**
 
-Use the following command to connect to the primary node of your cluster. Replace "j-1234ABCD5678" with your actual cluster ID. Replace "~/path/to/your-key-pair.pem" with the path to your key pair file. In this example, we use "~/emr-tutorial-key" as the path to your key pair.
+Use the following command to connect to the primary node of your cluster. Replace "j-1234ABCD5678" with your actual cluster ID. Replace "`~/path/to/your-key-pair.pem`" with the path to your key pair file. In this example, we use "`~/emr-tutorial-key`" as the path to your key pair.
 
 ```bash
 aws emr ssh --cluster-id j-1234ABCD5678 --key-pair-file ~/path/to/your-key-pair.pem
@@ -374,7 +374,7 @@ sudo cat /var/log/spark/spark-history-server.out
 **Troubleshooting**
 
 • **Connection timeout:** Verify that your security group allows SSH (port 22) from your IP
-• **Permission denied:** Ensure your key pair file has correct permissions. Replace "~/emr-tutorial-key.pem" with the path to your key pair file. In this example, we use "~/emr-tutorial-key" as the path to your key pair.
+• **Permission denied:** Ensure your key pair file has correct permissions. Replace "`~/emr-tutorial-key.pem`" with the path to your key pair file. In this example, we use "`~/emr-tutorial-key`" as the path to your key pair.
 ```
 chmod 400 ~/emr-tutorial-key.pem
 ```
