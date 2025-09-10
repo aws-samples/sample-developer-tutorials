@@ -114,7 +114,7 @@ aws s3api put-object \
     --metadata "author=AWSDocumentation,purpose=tutorial"
 ```
 
-Notice that we used "documents/" in the key name. This creates a logical folder structure in your bucket, even though S3 is actually a flat object store.
+Notice that we used `documents/` in the key name. This creates a logical folder structure in your bucket, even though S3 is actually a flat object store.
 
 ## Download and verify objects
 
@@ -127,7 +127,7 @@ aws s3api get-object \
     "downloaded-sample-file.txt"
 ```
 
-The command downloads the object and saves it as "downloaded-sample-file.txt" in your current directory. The output provides metadata about the object:
+The command downloads the object and saves it as `downloaded-sample-file.txt` in your current directory. The output provides metadata about the object:
 
 ```
 {

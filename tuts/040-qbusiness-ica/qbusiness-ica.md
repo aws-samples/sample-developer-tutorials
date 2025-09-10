@@ -26,13 +26,13 @@ The total cost for running the resources in this tutorial for one hour is approx
 
 Amazon Q Business uses IAM Identity Center for user management. In this step, you'll check if you have an IAM Identity Center instance and create one if needed.
 
-First, check if you already have an IAM Identity Center instance. Replace "us-east-1" with the AWS Region where your IAM Identity Center instance is located.
+First, check if you already have an IAM Identity Center instance. Replace `us-east-1` with the AWS Region where your IAM Identity Center instance is located.
 
 ```bash
 aws sso-admin list-instances --region us-east-1 --query 'Instances[0].InstanceArn' --output text
 ```
 
-If the command returns "None" or an empty result, you need to create an IAM Identity Center instance. Replace "us-east-1" with the AWS Region where you want to create your IAM Identity Center instance.
+If the command returns `None` or an empty result, you need to create an IAM Identity Center instance. Replace `us-east-1` with the AWS Region where you want to create your IAM Identity Center instance.
 
 ```bash
 aws sso-admin create-instance --region us-east-1 --name "QBusinessIdentityCenter-abcd1234" --query 'InstanceArn' --output text

@@ -70,7 +70,7 @@ Replace `d-abcd1234` with your actual directory ID. The registration process may
 aws workspaces describe-workspace-directories --directory-ids d-abcd1234
 ```
 
-Look for the `"State": "REGISTERED"` field in the output to confirm that registration is complete.
+Look for the `State: REGISTERED` field in the output to confirm that registration is complete.
 
 ## List available WorkSpaces bundles
 
@@ -125,7 +125,7 @@ Creating a WorkSpace can take 20 minutes or more. To check the status of your Wo
 aws workspaces describe-workspaces --workspace-ids ws-abcd1234
 ```
 
-Replace `ws-abcd1234` with your actual WorkSpace ID. Look for the `"State"` field in the output:
+Replace `ws-abcd1234` with your actual WorkSpace ID. Look for the `State` field in the output:
 - `PENDING`: The WorkSpace is still being created
 - `AVAILABLE`: The WorkSpace is ready to use
 - `ERROR`: There was a problem creating the WorkSpace

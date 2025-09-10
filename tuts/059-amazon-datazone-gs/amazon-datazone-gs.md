@@ -91,7 +91,7 @@ You can verify that your domain was created successfully and check its status us
 aws datazone get-domain --identifier "dzd_abcd1234"
 ```
 
-Replace `dzd_abcd1234` with your actual domain identifier. The domain status should be "AVAILABLE" before proceeding to the next steps.
+Replace `dzd_abcd1234` with your actual domain identifier. The domain status should be `AVAILABLE` before proceeding to the next steps.
 
 ## Create projects
 
@@ -192,7 +192,7 @@ aws datazone get-environment \
   --project-identifier "dzp_abcd1234"
 ```
 
-Replace `dze_abcd1234` with your environment identifier. The environment status should be "ACTIVE" before proceeding to the next steps.
+Replace `dze_abcd1234` with your environment identifier. The environment status should be `ACTIVE` before proceeding to the next steps.
 
 ## Create a data source for AWS Glue
 

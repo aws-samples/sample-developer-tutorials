@@ -124,7 +124,7 @@ fi
 echo "MSK cluster creation initiated. ARN: $CLUSTER_ARN"
 ```
 
-The response will include the ARN of your new cluster and its initial state, which will be "CREATING".
+The response will include the ARN of your new cluster and its initial state, which will be `CREATING`.
 
 **Get the cluster ARN**
 
@@ -166,7 +166,7 @@ while true; do
 done
 ```
 
-When the output shows "ACTIVE", your cluster is ready to use.
+When the output shows `ACTIVE`, your cluster is ready to use.
 
 ## Create IAM permissions for MSK access
 

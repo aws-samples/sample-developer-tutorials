@@ -227,7 +227,7 @@ After creating the workspace, check its status to ensure it becomes active:
 aws grafana describe-workspace --workspace-id g-abcd1234
 ```
 
-Replace `g-abcd1234` with your workspace ID. The workspace status will initially be "CREATING". Wait until the status changes to "ACTIVE" before proceeding:
+Replace `g-abcd1234` with your workspace ID. The workspace status will initially be `CREATING`. Wait until the status changes to `ACTIVE` before proceeding:
 
 ```
 {
