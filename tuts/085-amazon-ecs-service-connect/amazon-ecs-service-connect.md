@@ -212,7 +212,7 @@ Check that your cluster is active and ready to host services.
 aws ecs describe-clusters --clusters tutorial-cluster
 ```
 
-Wait for the cluster status to show "ACTIVE" before proceeding to the next step.
+Wait for the cluster status to show `ACTIVE` before proceeding to the next step.
 
 ## Configure IAM roles
 

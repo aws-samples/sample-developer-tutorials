@@ -15,7 +15,7 @@ Before you begin this tutorial, make sure you have the following:
 
 This tutorial creates AWS resources that will incur charges. The estimated cost for running this tutorial for one hour is approximately $0.20 USD (in the US East region), which includes:
 
-- EMR cluster with 3 m5.xlarge instances: ~$0.19/hour
+- EMR cluster with 3 m5.xlarge instances: approximately $0.19/hour
 - S3 storage and requests: <$0.01/hour
 
 To minimize costs, make sure to follow the cleanup instructions at the end of the tutorial to terminate all resources.
@@ -30,7 +30,7 @@ aws ec2 create-key-pair --key-name emr-tutorial-key --query 'KeyMaterial' --outp
 ```
 
 This command creates a new key pair named "emr-tutorial-key" and saves the private key to a file called
-"emr-tutorial-key.pem".
+`emr-tutorial-key.pem`.
 
 **Set proper permissions on the key file**
 
@@ -159,7 +159,7 @@ aws emr create-cluster \
   --log-uri s3://amzndemo-s3-demo-bucket/logs/
 ```
 
-Replace `your-key-pair-name` with the name of your EC2 key pair. In this tutorial, we use "emr-tutorial-key" as your key pair name. 
+Replace `your-key-pair-name` with the name of your EC2 key pair. In this tutorial, we use `emr-tutorial-key` as your key pair name. 
 This command creates a cluster with one primary node and two core nodes, all using m5.xlarge instances. The cluster will have Spark installed and will use the default IAM roles.
 
 The command returns a cluster ID, which you'll need for subsequent operations:
@@ -179,7 +179,7 @@ Check the status of your cluster to see when it's ready:
 aws emr describe-cluster --cluster-id j-1234ABCD5678
 ```
 
-Replace `j-1234ABCD5678` with your actual cluster ID. The cluster is ready when its state changes to "WAITING":
+Replace `j-1234ABCD5678` with your actual cluster ID. The cluster is ready when its state changes to `WAITING`:
 
 ```json
 {
@@ -196,7 +196,7 @@ Replace `j-1234ABCD5678` with your actual cluster ID. The cluster is ready when 
 }
 ```
 
-It may take 5-10 minutes for the cluster to reach the "WAITING" state.
+It may take 5-10 minutes for the cluster to reach the `WAITING` state.
 
 ## Submit work to your cluster
 
@@ -230,7 +230,7 @@ Monitor the status of your step. Replace `s-1234ABCDEFGH` with your actual step 
 aws emr describe-step --cluster-id j-1234ABCD5678 --step-id s-1234ABCDEFGH
 ```
 
-The step is complete when its state changes to "COMPLETED":
+The step is complete when its state changes to `COMPLETED`:
 
 ```json
 {
@@ -267,7 +267,7 @@ You should see output similar to:
 
 **Download and view results**
 
-Download the results file to your local machine. Replace "part-00000-abcd1234-abcd-1234-abcd-abcd1234abcd-c000.csv" with the actual filename from your "aws s3 ls" output.
+Download the results file to your local machine. Replace `part-00000-abcd1234-abcd-1234-abcd-abcd1234abcd-c000.csv` with the actual filename from your `aws s3 ls` output.
 
 ```bash
 aws s3 cp s3://amzndemo-s3-demo-bucket/results/part-00000-abcd1234-abcd-1234-abcd-abcd1234abcd-c000.csv ./results.csv
@@ -307,14 +307,14 @@ Step 1. Get your current IP address:
    curl -s https://checkip.amazonaws.com
 ```
 
-Step 2. Find your cluster's security group. Replace "j-1234ABCD5678" with your cluster ID.
+Step 2. Find your cluster's security group. Replace `j-1234ABCD5678` with your cluster ID.
 
 ```bash
    aws emr describe-cluster --cluster-id j-1234ABCD5678 --query 'Cluster.Ec2InstanceAttributes.EmrManagedMasterSecurityGroup' --output text
 ```  
  
 
-Step 3. Add SSH access rule to the security group. Replace "sg-xxxxxxxxx" with your security group ID that's returned in Step 2. Replace YOUR_IP_ADDRESS with the IP from
+Step 3. Add SSH access rule to the security group. Replace `sg-xxxxxxxxx` with your security group ID that's returned in Step 2. Replace YOUR_IP_ADDRESS with the IP from
 Step 1.
 
 ```bash
@@ -326,7 +326,7 @@ Step 1.
 
 **Connect via SSH**
 
-Use the following command to connect to the primary node of your cluster. Replace "j-1234ABCD5678" with your actual cluster ID. Replace "~/path/to/your-key-pair.pem" with the path to your key pair file. In this example, we use "~/emr-tutorial-key" as the path to your key pair.
+Use the following command to connect to the primary node of your cluster. Replace `j-1234ABCD5678` with your actual cluster ID. Replace `~/path/to/your-key-pair.pem` with the path to your key pair file. In this example, we use `~/emr-tutorial-key` as the path to your key pair.
 
 ```bash
 aws emr ssh --cluster-id j-1234ABCD5678 --key-pair-file ~/path/to/your-key-pair.pem
@@ -374,7 +374,7 @@ sudo cat /var/log/spark/spark-history-server.out
 **Troubleshooting**
 
 • **Connection timeout:** Verify that your security group allows SSH (port 22) from your IP
-• **Permission denied:** Ensure your key pair file has correct permissions. Replace "~/emr-tutorial-key.pem" with the path to your key pair file. In this example, we use "~/emr-tutorial-key" as the path to your key pair.
+• **Permission denied:** Ensure your key pair file has correct permissions. Replace `~/emr-tutorial-key.pem` with the path to your key pair file. In this example, we use `~/emr-tutorial-key` as the path to your key pair.
 ```
 chmod 400 ~/emr-tutorial-key.pem
 ```
@@ -387,19 +387,19 @@ When you're finished with the tutorial, clean up your resources to avoid incurri
 
 **Terminate the cluster**
 
-Terminate your EMR cluster. Replace "j-1234ABCD5678" with your cluster ID.
+Terminate your EMR cluster. Replace `j-1234ABCD5678` with your cluster ID.
 
 ```bash
 aws emr terminate-clusters --cluster-ids j-1234ABCD5678
 ```
 
-Check the termination status. Replace "j-1234ABCD5678" with your cluster ID.
+Check the termination status. Replace `j-1234ABCD5678` with your cluster ID.
 
 ```bash
 aws emr describe-cluster --cluster-id j-1234ABCD5678
 ```
 
-The cluster is terminated when its state changes to "TERMINATED". An example response is as follows: 
+The cluster is terminated when its state changes to `TERMINATED`. An example response is as follows: 
 
 ```json
 {
@@ -419,7 +419,7 @@ The cluster is terminated when its state changes to "TERMINATED". An example res
 
 **Delete S3 resources**
 
-Delete the contents of your S3 bucket. Replace "amzndemo-s3-demo-bucket" with the name of your Amazon S3 bucket.
+Delete the contents of your S3 bucket. Replace `amzndemo-s3-demo-bucket` with the name of your Amazon S3 bucket.
 
 ```bash
 aws s3 rm s3://amzndemo-s3-demo-bucket --recursive

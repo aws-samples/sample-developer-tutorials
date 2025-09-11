@@ -92,7 +92,7 @@ The broker creation process takes about 15-20 minutes. You can check the status 
 aws mq describe-broker --broker-id "$BROKER_ID" --query 'BrokerState' --output text
 ```
 
-Wait until the status shows "RUNNING" before proceeding to the next step.
+Wait until the status shows `RUNNING` before proceeding to the next step.
 
 ## Step 4: Get broker connection details
 
@@ -467,7 +467,7 @@ If you're having trouble connecting to your broker:
 
 1. **Check security group rules**: Ensure that the security group allows inbound connections from your IP address to the required ports.
 
-2. **Verify broker status**: Make sure the broker is in the "RUNNING" state.
+2. **Verify broker status**: Make sure the broker is in the `RUNNING` state.
 
 3. **Check network connectivity**: Ensure that your network allows outbound connections to the broker's endpoints.
 

@@ -95,7 +95,7 @@ The following command analyzes the document using Amazon Textract:
 aws textract analyze-document --document file://document.json --feature-types file://features.json > textract-analysis-results.json
 ```
 
-This command sends the document to Amazon Textract for analysis and saves the results to a file named "textract-analysis-results.json". The analysis might take a few seconds to complete.
+This command sends the document to Amazon Textract for analysis and saves the results to a file named `textract-analysis-results.json`. The analysis might take a few seconds to complete.
 
 ## Understand the analysis results
 

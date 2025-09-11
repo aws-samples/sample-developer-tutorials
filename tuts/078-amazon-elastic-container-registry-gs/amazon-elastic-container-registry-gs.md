@@ -12,7 +12,7 @@ Before you begin this tutorial, make sure you have the following:
 4. Basic familiarity with Docker concepts and commands.
 5. [Sufficient permissions](https://docs.aws.amazon.com/AmazonECR/latest/userguide/security-iam.html) to create and manage ECR resources in your AWS account.
 
-**Cost Information**: The cost of running this tutorial is minimal. Amazon ECR charges $0.10 per GB-month for storage and has data transfer costs that vary by region. For this tutorial, with a ~200MB image stored for a short time, the cost is less than $0.01. AWS Free Tier includes 500MB of storage per month for private repositories, which would cover this tutorial. See [Amazon ECR pricing](https://aws.amazon.com/ecr/pricing/) for more details.
+**Cost Information**: The cost of running this tutorial is minimal. Amazon ECR charges $0.10 per GB-month for storage and has data transfer costs that vary by region. For this tutorial, with a approximately 200MB image stored for a short time, the cost is less than $0.01. AWS Free Tier includes 500MB of storage per month for private repositories, which would cover this tutorial. See [Amazon ECR pricing](https://aws.amazon.com/ecr/pricing/) for more details.
 
 **Time to Complete**: Approximately 20-30 minutes.
 

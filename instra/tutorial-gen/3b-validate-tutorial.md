@@ -1,6 +1,26 @@
 # validate tutorial
 
 Validating the content of the AWS CLI tutorial and surface issues about the generated content.
+## formatting and style
+
+Review the tutorial markdown for proper formatting:
+
+**Backticks usage:**
+- Use backticks for all inline code, commands, file paths, resource IDs, status values, and technical terms
+- Examples: `aws s3 ls`, `my-bucket-name`, `ACTIVE`, `~/path/to/file`, `us-east-1`
+- Never use double quotes around backticked content (avoid `"~/file"`, use `~/file`)
+
+**Tilde usage:**
+- Use tildes (`~`) only in code blocks to represent home directory paths
+- Replace tildes meaning "approximately" with the word "approximately" 
+- Examples: "approximately $0.50/hour" not "~$0.50/hour"
+
+**Quotes usage:**
+- Avoid double quotes around technical terms, file names, or commands in descriptive text
+- Use backticks instead: `filename.txt` not "filename.txt"
+- Keep quotes only for actual quoted speech or JSON string values in code blocks
+
+Document any formatting issues in 3-formatting.md.
 
 ## deprecated features
 

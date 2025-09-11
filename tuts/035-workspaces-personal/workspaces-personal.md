@@ -28,13 +28,13 @@ Before you begin this tutorial, make sure you have the following:
 Running resources created in this tutorial will incur costs in your AWS account. Approximate costs include:
 
 - **WorkSpaces Personal (Standard bundle with Windows)**:
-  - AlwaysOn mode: ~$35/month
-  - AutoStop mode: ~$9.75/month + $0.26/hour of usage
+  - AlwaysOn mode: approximately $35/month
+  - AutoStop mode: approximately $9.75/month + $0.26/hour of usage
 
 - **Directory Services** (if you need to create one):
-  - AWS Simple AD (Small): ~$36.50/month
-  - AWS Managed Microsoft AD (Standard): ~$292/month
-  - AD Connector: ~$36.50/month
+  - AWS Simple AD (Small): approximately $36.50/month
+  - AWS Managed Microsoft AD (Standard): approximately $292/month
+  - AD Connector: approximately $36.50/month
 
 Additional charges may apply for data transfer, increased storage volumes, and application licensing. For the most current pricing information, see the [Amazon WorkSpaces Pricing page](https://aws.amazon.com/workspaces/pricing/).
 
@@ -70,7 +70,7 @@ Replace `d-abcd1234` with your actual directory ID. The registration process may
 aws workspaces describe-workspace-directories --directory-ids d-abcd1234
 ```
 
-Look for the `"State": "REGISTERED"` field in the output to confirm that registration is complete.
+Look for the `State: REGISTERED` field in the output to confirm that registration is complete.
 
 ## List available WorkSpaces bundles
 
@@ -125,7 +125,7 @@ Creating a WorkSpace can take 20 minutes or more. To check the status of your Wo
 aws workspaces describe-workspaces --workspace-ids ws-abcd1234
 ```
 
-Replace `ws-abcd1234` with your actual WorkSpace ID. Look for the `"State"` field in the output:
+Replace `ws-abcd1234` with your actual WorkSpace ID. Look for the `State` field in the output:
 - `PENDING`: The WorkSpace is still being created
 - `AVAILABLE`: The WorkSpace is ready to use
 - `ERROR`: There was a problem creating the WorkSpace

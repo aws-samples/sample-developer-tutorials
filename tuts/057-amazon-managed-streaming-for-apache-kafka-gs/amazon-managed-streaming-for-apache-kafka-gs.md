@@ -15,9 +15,9 @@ Before you begin this tutorial, make sure you have the following:
 
 This tutorial creates AWS resources that will incur costs while they exist. The estimated cost for running the resources in this tutorial for one hour is approximately $0.76 USD, with the MSK cluster accounting for most of this cost. The costs break down as follows:
 
-- MSK Cluster (3 brokers, kafka.t3.small): ~$0.45/hour
-- MSK Storage (3 GB minimum): ~$0.30/hour
-- EC2 Instance (t3.micro or t2.micro): ~$0.01/hour
+- MSK Cluster (3 brokers, kafka.t3.small): approximately $0.45/hour
+- MSK Storage (3 GB minimum): approximately $0.30/hour
+- EC2 Instance (t3.micro or t2.micro): approximately $0.01/hour
 
 To minimize costs, we'll use the smallest available instance types, and we'll provide instructions for cleaning up resources when you're done. Make sure to follow the cleanup instructions at the end of the tutorial to avoid ongoing charges.
 
@@ -124,7 +124,7 @@ fi
 echo "MSK cluster creation initiated. ARN: $CLUSTER_ARN"
 ```
 
-The response will include the ARN of your new cluster and its initial state, which will be "CREATING".
+The response will include the ARN of your new cluster and its initial state, which will be `CREATING`.
 
 **Get the cluster ARN**
 
@@ -166,7 +166,7 @@ while true; do
 done
 ```
 
-When the output shows "ACTIVE", your cluster is ready to use.
+When the output shows `ACTIVE`, your cluster is ready to use.
 
 ## Create IAM permissions for MSK access
 

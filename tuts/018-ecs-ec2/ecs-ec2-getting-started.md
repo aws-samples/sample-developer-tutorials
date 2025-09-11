@@ -75,7 +75,7 @@ Output:
 }
 ```
 
-The response shows that your cluster has been created successfully and is in the "ACTIVE" status. You can now launch container instances and run tasks in this cluster.
+The response shows that your cluster has been created successfully and is in the `ACTIVE` status. You can now launch container instances and run tasks in this cluster.
 
 **Verify cluster creation**
 

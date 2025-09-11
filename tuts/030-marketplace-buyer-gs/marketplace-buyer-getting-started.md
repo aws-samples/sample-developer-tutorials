@@ -55,7 +55,7 @@ aws marketplace-catalog list-entities \
   --query "WordPress"
 ```
 
-This command searches for WordPress-related AMI products in AWS Marketplace. You can replace "WordPress" with any keyword relevant to your needs.
+This command searches for WordPress-related AMI products in AWS Marketplace. You can replace `WordPress` with any keyword relevant to your needs.
 
 **Get details about a specific product**
 

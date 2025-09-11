@@ -156,7 +156,7 @@ aws sso-admin describe-account-assignment-creation-status \
   --account-assignment-creation-request-id "request-id-from-previous-command"
 ```
 
-Wait for the status to show "SUCCEEDED" before proceeding to the next step.
+Wait for the status to show `SUCCEEDED` before proceeding to the next step.
 
 **Provision permission set to account**
 
@@ -180,7 +180,7 @@ aws sso-admin describe-permission-set-provisioning-status \
   --provision-request-id "request-id-from-previous-command"
 ```
 
-Wait for the status to show "SUCCEEDED" before proceeding.
+Wait for the status to show `SUCCEEDED` before proceeding.
 
 ## Set up user access to applications
 
@@ -258,7 +258,7 @@ Here are some common issues you might encounter when setting up IAM Identity Cen
 
 **Issue**: Asynchronous operations don't complete as expected.
 
-**Solution**: Many IAM Identity Center operations are asynchronous, including account assignments and permission set provisioning. Always check the operation status using the appropriate describe command and wait for the status to show "SUCCEEDED" before proceeding to the next step.
+**Solution**: Many IAM Identity Center operations are asynchronous, including account assignments and permission set provisioning. Always check the operation status using the appropriate describe command and wait for the status to show `SUCCEEDED` before proceeding to the next step.
 
 **Issue**: Application creation fails with provider ARN errors.
 

@@ -20,10 +20,10 @@ Before you begin this tutorial, you need:
   * At least 1 Application Load Balancer
 
 **Estimated cost**: The resources created in this tutorial will incur charges in your AWS account:
-* NAT Gateways: ~$0.045 per hour, plus data processing charges
-* Elastic IP addresses: Free when associated with running instances, ~$0.005 per hour when not associated
+* NAT Gateways: approximately $0.045 per hour, plus data processing charges
+* Elastic IP addresses: Free when associated with running instances, approximately $0.005 per hour when not associated
 * EC2 instances: Varies by instance type (t3.micro used in this tutorial)
-* Application Load Balancer: ~$0.0225 per hour, plus data processing charges
+* Application Load Balancer: approximately $0.0225 per hour, plus data processing charges
 
 ## Create the VPC and subnets
 

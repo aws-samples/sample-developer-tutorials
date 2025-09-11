@@ -216,7 +216,7 @@ aws wafv2 associate-web-acl \
   --region us-east-1
 ```
 
-Replace "your-distribution-id" with the actual ID of your CloudFront distribution. This command associates your web ACL with the specified CloudFront distribution, enabling AWS WAF to inspect and filter requests to that distribution.
+Replace `your-distribution-id` with the actual ID of your CloudFront distribution. This command associates your web ACL with the specified CloudFront distribution, enabling AWS WAF to inspect and filter requests to that distribution.
 
 ## Configure logging
 

@@ -625,7 +625,7 @@ These commands first remove all objects from the S3 bucket and then delete the b
 
 The following commands delete the SageMaker execution role that's created for this tutorial.
 
-Note: Replace "123456789012" with your account ID.
+Note: Replace `123456789012` with your account ID.
 ```
 # Delete the custom policy 
 aws iam detach-role-policy \

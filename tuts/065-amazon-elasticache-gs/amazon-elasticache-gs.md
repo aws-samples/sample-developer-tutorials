@@ -157,7 +157,7 @@ $ aws elasticache create-serverless-cache \
 }
 ```
 
-This command creates a new serverless cache named "my-valkey-cache" using the Valkey engine and adds a tag for better resource management. The initial status is "CREATING" as ElastiCache provisions the resources.
+This command creates a new serverless cache named "my-valkey-cache" using the Valkey engine and adds a tag for better resource management. The initial status is `CREATING` as ElastiCache provisions the resources.
 
 **Check the status of the cache creation**
 
@@ -168,10 +168,10 @@ $ aws elasticache describe-serverless-caches \
   --serverless-cache-name my-valkey-cache \
   --query "ServerlessCaches[0].Status"
 
-"AVAILABLE"
+`AVAILABLE`
 ```
 
-You can run this command periodically until the status changes from "CREATING" to "AVAILABLE". This typically takes a few minutes.
+You can run this command periodically until the status changes from `CREATING` to `AVAILABLE`. This typically takes a few minutes.
 
 ## Connect to your cache
 
@@ -271,7 +271,7 @@ $ aws elasticache delete-serverless-cache \
 }
 ```
 
-This command initiates the deletion of your cache. The status changes to "DELETING" and ElastiCache begins the cleanup process.
+This command initiates the deletion of your cache. The status changes to `DELETING` and ElastiCache begins the cleanup process.
 
 **Verify cache deletion**
 
