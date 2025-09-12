@@ -8,10 +8,10 @@ You can either run the automated script `getting-started-batch-fargate.sh` to ex
 
 The script creates the following AWS resources in order:
 
-• IAM role
-• IAM role policy
-• Batch compute environment
-• Batch job queue
-• Batch job definition
+- IAM role
+- IAM role policy
+- Batch compute environment
+- Batch job queue
+- Batch job definition
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

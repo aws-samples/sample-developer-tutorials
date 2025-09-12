@@ -8,9 +8,9 @@ You can run the shell script to automatically set up the Amazon DocumentDB clust
 
 The script creates the following AWS resources in order:
 
-• Secrets Manager secret
-• Docdb db subnet group
-• Docdb db cluster
-• Docdb db instance
+- Secrets Manager secret
+- Docdb db subnet group
+- Docdb db cluster
+- Docdb db instance
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

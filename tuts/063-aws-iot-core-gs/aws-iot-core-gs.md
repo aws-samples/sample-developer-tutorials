@@ -6,11 +6,11 @@ This tutorial guides you through the process of setting up AWS IoT Core and conn
 
 Before you begin this tutorial, you need:
 
-* An AWS account with permissions to create AWS IoT resources
-* The AWS CLI installed and configured with your credentials
-* Python 3.7 or later installed on your computer
-* Git installed on your computer
-* Basic familiarity with the command line interface
+- An AWS account with permissions to create AWS IoT resources
+- The AWS CLI installed and configured with your credentials
+- Python 3.7 or later installed on your computer
+- Git installed on your computer
+- Basic familiarity with the command line interface
 
 **Time to complete:** Approximately 20-30 minutes
 
@@ -430,8 +430,8 @@ For more information, see [AWS IoT Core Quotas](https://docs.aws.amazon.com/iot/
 
 Now that you've successfully connected a device to AWS IoT Core and exchanged MQTT messages, you can explore more advanced features:
 
-* [Working with rules for AWS IoT](https://docs.aws.amazon.com/iot/latest/developerguide/iot-rules.html) - Learn how to route messages to other AWS services
-* [Working with device shadows](https://docs.aws.amazon.com/iot/latest/developerguide/iot-device-shadows.html) - Learn how to store and retrieve device state
-* [Device provisioning](https://docs.aws.amazon.com/iot/latest/developerguide/iot-provision.html) - Learn how to provision devices at scale
-* [Device Defender](https://docs.aws.amazon.com/iot/latest/developerguide/device-defender.html) - Learn how to audit and monitor your IoT devices for security issues
-* [Message Quality of Service in AWS IoT](https://docs.aws.amazon.com/iot/latest/developerguide/mqtt.html#mqtt-qos) - Learn about MQTT QoS levels and how they affect message delivery reliability
+- [Working with rules for AWS IoT](https://docs.aws.amazon.com/iot/latest/developerguide/iot-rules.html) - Learn how to route messages to other AWS services
+- [Working with device shadows](https://docs.aws.amazon.com/iot/latest/developerguide/iot-device-shadows.html) - Learn how to store and retrieve device state
+- [Device provisioning](https://docs.aws.amazon.com/iot/latest/developerguide/iot-provision.html) - Learn how to provision devices at scale
+- [Device Defender](https://docs.aws.amazon.com/iot/latest/developerguide/device-defender.html) - Learn how to audit and monitor your IoT devices for security issues
+- [Message Quality of Service in AWS IoT](https://docs.aws.amazon.com/iot/latest/developerguide/mqtt.html#mqtt-qos) - Learn about MQTT QoS levels and how they affect message delivery reliability

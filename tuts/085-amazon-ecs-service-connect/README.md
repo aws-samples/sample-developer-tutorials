@@ -8,12 +8,12 @@ You can either run the automated shell script (`amazon-ecs-service-connect.sh`) 
 
 The script creates the following AWS resources in order:
 
-• EC2 security group
-• Logs log group
-• Logs log group (b)
-• ECS cluster
-• IAM role
-• ECS task definition
-• ECS service
+- EC2 security group
+- Logs log group
+- Logs log group (b)
+- ECS cluster
+- IAM role
+- ECS task definition
+- ECS service
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

@@ -8,12 +8,12 @@ You can either run the automated script `aws-iot-core-gs.sh` to execute all oper
 
 The script creates the following AWS resources in order:
 
-• IoT Core policy
-• IoT Core thing
-• IoT Core keys and certificate
-• IoT Core policy (b)
-• IoT Core thing principal
-• IoT Core policy (c)
-• IoT Core policy (d)
+- IoT Core policy
+- IoT Core thing
+- IoT Core keys and certificate
+- IoT Core policy (b)
+- IoT Core thing principal
+- IoT Core policy (c)
+- IoT Core policy (d)
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

@@ -16,17 +16,17 @@ By the end of this tutorial, you'll have a working AWS Batch setup that can proc
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Create an IAM execution role](#create-an-iam-execution-role)
-* [Create a compute environment](#create-a-compute-environment)
-* [Create a job queue](#create-a-job-queue)
-* [Create a job definition](#create-a-job-definition)
-* [Submit and monitor a job](#submit-and-monitor-a-job)
-* [View job output](#view-job-output)
-* [Clean up resources](#clean-up-resources)
-* [Troubleshooting](#troubleshooting)
-* [Going to production](#going-to-production)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Create an IAM execution role](#create-an-iam-execution-role)
+- [Create a compute environment](#create-a-compute-environment)
+- [Create a job queue](#create-a-job-queue)
+- [Create a job definition](#create-a-job-definition)
+- [Submit and monitor a job](#submit-and-monitor-a-job)
+- [View job output](#view-job-output)
+- [Clean up resources](#clean-up-resources)
+- [Troubleshooting](#troubleshooting)
+- [Going to production](#going-to-production)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 
@@ -461,12 +461,12 @@ For comprehensive guidance on production-ready architectures, see the [AWS Well-
 
 Now that you've completed this tutorial, you can explore more advanced AWS Batch features:
 
-* [Job queues](https://docs.aws.amazon.com/batch/latest/userguide/job_queues.html) - Learn about job queue scheduling and priority management
-* [Job definitions](https://docs.aws.amazon.com/batch/latest/userguide/job_definitions.html) - Explore advanced job definition configurations including environment variables, volumes, and retry strategies
-* [Compute environments](https://docs.aws.amazon.com/batch/latest/userguide/compute_environments.html) - Understand different compute environment types and scaling options
-* [Multi-node parallel jobs](https://docs.aws.amazon.com/batch/latest/userguide/multi-node-parallel-jobs.html) - Run jobs that span multiple compute nodes
-* [Array jobs](https://docs.aws.amazon.com/batch/latest/userguide/array_jobs.html) - Submit large numbers of similar jobs efficiently
-* [Best practices](https://docs.aws.amazon.com/batch/latest/userguide/best-practices.html) - Learn optimization techniques for production workloads
+- [Job queues](https://docs.aws.amazon.com/batch/latest/userguide/job_queues.html) - Learn about job queue scheduling and priority management
+- [Job definitions](https://docs.aws.amazon.com/batch/latest/userguide/job_definitions.html) - Explore advanced job definition configurations including environment variables, volumes, and retry strategies
+- [Compute environments](https://docs.aws.amazon.com/batch/latest/userguide/compute_environments.html) - Understand different compute environment types and scaling options
+- [Multi-node parallel jobs](https://docs.aws.amazon.com/batch/latest/userguide/multi-node-parallel-jobs.html) - Run jobs that span multiple compute nodes
+- [Array jobs](https://docs.aws.amazon.com/batch/latest/userguide/array_jobs.html) - Submit large numbers of similar jobs efficiently
+- [Best practices](https://docs.aws.amazon.com/batch/latest/userguide/best-practices.html) - Learn optimization techniques for production workloads
 
 ## Security Considerations
 

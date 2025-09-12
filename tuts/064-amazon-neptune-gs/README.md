@@ -8,20 +8,20 @@ You can either run the automated script `amazon-neptune-gs.sh` to execute all op
 
 The script creates the following AWS resources in order:
 
-• EC2 vpc
-• EC2 internet gateway
-• EC2 internet gateway (b)
-• EC2 subnet
-• EC2 subnet (b)
-• EC2 subnet (c)
-• EC2 route table
-• EC2 route
-• EC2 route table (b)
-• EC2 route table (c)
-• EC2 route table (d)
-• EC2 security group
-• Neptune db subnet group
-• Neptune db cluster
-• Neptune db instance
+- EC2 vpc
+- EC2 internet gateway
+- EC2 internet gateway (b)
+- EC2 subnet
+- EC2 subnet (b)
+- EC2 subnet (c)
+- EC2 route table
+- EC2 route
+- EC2 route table (b)
+- EC2 route table (c)
+- EC2 route table (d)
+- EC2 security group
+- Neptune db subnet group
+- Neptune db cluster
+- Neptune db instance
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

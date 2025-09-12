@@ -6,9 +6,9 @@ This tutorial walks you through using Amazon Athena with the AWS Command Line In
 
 Before you begin this tutorial, you need:
 
-* An AWS account. If you don't have one, sign up at [https://aws.amazon.com/free/](https://aws.amazon.com/free/).
-* The AWS CLI installed and configured with appropriate permissions. For installation instructions, see [Installing or updating the latest version of the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
-* Basic knowledge of SQL queries.
+- An AWS account. If you don't have one, sign up at [https://aws.amazon.com/free/](https://aws.amazon.com/free/).
+- The AWS CLI installed and configured with appropriate permissions. For installation instructions, see [Installing or updating the latest version of the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
+- Basic knowledge of SQL queries.
 
 This tutorial uses live resources, so you are charged for the queries that you run. The estimated cost for completing this tutorial is approximately $0.0001 (one-tenth of a cent), assuming you follow the cleanup instructions. You aren't charged for the sample data in the location that this tutorial uses, but if you upload your own data files to Amazon S3, additional charges may apply.
 
@@ -170,7 +170,7 @@ TABLE_QUERY="CREATE EXTERNAL TABLE IF NOT EXISTS mydatabase.cloudfront_logs (
     os STRING,
     Browser STRING,
     BrowserVersion STRING
-  ) 
+  )
   ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.RegexSerDe'
   WITH SERDEPROPERTIES (
     \"input.regex\" = \"^(?!#)([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+[^\\\\(]+[\\\\(]([^\\\\;]+).*\\\\%20([^\\\\/]+)[\\\\/](.*)$\"
@@ -244,9 +244,9 @@ Run the following command:
 ```bash
 # Execute the query and capture the query ID
 QUERY_ID=$(aws athena start-query-execution \
-  --query-string "SELECT os, COUNT(*) count 
-  FROM mydatabase.cloudfront_logs 
-  WHERE date BETWEEN date '2014-07-05' AND date '2014-08-05' 
+  --query-string "SELECT os, COUNT(*) count
+  FROM mydatabase.cloudfront_logs
+  WHERE date BETWEEN date '2014-07-05' AND date '2014-08-05'
   GROUP BY os" \
   --result-configuration "OutputLocation=s3://$S3_BUCKET/output/" \
   --query "QueryExecutionId" --output text)
@@ -345,9 +345,9 @@ NAMED_QUERY_ID=$(aws athena create-named-query \
   --name "OS Count Query" \
   --description "Count of operating systems in CloudFront logs" \
   --database "mydatabase" \
-  --query-string "SELECT os, COUNT(*) count 
-  FROM mydatabase.cloudfront_logs 
-  WHERE date BETWEEN date '2014-07-05' AND date '2014-08-05' 
+  --query-string "SELECT os, COUNT(*) count
+  FROM mydatabase.cloudfront_logs
+  WHERE date BETWEEN date '2014-07-05' AND date '2014-08-05'
   GROUP BY os" \
   --query "NamedQueryId" --output text)
 
@@ -539,7 +539,7 @@ For more information on these topics, see:
 
 Now that you've learned the basics of using Amazon Athena with the AWS CLI, you can explore these additional features:
 
-* [Use AWS Glue Data Catalog with Athena](https://docs.aws.amazon.com/athena/latest/ug/data-sources-glue.html) - Learn how to use AWS Glue to create and manage your data catalog.
-* [Query Amazon CloudFront logs](https://docs.aws.amazon.com/athena/latest/ug/cloudfront-logs.html) - Explore more advanced queries for CloudFront logs.
-* [Connect to other data sources](https://docs.aws.amazon.com/athena/latest/ug/work-with-data-stores.html) - Learn how to connect Athena to various data sources.
-* [Use workgroups to control query access and costs](https://docs.aws.amazon.com/athena/latest/ug/workgroups.html) - Organize users and applications into workgroups for better resource management.
+- [Use AWS Glue Data Catalog with Athena](https://docs.aws.amazon.com/athena/latest/ug/data-sources-glue.html) - Learn how to use AWS Glue to create and manage your data catalog.
+- [Query Amazon CloudFront logs](https://docs.aws.amazon.com/athena/latest/ug/cloudfront-logs.html) - Explore more advanced queries for CloudFront logs.
+- [Connect to other data sources](https://docs.aws.amazon.com/athena/latest/ug/work-with-data-stores.html) - Learn how to connect Athena to various data sources.
+- [Use workgroups to control query access and costs](https://docs.aws.amazon.com/athena/latest/ug/workgroups.html) - Organize users and applications into workgroups for better resource management.

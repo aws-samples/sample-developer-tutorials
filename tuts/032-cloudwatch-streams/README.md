@@ -8,10 +8,10 @@ You can run the shell script to automatically set up the CloudWatch log resource
 
 The script creates the following AWS resources in order:
 
-• IAM role
-• IAM role policy
-• Lambda function
-• Lambda function (b)
-• CloudWatch dashboard
+- IAM role
+- IAM role policy
+- Lambda function
+- Lambda function (b)
+- CloudWatch dashboard
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

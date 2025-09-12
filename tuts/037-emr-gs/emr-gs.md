@@ -90,10 +90,10 @@ def calculate_red_violations(data_source, output_uri):
         restaurants_df.createOrReplaceTempView("restaurant_violations")
 
         # Create a DataFrame of the top 10 restaurants with the most Red violations
-        top_red_violation_restaurants = spark.sql("""SELECT name, count(*) AS total_red_violations 
-          FROM restaurant_violations 
-          WHERE violation_type = 'RED' 
-          GROUP BY name 
+        top_red_violation_restaurants = spark.sql("""SELECT name, count(*) AS total_red_violations
+          FROM restaurant_violations
+          WHERE violation_type = 'RED'
+          GROUP BY name
           ORDER BY total_red_violations DESC LIMIT 10""")
 
         # Write the results to the specified output URI
@@ -159,7 +159,7 @@ aws emr create-cluster \
   --log-uri s3://amzndemo-s3-demo-bucket/logs/
 ```
 
-Replace `your-key-pair-name` with the name of your EC2 key pair. In this tutorial, we use `emr-tutorial-key` as your key pair name. 
+Replace `your-key-pair-name` with the name of your EC2 key pair. In this tutorial, we use `emr-tutorial-key` as your key pair name.
 This command creates a cluster with one primary node and two core nodes, all using m5.xlarge instances. The cluster will have Spark installed and will use the default IAM roles.
 
 The command returns a cluster ID, which you'll need for subsequent operations:
@@ -224,7 +224,7 @@ This command submits your PySpark script as a step to the cluster. The `Args` pa
 
 **Check step status**
 
-Monitor the status of your step. Replace `s-1234ABCDEFGH` with your actual step ID. 
+Monitor the status of your step. Replace `s-1234ABCDEFGH` with your actual step ID.
 
 ```bash
 aws emr describe-step --cluster-id j-1234ABCD5678 --step-id s-1234ABCDEFGH
@@ -311,8 +311,8 @@ Step 2. Find your cluster's security group. Replace `j-1234ABCD5678` with your c
 
 ```bash
    aws emr describe-cluster --cluster-id j-1234ABCD5678 --query 'Cluster.Ec2InstanceAttributes.EmrManagedMasterSecurityGroup' --output text
-```  
- 
+```
+
 
 Step 3. Add SSH access rule to the security group. Replace `sg-xxxxxxxxx` with your security group ID that's returned in Step 2. Replace YOUR_IP_ADDRESS with the IP from
 Step 1.
@@ -334,7 +334,7 @@ aws emr ssh --cluster-id j-1234ABCD5678 --key-pair-file ~/path/to/your-key-pair.
 
 **View Spark logs**
 
-Once connected, you can view Spark logs in two locations: 
+Once connected, you can view Spark logs in two locations:
 
 Option 1: View local Spark service logs
 ```bash
@@ -366,19 +366,19 @@ sudo cat /var/log/spark/spark-history-server.out
 
 **Useful commands while Connected**
 
-• **Check cluster status:** `yarn application -list`
-• **View HDFS contents:** `hdfs dfs -ls /`
-• **Monitor system resources:** `top`
-• **Exit SSH session:** `exit`
+- **Check cluster status:** `yarn application -list`
+- **View HDFS contents:** `hdfs dfs -ls /`
+- **Monitor system resources:** `top`
+- **Exit SSH session:** `exit`
 
 **Troubleshooting**
 
-• **Connection timeout:** Verify that your security group allows SSH (port 22) from your IP
-• **Permission denied:** Ensure your key pair file has correct permissions. Replace `~/emr-tutorial-key.pem` with the path to your key pair file. In this example, we use `~/emr-tutorial-key` as the path to your key pair.
+- **Connection timeout:** Verify that your security group allows SSH (port 22) from your IP
+- **Permission denied:** Ensure your key pair file has correct permissions. Replace `~/emr-tutorial-key.pem` with the path to your key pair file. In this example, we use `~/emr-tutorial-key` as the path to your key pair.
 ```
 chmod 400 ~/emr-tutorial-key.pem
 ```
-• **Key not found:** Verify the path to your key pair file is correct
+- **Key not found:** Verify the path to your key pair file is correct
 
 
 ## Clean up resources
@@ -399,7 +399,7 @@ Check the termination status. Replace `j-1234ABCD5678` with your cluster ID.
 aws emr describe-cluster --cluster-id j-1234ABCD5678
 ```
 
-The cluster is terminated when its state changes to `TERMINATED`. An example response is as follows: 
+The cluster is terminated when its state changes to `TERMINATED`. An example response is as follows:
 
 ```json
 {

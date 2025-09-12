@@ -4,17 +4,17 @@ This tutorial guides you through setting up Amazon ECS Service Connect using the
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Create the VPC infrastructure](#create-the-vpc-infrastructure)
-* [Set up logging](#set-up-logging)
-* [Create the ECS cluster](#create-the-ecs-cluster)
-* [Configure IAM roles](#configure-iam-roles)
-* [Register the task definition](#register-the-task-definition)
-* [Create the service with Service Connect](#create-the-service-with-service-connect)
-* [Verify the deployment](#verify-the-deployment)
-* [Clean up resources](#clean-up-resources)
-* [Going to production](#going-to-production)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Create the VPC infrastructure](#create-the-vpc-infrastructure)
+- [Set up logging](#set-up-logging)
+- [Create the ECS cluster](#create-the-ecs-cluster)
+- [Configure IAM roles](#configure-iam-roles)
+- [Register the task definition](#register-the-task-definition)
+- [Create the service with Service Connect](#create-the-service-with-service-connect)
+- [Verify the deployment](#verify-the-deployment)
+- [Clean up resources](#clean-up-resources)
+- [Going to production](#going-to-production)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 
@@ -683,19 +683,19 @@ This tutorial is designed to help you learn how ECS Service Connect works in a s
 
 ### Security considerations
 
-* **Private subnets**: Move ECS tasks to private subnets and use a NAT Gateway for outbound internet access
-* **Service Connect TLS**: Enable TLS encryption for service-to-service communication
-* **Secrets management**: Use AWS Secrets Manager for sensitive configuration data
-* **Network security**: Implement more restrictive security group rules and consider network ACLs
-* **Container security**: Scan container images for vulnerabilities and use private ECR repositories
+- **Private subnets**: Move ECS tasks to private subnets and use a NAT Gateway for outbound internet access
+- **Service Connect TLS**: Enable TLS encryption for service-to-service communication
+- **Secrets management**: Use AWS Secrets Manager for sensitive configuration data
+- **Network security**: Implement more restrictive security group rules and consider network ACLs
+- **Container security**: Scan container images for vulnerabilities and use private ECR repositories
 
 ### Architecture considerations
 
-* **Auto scaling**: Configure ECS Service Auto Scaling based on CloudWatch metrics
-* **Load balancing**: Add an Application Load Balancer for external traffic
-* **Multi-region deployment**: Implement cross-region deployment for disaster recovery
-* **Monitoring and observability**: Add comprehensive monitoring, alerting, and distributed tracing
-* **Database integration**: Add managed database services with proper scaling and backup strategies
+- **Auto scaling**: Configure ECS Service Auto Scaling based on CloudWatch metrics
+- **Load balancing**: Add an Application Load Balancer for external traffic
+- **Multi-region deployment**: Implement cross-region deployment for disaster recovery
+- **Monitoring and observability**: Add comprehensive monitoring, alerting, and distributed tracing
+- **Database integration**: Add managed database services with proper scaling and backup strategies
 
 For comprehensive guidance on production-ready architectures, see the [AWS Well-Architected Framework](https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html) and [AWS Architecture Center](https://aws.amazon.com/architecture/). For security best practices, see the [AWS Security Best Practices](https://docs.aws.amazon.com/security/latest/userguide/security-best-practices.html).
 
@@ -703,9 +703,9 @@ For comprehensive guidance on production-ready architectures, see the [AWS Well-
 
 Now that you've successfully configured ECS Service Connect, consider exploring these related topics:
 
-* [Service Connect concepts](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-connect-concepts.html) - Learn more about Service Connect architecture and components
-* [Service Connect configuration](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-connect-configuration.html) - Explore advanced Service Connect configuration options
-* [ECS Service Connect with Application Load Balancer](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-connect-alb.html) - Integrate Service Connect with load balancers for external traffic
-* [Service Connect TLS encryption](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-connect-tls.html) - Secure inter-service communication with TLS
-* [ECS Exec](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html) - Debug and troubleshoot your containers using ECS Exec
-* [Amazon ECS monitoring](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/cloudwatch-metrics.html) - Monitor your ECS services with CloudWatch metrics and logs
+- [Service Connect concepts](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-connect-concepts.html) - Learn more about Service Connect architecture and components
+- [Service Connect configuration](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-connect-configuration.html) - Explore advanced Service Connect configuration options
+- [ECS Service Connect with Application Load Balancer](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-connect-alb.html) - Integrate Service Connect with load balancers for external traffic
+- [Service Connect TLS encryption](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-connect-tls.html) - Secure inter-service communication with TLS
+- [ECS Exec](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html) - Debug and troubleshoot your containers using ECS Exec
+- [Amazon ECS monitoring](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/cloudwatch-metrics.html) - Monitor your ECS services with CloudWatch metrics and logs

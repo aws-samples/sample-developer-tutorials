@@ -8,8 +8,8 @@ You can run the shell script to automatically configure the Amazon SES resources
 
 The script creates the following AWS resources in order:
 
-• SES email identity verification
-• SES domain identity verification (optional)
-• SES DKIM setup (optional)
+- SES email identity verification
+- SES domain identity verification (optional)
+- SES DKIM setup (optional)
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

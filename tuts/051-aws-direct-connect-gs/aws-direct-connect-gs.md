@@ -17,8 +17,8 @@ Before you begin this tutorial, make sure you have the following:
 
 AWS Direct Connect enables you to establish a dedicated network connection between your network and one of the AWS Direct Connect locations. There are two types of connections:
 
-* **Dedicated Connection**: A physical Ethernet connection associated with a single customer. Available bandwidths are 1 Gbps, 10 Gbps, 100 Gbps, and 400 Gbps.
-* **Hosted Connection**: A physical Ethernet connection that an AWS Direct Connect Partner provisions on behalf of a customer. Available bandwidths range from 50 Mbps to 10 Gbps.
+- **Dedicated Connection**: A physical Ethernet connection associated with a single customer. Available bandwidths are 1 Gbps, 10 Gbps, 100 Gbps, and 400 Gbps.
+- **Hosted Connection**: A physical Ethernet connection that an AWS Direct Connect Partner provisions on behalf of a customer. Available bandwidths range from 50 Mbps to 10 Gbps.
 
 In this tutorial, we'll focus on dedicated connections that you can create and manage directly through the AWS CLI.
 

@@ -6,9 +6,9 @@ This tutorial walks you through the process of using AWS Payment Cryptography to
 
 Before you begin, make sure that:
 
-* You have an AWS account with permission to access the AWS Payment Cryptography service. For more information, see [IAM policies](https://docs.aws.amazon.com/payment-cryptography/latest/userguide/security_iam_service-with-iam.html).
-* You have the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) installed and configured with your credentials.
-* You are using a region where AWS Payment Cryptography is available.
+- You have an AWS account with permission to access the AWS Payment Cryptography service. For more information, see [IAM policies](https://docs.aws.amazon.com/payment-cryptography/latest/userguide/security_iam_service-with-iam.html).
+- You have the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) installed and configured with your credentials.
+- You are using a region where AWS Payment Cryptography is available.
 
 This tutorial takes approximately 10 minutes to complete and uses minimal AWS resources. The only resource created is a cryptographic key, which has no direct cost, but standard AWS Payment Cryptography service rates apply for API operations. The total cost for running this tutorial is approximately $0.00154 (less than one cent) if you delete the key immediately after completing the tutorial. If you don't delete the key, it will continue to incur a storage cost of approximately $1.00 per month.
 
@@ -225,9 +225,9 @@ For more information on building production-ready applications with AWS Payment 
 
 Now that you've learned the basics of AWS Payment Cryptography, you might want to explore more advanced features:
 
-* Learn about other types of [card data operations](https://docs.aws.amazon.com/payment-cryptography/latest/userguide/card-data-operations.html) such as PIN verification and EMV cryptograms
-* Explore [key management](https://docs.aws.amazon.com/payment-cryptography/latest/userguide/key-management.html) features like key import, export, and rotation
-* Set up [key aliases](https://docs.aws.amazon.com/payment-cryptography/latest/userguide/key-aliases.html) for easier key management
-* Implement [encryption and decryption](https://docs.aws.amazon.com/payment-cryptography/latest/userguide/encrypt-decrypt.html) of sensitive payment data
+- Learn about other types of [card data operations](https://docs.aws.amazon.com/payment-cryptography/latest/userguide/card-data-operations.html) such as PIN verification and EMV cryptograms
+- Explore [key management](https://docs.aws.amazon.com/payment-cryptography/latest/userguide/key-management.html) features like key import, export, and rotation
+- Set up [key aliases](https://docs.aws.amazon.com/payment-cryptography/latest/userguide/key-aliases.html) for easier key management
+- Implement [encryption and decryption](https://docs.aws.amazon.com/payment-cryptography/latest/userguide/encrypt-decrypt.html) of sensitive payment data
 
 For more examples and deployment patterns, check out the [AWS Payment Cryptography Workshop](https://catalog.us-east-1.prod.workshops.aws/workshops/b85843d4-a5e4-40fc-9a96-de0a99312a4b/en-US) or explore sample projects on [GitHub](https://github.com/aws-samples/samples-for-payment-cryptography-service).

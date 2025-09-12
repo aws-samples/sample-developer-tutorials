@@ -8,16 +8,16 @@ You can either run the provided shell script to automatically configure AWS Conf
 
 The script creates the following AWS resources in order:
 
-• S3 bucket
-• S3 bucket (b)
-• S3 public access block
-• SNS topic
-• IAM role
-• IAM role policy
-• IAM role policy (b)
-• Configservice configuration recorder
-• Configservice delivery channel
-• Configservice delivery channel (b)
-• Configservice configuration recorder (b)
+- S3 bucket
+- S3 bucket (b)
+- S3 public access block
+- SNS topic
+- IAM role
+- IAM role policy
+- IAM role policy (b)
+- Configservice configuration recorder
+- Configservice delivery channel
+- Configservice delivery channel (b)
+- Configservice configuration recorder (b)
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

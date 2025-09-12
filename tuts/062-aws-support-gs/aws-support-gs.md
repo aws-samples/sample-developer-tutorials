@@ -4,14 +4,14 @@ This tutorial guides you through common AWS Support operations using the AWS Com
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Check available services and severity levels](#check-available-services-and-severity-levels)
-* [Create a support case](#create-a-support-case)
-* [Manage your support cases](#manage-your-support-cases)
-* [Add communications to a case](#add-communications-to-a-case)
-* [Resolve a support case](#resolve-a-support-case)
-* [Going to production](#going-to-production)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Check available services and severity levels](#check-available-services-and-severity-levels)
+- [Create a support case](#create-a-support-case)
+- [Manage your support cases](#manage-your-support-cases)
+- [Add communications to a case](#add-communications-to-a-case)
+- [Resolve a support case](#resolve-a-support-case)
+- [Going to production](#going-to-production)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 
@@ -24,7 +24,7 @@ Before you begin this tutorial, make sure you have the following:
 
 **Time to complete:** Approximately 15-20 minutes
 
-**Cost:** This tutorial uses the AWS Support API, which doesn't incur additional costs beyond your AWS Support plan subscription. For pricing details, see https://aws.amazon.com/premiumsupport/pricing/. 
+**Cost:** This tutorial uses the AWS Support API, which doesn't incur additional costs beyond your AWS Support plan subscription. For pricing details, see https://aws.amazon.com/premiumsupport/pricing/.
 
 Let's get started with using the AWS Support API through the AWS CLI.
 
@@ -317,9 +317,9 @@ For more comprehensive guidance on building production-ready solutions, refer to
 
 Now that you've learned how to use the AWS Support API through the AWS CLI, you can explore more advanced features:
 
-* Learn how to [request a service quota increase](https://docs.aws.amazon.com/awssupport/latest/user/create-service-quota-increase.html)
-* Explore [AWS Trusted Advisor](https://docs.aws.amazon.com/awssupport/latest/user/trusted-advisor.html) to optimize your AWS environment
-* Understand [AWS Support response times](https://docs.aws.amazon.com/awssupport/latest/user/case-management.html#response-times-for-support-cases) for different support plans
-* Learn about [adding attachments to support cases](https://docs.aws.amazon.com/awssupport/latest/user/case-management.html#adding-attachments) for more detailed troubleshooting
+- Learn how to [request a service quota increase](https://docs.aws.amazon.com/awssupport/latest/user/create-service-quota-increase.html)
+- Explore [AWS Trusted Advisor](https://docs.aws.amazon.com/awssupport/latest/user/trusted-advisor.html) to optimize your AWS environment
+- Understand [AWS Support response times](https://docs.aws.amazon.com/awssupport/latest/user/case-management.html#response-times-for-support-cases) for different support plans
+- Learn about [adding attachments to support cases](https://docs.aws.amazon.com/awssupport/latest/user/case-management.html#adding-attachments) for more detailed troubleshooting
 
 For more information about AWS Support and available commands, refer to the [AWS CLI Command Reference for AWS Support](https://docs.aws.amazon.com/cli/latest/reference/support/index.html).

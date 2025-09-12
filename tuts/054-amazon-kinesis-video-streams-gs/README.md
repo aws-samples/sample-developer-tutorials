@@ -8,6 +8,6 @@ You can run the shell script to automatically set up the Amazon Kinesis Video St
 
 The script creates the following AWS resources in order:
 
-• Kinesisvideo stream
+- Kinesisvideo stream
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

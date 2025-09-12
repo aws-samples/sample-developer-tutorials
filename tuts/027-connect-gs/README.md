@@ -8,7 +8,7 @@ You can either run the automated script `connect-gs.sh` to execute all operation
 
 The script creates the following AWS resources in order:
 
-• Connect instance
-• Connect user
+- Connect instance
+- Connect user
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

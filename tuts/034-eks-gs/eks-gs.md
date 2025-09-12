@@ -384,7 +384,7 @@ This tutorial is designed to help you learn how to create and manage an EKS clus
 
 ### Security considerations
 
-1. **Network security**: 
+1. **Network security**:
    - Place worker nodes in private subnets only
    - Use security groups to restrict traffic between pods
    - Consider using private API server endpoints
@@ -424,9 +424,9 @@ For more information on EKS architecture best practices, see the [EKS Best Pract
 
 Now that you've learned how to create and manage an Amazon EKS cluster using the AWS CLI, you can explore more advanced features and use cases:
 
-* Deploy a [sample application](https://docs.aws.amazon.com/eks/latest/userguide/sample-deployment.html) to your EKS cluster
-* Learn how to [manage access to your cluster](https://docs.aws.amazon.com/eks/latest/userguide/grant-k8s-access.html) for other IAM users and roles
-* Explore [cluster autoscaling](https://docs.aws.amazon.com/eks/latest/userguide/autoscaling.html) to automatically adjust the size of your node groups based on demand
-* Configure [persistent storage](https://docs.aws.amazon.com/eks/latest/userguide/storage.html) for your applications using Amazon EBS or Amazon EFS
-* Set up [monitoring and logging](https://docs.aws.amazon.com/eks/latest/userguide/monitoring.html) for your EKS cluster
-* Implement [security best practices](https://docs.aws.amazon.com/eks/latest/userguide/security.html) for your Kubernetes workloads
+- Deploy a [sample application](https://docs.aws.amazon.com/eks/latest/userguide/sample-deployment.html) to your EKS cluster
+- Learn how to [manage access to your cluster](https://docs.aws.amazon.com/eks/latest/userguide/grant-k8s-access.html) for other IAM users and roles
+- Explore [cluster autoscaling](https://docs.aws.amazon.com/eks/latest/userguide/autoscaling.html) to automatically adjust the size of your node groups based on demand
+- Configure [persistent storage](https://docs.aws.amazon.com/eks/latest/userguide/storage.html) for your applications using Amazon EBS or Amazon EFS
+- Set up [monitoring and logging](https://docs.aws.amazon.com/eks/latest/userguide/monitoring.html) for your EKS cluster
+- Implement [security best practices](https://docs.aws.amazon.com/eks/latest/userguide/security.html) for your Kubernetes workloads

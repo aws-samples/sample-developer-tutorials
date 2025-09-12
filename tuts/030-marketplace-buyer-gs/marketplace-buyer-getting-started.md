@@ -6,14 +6,14 @@ This tutorial guides you through common AWS Marketplace buyer operations using t
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Searching for products](#searching-for-products)
-* [Creating resources for your instance](#creating-resources-for-your-instance)
-* [Launching an instance](#launching-an-instance)
-* [Managing your software](#managing-your-software)
-* [Cleaning up resources](#cleaning-up-resources)
-* [Going to production](#going-to-production)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Searching for products](#searching-for-products)
+- [Creating resources for your instance](#creating-resources-for-your-instance)
+- [Launching an instance](#launching-an-instance)
+- [Managing your software](#managing-your-software)
+- [Cleaning up resources](#cleaning-up-resources)
+- [Going to production](#going-to-production)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 
@@ -202,7 +202,7 @@ Replace `your-instance-public-dns` with the actual public DNS name of your insta
 
 ## Managing your instances
 
-After launching your instance, you can monitor it. 
+After launching your instance, you can monitor it.
 
 **Monitor your EC2 instances**
 

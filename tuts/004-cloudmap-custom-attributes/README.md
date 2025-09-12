@@ -8,22 +8,22 @@ You can either run the automated script `cloudmap-custom-attributes.sh` to execu
 
 The script creates the following AWS resources in order:
 
-• Service Discovery http namespace
-• Service Discovery http namespace (b)
-• DynamoDB table
-• Service Discovery service
-• Service Discovery instance
-• Service Discovery instance (b)
-• IAM role
-• IAM policy
-• IAM role policy
-• IAM role policy (b)
-• Service Discovery service (b)
-• Lambda function
-• Service Discovery instance (c)
-• Service Discovery instance (d)
-• Lambda function (b)
-• Service Discovery instance (e)
-• Service Discovery instance (f)
+- Service Discovery http namespace
+- Service Discovery http namespace (b)
+- DynamoDB table
+- Service Discovery service
+- Service Discovery instance
+- Service Discovery instance (b)
+- IAM role
+- IAM policy
+- IAM role policy
+- IAM role policy (b)
+- Service Discovery service (b)
+- Lambda function
+- Service Discovery instance (c)
+- Service Discovery instance (d)
+- Lambda function (b)
+- Service Discovery instance (e)
+- Service Discovery instance (f)
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

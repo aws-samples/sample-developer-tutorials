@@ -153,7 +153,7 @@ The command returns a list of VPC IDs and their names (if they have a Name tag):
 
 ```
 vpc-abcd1234EXAMPLE    my-vpc
-vpc-efgh5678EXAMPLE    
+vpc-efgh5678EXAMPLE
 ```
 
 Make note of the VPC ID that you want to associate with the service network.

@@ -8,25 +8,25 @@ You can either run the automated script `vpc-private-servers-gs.sh` to execute a
 
 The script creates the following AWS resources in order:
 
-• EC2 vpc
-• EC2 subnet
-• EC2 subnet (b)
-• EC2 subnet (c)
-• EC2 subnet (d)
-• EC2 internet gateway
-• EC2 internet gateway (b)
-• EC2 route table
-• EC2 route table (b)
-• EC2 route table (c)
-• EC2 route
-• EC2 route table (d)
-• EC2 route table (e)
-• EC2 route table (f)
-• EC2 route table (g)
-• EC2 address
-• EC2 address (b)
-• EC2 nat gateway
-• EC2 nat gateway (b)
-• EC2 route (b)
+- EC2 vpc
+- EC2 subnet
+- EC2 subnet (b)
+- EC2 subnet (c)
+- EC2 subnet (d)
+- EC2 internet gateway
+- EC2 internet gateway (b)
+- EC2 route table
+- EC2 route table (b)
+- EC2 route table (c)
+- EC2 route
+- EC2 route table (d)
+- EC2 route table (e)
+- EC2 route table (f)
+- EC2 route table (g)
+- EC2 address
+- EC2 address (b)
+- EC2 nat gateway
+- EC2 nat gateway (b)
+- EC2 route (b)
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

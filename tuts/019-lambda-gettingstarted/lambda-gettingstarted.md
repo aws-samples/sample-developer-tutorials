@@ -86,19 +86,19 @@ Create a file named `index.mjs` with the following content:
 
 ```javascript
 export const handler = async (event, context) => {
-  
+
   const length = event.length;
   const width = event.width;
   let area = calculateArea(length, width);
   console.log(`The area is ${area}`);
-        
+
   console.log('CloudWatch log group: ', context.logGroupName);
-  
+
   let data = {
     "area": area,
   };
     return JSON.stringify(data);
-    
+
   function calculateArea(length, width) {
     return length * width;
   }
@@ -119,20 +119,20 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 def lambda_handler(event, context):
-    
+
     # Get the length and width parameters from the event object
     length = event['length']
     width = event['width']
-    
+
     area = calculate_area(length, width)
     print(f"The area is {area}")
-        
+
     logger.info(f"CloudWatch logs group: {context.log_group_name}")
-    
+
     # return the calculated area as a JSON string
     data = {"area": area}
     return json.dumps(data)
-    
+
 def calculate_area(length, width):
     return length*width
 ```

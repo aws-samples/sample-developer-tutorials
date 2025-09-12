@@ -6,9 +6,9 @@ This tutorial guides you through the process of creating and managing Amazon Sim
 
 Before you begin, make sure you have:
 
-* An AWS account with appropriate permissions to create and manage SNS resources
-* AWS CLI installed and configured with your credentials
-* Basic familiarity with command-line operations
+- An AWS account with appropriate permissions to create and manage SNS resources
+- AWS CLI installed and configured with your credentials
+- Basic familiarity with command-line operations
 
 To install the AWS CLI, see [Installing or updating the latest version of the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
 
@@ -17,9 +17,9 @@ To configure the AWS CLI, see [Configuration basics](https://docs.aws.amazon.com
 ### Cost information
 
 The resources and operations used in this tutorial fall within the AWS Free Tier limits for Amazon SNS, which includes:
-* 1 million Amazon SNS requests per month
-* 100,000 HTTP/HTTPS notifications per month
-* 1,000 email notifications per month
+- 1 million Amazon SNS requests per month
+- 100,000 HTTP/HTTPS notifications per month
+- 1,000 email notifications per month
 
 If you're not within the Free Tier period or exceed these limits, the costs are minimal for the operations in this tutorial. For current pricing information, see [Amazon SNS pricing](https://aws.amazon.com/sns/pricing/).
 
@@ -98,7 +98,7 @@ The command returns details about your subscription:
 }
 ```
 
-Note that the `SubscriptionArn` is now a full ARN instead of "pending confirmation", which indicates that the subscription has been confirmed. 
+Note that the `SubscriptionArn` is now a full ARN instead of "pending confirmation", which indicates that the subscription has been confirmed.
 Make note of the SubscriptionArn value as you'll need it for the following steps.
 
 ## Publish a message to the topic
@@ -150,7 +150,7 @@ These commands don't produce any output if they're successful.
 
 **Issue 1**: You don't receive the confirmation email.
 
-**Solution**: 
+**Solution**:
 - Check your spam or junk folder
 - Verify that you entered the correct email address
 - Try subscribing again with the same command
@@ -211,7 +211,7 @@ For more information on building production-ready applications with Amazon SNS, 
 
 Now that you've learned the basics of Amazon SNS, you can explore more advanced features:
 
-* [Creating an Amazon SNS FIFO topic](https://docs.aws.amazon.com/sns/latest/dg/sns-fifo-topics.html) - Learn how to create and use FIFO (First-In-First-Out) topics for applications that require strict message ordering
-* [Amazon SNS message filtering](https://docs.aws.amazon.com/sns/latest/dg/sns-message-filtering.html) - Discover how to filter messages so that subscribers receive only the messages they're interested in
-* [Securing Amazon SNS data with server-side encryption](https://docs.aws.amazon.com/sns/latest/dg/sns-server-side-encryption.html) - Learn how to protect the contents of your messages using encryption
-* [Amazon SNS dead-letter queues](https://docs.aws.amazon.com/sns/latest/dg/sns-dead-letter-queues.html) - Find out how to capture and analyze messages that couldn't be delivered to subscribers
+- [Creating an Amazon SNS FIFO topic](https://docs.aws.amazon.com/sns/latest/dg/sns-fifo-topics.html) - Learn how to create and use FIFO (First-In-First-Out) topics for applications that require strict message ordering
+- [Amazon SNS message filtering](https://docs.aws.amazon.com/sns/latest/dg/sns-message-filtering.html) - Discover how to filter messages so that subscribers receive only the messages they're interested in
+- [Securing Amazon SNS data with server-side encryption](https://docs.aws.amazon.com/sns/latest/dg/sns-server-side-encryption.html) - Learn how to protect the contents of your messages using encryption
+- [Amazon SNS dead-letter queues](https://docs.aws.amazon.com/sns/latest/dg/sns-dead-letter-queues.html) - Find out how to capture and analyze messages that couldn't be delivered to subscribers

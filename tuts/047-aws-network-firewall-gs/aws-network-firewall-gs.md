@@ -4,14 +4,14 @@ This tutorial guides you through setting up AWS Network Firewall using the AWS C
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Create rule groups](#create-rule-groups)
-* [Create a firewall policy](#create-a-firewall-policy)
-* [Create a firewall](#create-a-firewall)
-* [Update route tables](#update-route-tables)
-* [Clean up resources](#clean-up-resources)
-* [Going to production](#going-to-production)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Create rule groups](#create-rule-groups)
+- [Create a firewall policy](#create-a-firewall-policy)
+- [Create a firewall](#create-a-firewall)
+- [Update route tables](#update-route-tables)
+- [Clean up resources](#clean-up-resources)
+- [Going to production](#going-to-production)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 
@@ -30,8 +30,8 @@ Before you begin this tutorial, make sure you have the following:
 
 The resources you create in this tutorial will incur the following approximate costs if left running:
 
-* Network Firewall Endpoint: $0.395 per hour in US East (N. Virginia)
-* Network Firewall Traffic Processing: $0.065 per GB processed in US East (N. Virginia)
+- Network Firewall Endpoint: $0.395 per hour in US East (N. Virginia)
+- Network Firewall Traffic Processing: $0.065 per GB processed in US East (N. Virginia)
 
 For a firewall running continuously for a month (730 hours) with 100 GB of traffic, the cost would be approximately $295. Prices may vary by region. This tutorial includes cleanup instructions to help you avoid ongoing charges.
 
@@ -39,10 +39,10 @@ For a firewall running continuously for a month (730 hours) with 100 GB of traff
 
 When working with Network Firewall resources using the CLI, consider these best practices:
 
-* **Use unique resource names**: Generate unique identifiers for your resources to avoid naming conflicts. For example, append a random string to resource names like `StatelessRuleGroup-abcd1234`.
-* **Implement proper error handling**: Check the exit status of commands and handle failures appropriately.
-* **Wait for resource readiness**: Always wait for resources to reach the appropriate state before proceeding to dependent operations.
-* **Use timeouts**: Implement timeouts for long-running operations to avoid indefinite waits.
+- **Use unique resource names**: Generate unique identifiers for your resources to avoid naming conflicts. For example, append a random string to resource names like `StatelessRuleGroup-abcd1234`.
+- **Implement proper error handling**: Check the exit status of commands and handle failures appropriately.
+- **Wait for resource readiness**: Always wait for resources to reach the appropriate state before proceeding to dependent operations.
+- **Use timeouts**: Implement timeouts for long-running operations to avoid indefinite waits.
 
 For information about managing subnets and route tables in your VPC, see [VPCs and subnets](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Subnets.html) and [Route tables](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Route_Tables.html) in the Amazon Virtual Private Cloud User Guide.
 
@@ -195,12 +195,12 @@ while true; do
     --firewall-name "Firewall-abcd1234" \
     --query "FirewallStatus.Status" \
     --output text)
-  
+
   if [ "$STATUS" = "READY" ]; then
     echo "Firewall is ready!"
     break
   fi
-  
+
   echo "Firewall not ready yet (status: $STATUS), waiting 20 seconds..."
   sleep 20
 done

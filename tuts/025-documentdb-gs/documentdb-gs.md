@@ -4,16 +4,16 @@ This tutorial guides you through the process of creating and using an Amazon Doc
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Create a DB subnet group](#create-a-db-subnet-group)
-* [Create a DocumentDB cluster](#create-a-documentdb-cluster)
-* [Create a DocumentDB instance](#create-a-documentdb-instance)
-* [Configure security and connectivity](#configure-security-and-connectivity)
-* [Connect to your cluster](#connect-to-your-cluster)
-* [Perform database operations](#perform-database-operations)
-* [Clean up resources](#clean-up-resources)
-* [Going to production](#going-to-production)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Create a DB subnet group](#create-a-db-subnet-group)
+- [Create a DocumentDB cluster](#create-a-documentdb-cluster)
+- [Create a DocumentDB instance](#create-a-documentdb-instance)
+- [Configure security and connectivity](#configure-security-and-connectivity)
+- [Connect to your cluster](#connect-to-your-cluster)
+- [Perform database operations](#perform-database-operations)
+- [Clean up resources](#clean-up-resources)
+- [Going to production](#going-to-production)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 
@@ -41,7 +41,7 @@ First, identify your default VPC:
 aws ec2 describe-vpcs --filters "Name=isDefault,Values=true" --query "Vpcs[0].VpcId" --output text
 ```
 
-This command returns the ID of your default VPC. Next, find subnets in this VPC. Replace `vpc-abcd1234` with your actual VPC ID. 
+This command returns the ID of your default VPC. Next, find subnets in this VPC. Replace `vpc-abcd1234` with your actual VPC ID.
 
 ```bash
 aws ec2 describe-subnets --filters "Name=vpc-id,Values=vpc-abcd1234" --query "Subnets[*].[SubnetId,AvailabilityZone]" --output text
@@ -51,7 +51,7 @@ The output will show subnet IDs and their Availability Zones. You'll need to sel
 
 **Create the DB subnet group**
 
-Now, create a DB subnet group using subnets from different Availability Zones. Replace `subnet-abcd1234` and `subnet-efgh5678` with actual subnet IDs from different Availability Zones. 
+Now, create a DB subnet group using subnets from different Availability Zones. Replace `subnet-abcd1234` and `subnet-efgh5678` with actual subnet IDs from different Availability Zones.
 
 ```bash
 aws docdb create-db-subnet-group \
@@ -97,7 +97,7 @@ With the subnet group in place, you can now create your DocumentDB cluster.
 
 **Store credentials securely**
 
-For better security, let's store our database credentials in AWS Secrets Manager instead of using them directly in commands. Replace `YourStrongPassword123!` with a secure password of your choice. 
+For better security, let's store our database credentials in AWS Secrets Manager instead of using them directly in commands. Replace `YourStrongPassword123!` with a secure password of your choice.
 
 ```bash
 aws secretsmanager create-secret \
@@ -110,7 +110,7 @@ This command stores your credentials securely and returns information about the 
 
 **Create the cluster**
 
-The following command creates a DocumentDB cluster with version 5.0.0. Replace `YourStrongPassword123!` with the same password you stored in Secrets Manager. 
+The following command creates a DocumentDB cluster with version 5.0.0. Replace `YourStrongPassword123!` with the same password you stored in Secrets Manager.
 
 ```bash
 aws docdb create-db-cluster \
@@ -235,7 +235,7 @@ You should see the certificate file in the output.
 
 ## Connect to your cluster
 
-Since DocumentDB clusters are only accessible from within the VPC, we'll use AWS Systems Manager Session Manager to connect through the EC2 instance. 
+Since DocumentDB clusters are only accessible from within the VPC, we'll use AWS Systems Manager Session Manager to connect through the EC2 instance.
 
 **Get your EC2 Instance ID**
 Find the Instance ID of the EC2 instance that's created before:
@@ -244,9 +244,9 @@ aws ec2 describe-instances \
    --filters "Name=tag:Name,Values=DocumentDB-Tutorial-Instance" \
    --query "Reservations[0].Instances[0].InstanceId" \
    --output text
-```   
+```
 
-Save the instance ID for the following use. 
+Save the instance ID for the following use.
 
 **Start Session Manager**
 Replace `YOUR_INSTANCE_ID` with the actual Instance ID from the previous step.
@@ -255,7 +255,7 @@ aws ssm start-session --target YOUR_INSTANCE_ID
 ```
 
 **Set up certificate for SSM user**
-Once in the session (you'll see `sh-4.2$` prompt), run the following commands: 
+Once in the session (you'll see `sh-4.2$` prompt), run the following commands:
 ```bash
 sudo mkdir -p /home/ssm-user/certs
 sudo cp /root/certs/global-bundle.pem /home/ssm-user/certs/
@@ -264,7 +264,7 @@ sudo chown ssm-user:ssm-user /home/ssm-user/certs/global-bundle.pem
 
 **Connect to MongoDB Shell**
 
-Use the following command to connect to your cluster. Replace `/home/ssm-user/certs/global-bundle.pem` with the certificate path that you created in the previous step. Replace the host with your actual cluster endpoint and the password with your actual password. 
+Use the following command to connect to your cluster. Replace `/home/ssm-user/certs/global-bundle.pem` with the certificate path that you created in the previous step. Replace the host with your actual cluster endpoint and the password with your actual password.
 
 ```bash
 mongosh --tls --tlsCAFile /home/ssm-user/certs/global-bundle.pem \
@@ -315,9 +315,9 @@ Insert multiple documents at once:
 
 ```javascript
 db.profiles.insertMany([
-  { _id: 1, name: 'Matt', status: 'active', level: 12, score: 202 }, 
-  { _id: 2, name: 'Frank', status: 'inactive', level: 2, score: 9 }, 
-  { _id: 3, name: 'Karen', status: 'active', level: 7, score: 87 }, 
+  { _id: 1, name: 'Matt', status: 'active', level: 12, score: 202 },
+  { _id: 2, name: 'Frank', status: 'inactive', level: 2, score: 9 },
+  { _id: 3, name: 'Karen', status: 'active', level: 7, score: 87 },
   { _id: 4, name: 'Katie', status: 'active', level: 3, score: 27 }
 ])
 ```

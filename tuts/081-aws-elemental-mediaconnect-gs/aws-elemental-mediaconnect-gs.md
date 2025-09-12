@@ -4,15 +4,15 @@ This tutorial shows you how to use AWS Elemental MediaConnect with the AWS Comma
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Verify access to AWS Elemental MediaConnect](#verify-access-to-aws-elemental-mediaconnect)
-* [Create a flow](#create-a-flow)
-* [Add an output](#add-an-output)
-* [Grant an entitlement](#grant-an-entitlement)
-* [Share details with affiliates](#share-details-with-affiliates)
-* [Clean up resources](#clean-up-resources)
-* [Going to production](#going-to-production)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Verify access to AWS Elemental MediaConnect](#verify-access-to-aws-elemental-mediaconnect)
+- [Create a flow](#create-a-flow)
+- [Add an output](#add-an-output)
+- [Grant an entitlement](#grant-an-entitlement)
+- [Share details with affiliates](#share-details-with-affiliates)
+- [Clean up resources](#clean-up-resources)
+- [Going to production](#going-to-production)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 
@@ -25,14 +25,14 @@ Before you begin this tutorial, make sure you have the following:
 
 This tutorial is based on a scenario where you want to:
 
-* Ingest a live video stream of an awards show that is taking place in New York City
-* Distribute your video to an affiliate in Boston who does not have an AWS account, and wants content sent to their on-premises encoder
-* Share your video with an affiliate in Philadelphia who wants to use their AWS account to distribute the video to their three local stations
+- Ingest a live video stream of an awards show that is taking place in New York City
+- Distribute your video to an affiliate in Boston who does not have an AWS account, and wants content sent to their on-premises encoder
+- Share your video with an affiliate in Philadelphia who wants to use their AWS account to distribute the video to their three local stations
 
 ### Estimated time and cost
 
-* **Time to complete**: Approximately 30 minutes
-* **Cost**: The resources created in this tutorial will cost approximately $0.41 per hour while running, including:
+- **Time to complete**: Approximately 30 minutes
+- **Cost**: The resources created in this tutorial will cost approximately $0.41 per hour while running, including:
   * Flow ingest: $0.08/hour
   * Flow egress: $0.08/hour
   * Data transfer (for a typical 5 Mbps stream): $0.25/hour
@@ -66,12 +66,12 @@ If you have the correct permissions, this command will return a list of existing
 
 Now, create an AWS Elemental MediaConnect flow to ingest your video from your on-premises encoder into the AWS Cloud. For this tutorial, we'll use the following details:
 
-* Flow name: AwardsNYCShow
-* Source name: AwardsNYCSource
-* Source protocol: Zixi push
-* Zixi stream ID: ZixiAwardsNYCFeed
-* CIDR block sending the content: 10.24.34.0/23
-* Source encryption: None
+- Flow name: AwardsNYCShow
+- Source name: AwardsNYCSource
+- Source protocol: Zixi push
+- Zixi stream ID: ZixiAwardsNYCFeed
+- CIDR block sending the content: 10.24.34.0/23
+- Source encryption: None
 
 **Create a flow**
 
@@ -138,12 +138,12 @@ $ FLOW_ARN="arn:aws:mediaconnect:us-east-2:123456789012:flow:1-abcd1234-b786ff4d
 
 To send content to your affiliate in Boston, add an output to your flow. This output will send your video to your Boston affiliate's on-premises encoder. We'll use these details:
 
-* Output name: AwardsNYCOutput
-* Output protocol: Zixi push
-* Zixi stream ID: ZixiAwardsOutput
-* IP address of the Boston affiliate's on-premises encoder: 198.51.100.11
-* Port: 1024
-* Output encryption: None
+- Output name: AwardsNYCOutput
+- Output protocol: Zixi push
+- Zixi stream ID: ZixiAwardsOutput
+- IP address of the Boston affiliate's on-premises encoder: 198.51.100.11
+- Port: 1024
+- Output encryption: None
 
 **Add an output to the flow**
 
@@ -174,9 +174,9 @@ $ aws mediaconnect add-flow-outputs \
 
 Grant an entitlement to allow your Philadelphia affiliate to use your content as the source for their AWS Elemental MediaConnect flow. We'll use these details:
 
-* Entitlement name: PhillyTeam
-* Philadelphia affiliate's AWS account ID: 222233334444
-* Output encryption: None
+- Entitlement name: PhillyTeam
+- Philadelphia affiliate's AWS account ID: 222233334444
+- Output encryption: None
 
 **Grant an entitlement**
 
@@ -304,15 +304,15 @@ This tutorial demonstrates the basic functionality of AWS Elemental MediaConnect
 
 For comprehensive guidance on building production-ready architectures, refer to:
 
-* [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/)
-* [Media & Entertainment on AWS](https://aws.amazon.com/media/)
-* [AWS Media Services](https://aws.amazon.com/media-services/)
+- [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/)
+- [Media & Entertainment on AWS](https://aws.amazon.com/media/)
+- [AWS Media Services](https://aws.amazon.com/media-services/)
 
 ## Next steps
 
 Now that you've learned the basics of using AWS Elemental MediaConnect with the AWS CLI, you can explore more advanced features:
 
-* Learn how to [encrypt your content](https://docs.aws.amazon.com/mediaconnect/latest/ug/encryption.html) for secure transmission
-* Explore [monitoring options](https://docs.aws.amazon.com/mediaconnect/latest/ug/monitoring.html) for your MediaConnect flows
-* Set up [failover sources](https://docs.aws.amazon.com/mediaconnect/latest/ug/sources-failover.html) for high availability
-* Learn about [MediaConnect gateways](https://docs.aws.amazon.com/mediaconnect/latest/ug/gateways.html) for cloud-based video processing
+- Learn how to [encrypt your content](https://docs.aws.amazon.com/mediaconnect/latest/ug/encryption.html) for secure transmission
+- Explore [monitoring options](https://docs.aws.amazon.com/mediaconnect/latest/ug/monitoring.html) for your MediaConnect flows
+- Set up [failover sources](https://docs.aws.amazon.com/mediaconnect/latest/ug/sources-failover.html) for high availability
+- Learn about [MediaConnect gateways](https://docs.aws.amazon.com/mediaconnect/latest/ug/gateways.html) for cloud-based video processing

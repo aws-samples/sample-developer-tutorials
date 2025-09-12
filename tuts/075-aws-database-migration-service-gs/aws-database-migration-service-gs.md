@@ -455,12 +455,12 @@ while true; do
         --filters Name=replication-instance-id,Values="DMS-instance" \
         --query 'ReplicationInstances[0].Status' \
         --output text)
-    
+
     if [ "$STATUS" = "available" ]; then
         echo "DMS replication instance is now available"
         break
     fi
-    
+
     echo "Current status: $STATUS. Waiting 30 seconds..."
     sleep 30
 done
@@ -561,7 +561,7 @@ while true; do
         --filters Name=endpoint-arn,Values=$SOURCE_ENDPOINT_ARN \
         --query 'Connections[0].Status' \
         --output text)
-    
+
     if [ "$STATUS" = "successful" ]; then
         echo "Source endpoint connection test successful"
         break
@@ -569,7 +569,7 @@ while true; do
         echo "Source endpoint connection test failed"
         exit 1
     fi
-    
+
     echo "Current status: $STATUS. Waiting 10 seconds..."
     sleep 10
 done
@@ -592,7 +592,7 @@ while true; do
         --filters Name=endpoint-arn,Values=$TARGET_ENDPOINT_ARN \
         --query 'Connections[0].Status' \
         --output text)
-    
+
     if [ "$STATUS" = "successful" ]; then
         echo "Target endpoint connection test successful"
         break
@@ -600,7 +600,7 @@ while true; do
         echo "Target endpoint connection test failed"
         exit 1
     fi
-    
+
     echo "Current status: $STATUS. Waiting 10 seconds..."
     sleep 10
 done
@@ -707,12 +707,12 @@ while true; do
         --filters Name=replication-task-arn,Values=$TASK_ARN \
         --query 'ReplicationTasks[0].Status' \
         --output text)
-    
+
     if [ "$STATUS" = "ready" ]; then
         echo "Migration task is now ready"
         break
     fi
-    
+
     echo "Current status: $STATUS. Waiting 30 seconds..."
     sleep 30
 done

@@ -6,16 +6,16 @@ This tutorial walks you through creating your first CloudFormation stack using t
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Create a CloudFormation template](#create-a-cloudformation-template)
-* [Validate and deploy the template](#validate-and-deploy-the-template)
-* [Monitor stack creation](#monitor-stack-creation)
-* [View stack resources and outputs](#view-stack-resources-and-outputs)
-* [Test the web server](#test-the-web-server)
-* [Troubleshoot common issues](#troubleshoot-common-issues)
-* [Clean up resources](#clean-up-resources)
-* [Going to production](#going-to-production)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Create a CloudFormation template](#create-a-cloudformation-template)
+- [Validate and deploy the template](#validate-and-deploy-the-template)
+- [Monitor stack creation](#monitor-stack-creation)
+- [View stack resources and outputs](#view-stack-resources-and-outputs)
+- [Test the web server](#test-the-web-server)
+- [Troubleshoot common issues](#troubleshoot-common-issues)
+- [Clean up resources](#clean-up-resources)
+- [Going to production](#going-to-production)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 
@@ -56,7 +56,7 @@ Parameters:
       - t3.micro
       - t2.micro
     ConstraintDescription: must be a valid EC2 instance type.
-    
+
   MyIP:
     Description: Your IP address in CIDR format (e.g. 203.0.113.1/32).
     Type: String
@@ -103,9 +103,9 @@ Outputs:
 
 This template defines a simple web server infrastructure with the following components:
 
-* **Parameters**: Values that can be passed to the template when creating the stack, including the AMI ID, instance type, and your IP address.
-* **Resources**: The AWS resources to create, including a security group that allows HTTP access from your IP address and an EC2 instance running Apache HTTP Server.
-* **Outputs**: Values that are returned after the stack is created, including the URL of the web server.
+- **Parameters**: Values that can be passed to the template when creating the stack, including the AMI ID, instance type, and your IP address.
+- **Resources**: The AWS resources to create, including a security group that allows HTTP access from your IP address and an EC2 instance running Apache HTTP Server.
+- **Outputs**: Values that are returned after the stack is created, including the URL of the web server.
 
 Note that we're using Amazon Linux 2023, the latest version of Amazon Linux, which includes several improvements over Amazon Linux 2.
 

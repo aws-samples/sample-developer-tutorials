@@ -8,12 +8,12 @@ You can either run the automated script `chimesdk-routingcalls.sh` to execute al
 
 The script creates the following AWS resources in order:
 
-• IAM role
-• IAM role policy
-• Lambda function
-• Lambda function (b)
-• Chime SDK Voice sip media application
-• Chime SDK Voice sip media application (b)
-• Chime SDK Voice sip rule
+- IAM role
+- IAM role policy
+- Lambda function
+- Lambda function (b)
+- Chime SDK Voice sip media application
+- Chime SDK Voice sip media application (b)
+- Chime SDK Voice sip rule
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

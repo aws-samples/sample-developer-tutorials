@@ -4,13 +4,13 @@ This tutorial guides you through creating an Amazon Q Business application envir
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Create an IAM role for Amazon Q Business](#create-an-iam-role-for-amazon-q-business)
-* [Create an Amazon Q Business application with anonymous access](#create-an-amazon-q-business-application-with-anonymous-access)
-* [Verify the application creation](#verify-the-application-creation)
-* [Clean up resources](#clean-up-resources)
-* [Going to production](#going-to-production)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Create an IAM role for Amazon Q Business](#create-an-iam-role-for-amazon-q-business)
+- [Create an Amazon Q Business application with anonymous access](#create-an-amazon-q-business-application-with-anonymous-access)
+- [Verify the application creation](#verify-the-application-creation)
+- [Clean up resources](#clean-up-resources)
+- [Going to production](#going-to-production)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 

@@ -8,14 +8,14 @@ You can either run the automated shell script (`ecs-ec2-getting-started.sh`) to 
 
 The script creates the following AWS resources in order:
 
-• ECS cluster
-• EC2 key pair
-• EC2 security group
-• IAM role
-• IAM role policy
-• IAM instance profile
-• EC2 instances
-• ECS task definition
-• ECS service
+- ECS cluster
+- EC2 key pair
+- EC2 security group
+- IAM role
+- IAM role policy
+- IAM instance profile
+- EC2 instances
+- ECS task definition
+- ECS service
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

@@ -24,7 +24,7 @@ To avoid ongoing charges, follow the cleanup instructions at the end of this tut
 
 First, you'll create a Kinesis video stream that will store and process your video data. The stream acts as a resource that continuously captures, processes, and stores video data.
 
-The following command creates a new Kinesis video stream with a 24-hour data retention period, and save this ARN to a variable for easy reference: 
+The following command creates a new Kinesis video stream with a 24-hour data retention period, and save this ARN to a variable for easy reference:
 
 ```
 $ STREAM_ARN=$(aws kinesisvideo create-stream --stream-name "MyKinesisVideoStream" --data-retention-in-hours 24 --query "StreamARN" --output text)

@@ -8,17 +8,17 @@ By the end of this tutorial, you'll have a fully functional Amazon Q Business ap
 
 Before you begin this tutorial, make sure you have:
 
-* An AWS account with permissions to create and manage Amazon Q Business resources, IAM Identity Center, IAM roles, and policies.
-* The AWS CLI installed and configured with appropriate credentials. For information about installing the AWS CLI, see [Installing or updating the latest version of the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
-* Basic familiarity with AWS CLI commands and JSON syntax.
-* Approximately 30 minutes to complete the tutorial.
+- An AWS account with permissions to create and manage Amazon Q Business resources, IAM Identity Center, IAM roles, and policies.
+- The AWS CLI installed and configured with appropriate credentials. For information about installing the AWS CLI, see [Installing or updating the latest version of the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
+- Basic familiarity with AWS CLI commands and JSON syntax.
+- Approximately 30 minutes to complete the tutorial.
 
 ### Cost considerations
 
 This tutorial creates resources that incur charges to your AWS account:
 
-* Amazon Q Business Pro user subscription: $40 per user per month
-* Amazon Q Business Lite user subscription (optional): $20 per user per month
+- Amazon Q Business Pro user subscription: $40 per user per month
+- Amazon Q Business Lite user subscription (optional): $20 per user per month
 
 The total cost for running the resources in this tutorial for one hour is approximately $0.056 (for one Pro user) or $0.084 (if you also create a group with a Lite subscription). To avoid ongoing charges, follow the cleanup steps at the end of the tutorial.
 
@@ -76,7 +76,7 @@ cat > qbusiness-trust-policy.json << EOF
 EOF
 ```
 
-Next, create a permissions policy file that defines what actions the role can perform. 
+Next, create a permissions policy file that defines what actions the role can perform.
 
 Note: For this tutorial, replace "123456789012" with your AWS account number. Replace "us-east-1" with the AWS Region name that you plan to use.
 
@@ -170,9 +170,9 @@ After creating the role and policy, wait for them to propagate (approximately 15
 
 Before creating the Amazon Q Business application, you need to set up a user in IAM Identity Center who will access the application.
 
-First, get the Identity Store ID associated with your IAM Identity Center instance. 
+First, get the Identity Store ID associated with your IAM Identity Center instance.
 
-Replace "arn:aws:sso:::instance/ssoins-abcd1234xmpl" with the ARN of your IAM Identity Center instance. Replace "us-east-1" with the AWS Region where your IAM Identity Center instance is located. 
+Replace "arn:aws:sso:::instance/ssoins-abcd1234xmpl" with the ARN of your IAM Identity Center instance. Replace "us-east-1" with the AWS Region where your IAM Identity Center instance is located.
 
 ```bash
 aws sso-admin describe-instance \
@@ -182,9 +182,9 @@ aws sso-admin describe-instance \
   --output text
 ```
 
-Make a note of the Identity Store ID in the response. You'll use it in the following command. 
+Make a note of the Identity Store ID in the response. You'll use it in the following command.
 
-Now, create a user in the Identity Store. Replace "d-abcd1234xmpl" with your actual Identity Store ID. Replace "us-east-1" with the AWS Region where your IAM Identity Center instance is located. 
+Now, create a user in the Identity Store. Replace "d-abcd1234xmpl" with your actual Identity Store ID. Replace "us-east-1" with the AWS Region where your IAM Identity Center instance is located.
 Note: In a production environment, use valid email addresses from your organization's domain instead of example.com.
 
 ```bash
@@ -508,7 +508,7 @@ aws iam create-policy \
   --output text
 ```
 
-Attach the policy to the role. Replace "123456789012" with the AWS account number. Replace "us-east-1" with the AWS Region name that you plan to use. 
+Attach the policy to the role. Replace "123456789012" with the AWS account number. Replace "us-east-1" with the AWS Region name that you plan to use.
 
 ```bash
 aws iam attach-role-policy \
@@ -543,9 +543,9 @@ aws qbusiness get-web-experience \
   --output text
 ```
 
-This URL is where your users can access the Amazon Q Business application through a web browser. 
+This URL is where your users can access the Amazon Q Business application through a web browser.
 
-To sign in and access the URL through a web browser, for username, use the user-name "qbusiness-user-abcd1234" that you specify in Step 3. For Password, choose "Forgot password" to receive the reset password email from your email that's specified in Step 3. 
+To sign in and access the URL through a web browser, for username, use the user-name "qbusiness-user-abcd1234" that you specify in Step 3. For Password, choose "Forgot password" to receive the reset password email from your email that's specified in Step 3.
 
 ## Step 9: Verify your resources
 
@@ -657,7 +657,7 @@ For more information on AWS architecture best practices, see the [AWS Well-Archi
 
 Now that you've created an Amazon Q Business application, you might want to explore these related topics:
 
-* [Adding data sources to your Amazon Q Business application](https://docs.aws.amazon.com/amazonq/latest/qbusiness-ug/data-source-overview.html)
-* [Managing user subscriptions in Amazon Q Business](https://docs.aws.amazon.com/amazonq/latest/qbusiness-ug/tiers.html)
-* [Customizing your Amazon Q Business web experience](https://docs.aws.amazon.com/amazonq/latest/qbusiness-ug/customizing-web-experience.html)
-* [Monitoring Amazon Q Business with CloudWatch](https://docs.aws.amazon.com/amazonq/latest/qbusiness-ug/monitoring-overview.html)
+- [Adding data sources to your Amazon Q Business application](https://docs.aws.amazon.com/amazonq/latest/qbusiness-ug/data-source-overview.html)
+- [Managing user subscriptions in Amazon Q Business](https://docs.aws.amazon.com/amazonq/latest/qbusiness-ug/tiers.html)
+- [Customizing your Amazon Q Business web experience](https://docs.aws.amazon.com/amazonq/latest/qbusiness-ug/customizing-web-experience.html)
+- [Monitoring Amazon Q Business with CloudWatch](https://docs.aws.amazon.com/amazonq/latest/qbusiness-ug/monitoring-overview.html)

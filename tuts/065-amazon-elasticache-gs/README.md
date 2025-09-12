@@ -8,6 +8,6 @@ You can either run the automated script `amazon-elasticache-gs.sh` to execute al
 
 The script creates the following AWS resources in order:
 
-• ElastiCache serverless cache
+- ElastiCache serverless cache
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

@@ -108,13 +108,13 @@ To enable the APNs channel, you can use either key credentials (recommended) or 
 ```
 aws pinpoint update-apns-channel \
   --application-id abcd1234xmplabcd1234abcd1234 \
-  --apns-channel-request '{ 
-    "Enabled": true, 
-    "DefaultAuthenticationMethod": "KEY", 
-    "TokenKey": "YOUR_P8_FILE_CONTENT", 
-    "TokenKeyId": "YOUR_KEY_ID", 
-    "BundleId": "YOUR_BUNDLE_ID", 
-    "TeamId": "YOUR_TEAM_ID" 
+  --apns-channel-request '{
+    "Enabled": true,
+    "DefaultAuthenticationMethod": "KEY",
+    "TokenKey": "YOUR_P8_FILE_CONTENT",
+    "TokenKeyId": "YOUR_KEY_ID",
+    "BundleId": "YOUR_BUNDLE_ID",
+    "TeamId": "YOUR_TEAM_ID"
   }'
 ```
 
@@ -125,12 +125,12 @@ Replace the placeholder values with your actual APNs credentials from your Apple
 ```
 aws pinpoint update-apns-channel \
   --application-id abcd1234xmplabcd1234abcd1234 \
-  --apns-channel-request '{ 
-    "Enabled": true, 
-    "DefaultAuthenticationMethod": "CERTIFICATE", 
-    "Certificate": "YOUR_BASE64_ENCODED_CERTIFICATE", 
-    "PrivateKey": "YOUR_PRIVATE_KEY", 
-    "CertificateType": "PRODUCTION" 
+  --apns-channel-request '{
+    "Enabled": true,
+    "DefaultAuthenticationMethod": "CERTIFICATE",
+    "Certificate": "YOUR_BASE64_ENCODED_CERTIFICATE",
+    "PrivateKey": "YOUR_PRIVATE_KEY",
+    "CertificateType": "PRODUCTION"
   }'
 ```
 
@@ -148,10 +148,10 @@ To enable the Baidu Cloud Push channel, use the following command:
 ```
 aws pinpoint update-baidu-channel \
   --application-id abcd1234xmplabcd1234abcd1234 \
-  --baidu-channel-request '{ 
-    "Enabled": true, 
-    "ApiKey": "YOUR_BAIDU_API_KEY", 
-    "SecretKey": "YOUR_BAIDU_SECRET_KEY" 
+  --baidu-channel-request '{
+    "Enabled": true,
+    "ApiKey": "YOUR_BAIDU_API_KEY",
+    "SecretKey": "YOUR_BAIDU_SECRET_KEY"
   }'
 ```
 
@@ -164,10 +164,10 @@ To enable the ADM channel, use the following command:
 ```
 aws pinpoint update-adm-channel \
   --application-id abcd1234xmplabcd1234abcd1234 \
-  --adm-channel-request '{ 
-    "Enabled": true, 
-    "ClientId": "YOUR_ADM_CLIENT_ID", 
-    "ClientSecret": "YOUR_ADM_CLIENT_SECRET" 
+  --adm-channel-request '{
+    "Enabled": true,
+    "ClientId": "YOUR_ADM_CLIENT_ID",
+    "ClientSecret": "YOUR_ADM_CLIENT_SECRET"
   }'
 ```
 
