@@ -15,6 +15,11 @@ Use present tense and active voice as much as possible.
 
 Don't add linebreaks in the middle of a paragraph. Keep all of the text in the paragraph on one line. Ensure that there is an empty line between all headers, paragraphs, example titles, and code blocks.
 
+**List formatting:**
+- Always use hyphens (-) for unordered lists, never asterisks (*) or bullet characters (•)
+- Maintain consistent indentation for nested lists
+- Example: `- First item` not `* First item` or `• First item`
+
 For any relative path links, replace the './' with the full path that it represents.
 
 ## portability

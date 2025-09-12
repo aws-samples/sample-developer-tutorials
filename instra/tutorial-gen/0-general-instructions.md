@@ -13,3 +13,6 @@ When creating tutorials for specific AWS services:
 1. CRITICAL FOR VPC CREATION:
    - Use the architecture defined in vpc-example.md as reference
    - This step is mandatory before creating any VPC resources
+2. CRITICAL FOR MARKDOWN FORMATTING:
+   - Follow the markdown-formatting-guide.md for consistent formatting
+   - Always use hyphens (-) for lists, never asterisks (*) or bullet characters (•)

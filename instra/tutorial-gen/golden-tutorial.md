@@ -4,14 +4,14 @@ This tutorial guides you through common Amazon Lightsail operations using the AW
 
 ## Topics
 
-* [Prerequisites](#getstarted-awscli-prerequisites)
-* [Generate SSH key pairs](#getstarted-awscli-generate-ssh-key-pairs)
-* [Create and manage instances](#getstarted-awscli-create-and-manage-instances)
-* [Connect to your instance](#getstarted-awscli-connect-to-your-instance)
-* [Add storage to your instance](#getstarted-awscli-add-storage-to-your-instance)
-* [Create and use snapshots](#getstarted-awscli-create-and-use-snapshots)
-* [Clean up resources](#getstarted-awscli-clean-up-resources)
-* [Next steps](#getstarted-awscli-next-steps)
+- [Prerequisites](#getstarted-awscli-prerequisites)
+- [Generate SSH key pairs](#getstarted-awscli-generate-ssh-key-pairs)
+- [Create and manage instances](#getstarted-awscli-create-and-manage-instances)
+- [Connect to your instance](#getstarted-awscli-connect-to-your-instance)
+- [Add storage to your instance](#getstarted-awscli-add-storage-to-your-instance)
+- [Create and use snapshots](#getstarted-awscli-create-and-use-snapshots)
+- [Clean up resources](#getstarted-awscli-clean-up-resources)
+- [Next steps](#getstarted-awscli-next-steps)
 
 ## Prerequisites
 
