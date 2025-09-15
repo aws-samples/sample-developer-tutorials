@@ -8,10 +8,10 @@ You can either run the automated script `vpc-ipam-gs.sh` to execute all operatio
 
 The script creates the following AWS resources in order:
 
-• EC2 ipam
-• EC2 ipam pool
-• EC2 ipam pool (b)
-• EC2 ipam pool (c)
-• EC2 vpc
+- EC2 ipam
+- EC2 ipam pool
+- EC2 ipam pool (b)
+- EC2 ipam pool (c)
+- EC2 vpc
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

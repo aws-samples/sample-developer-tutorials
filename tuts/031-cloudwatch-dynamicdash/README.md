@@ -8,9 +8,9 @@ You can either run the provided shell script to automatically create the dynamic
 
 The script creates the following AWS resources in order:
 
-• IAM role
-• IAM role policy
-• Lambda function
-• CloudWatch dashboard
+- IAM role
+- IAM role policy
+- Lambda function
+- CloudWatch dashboard
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

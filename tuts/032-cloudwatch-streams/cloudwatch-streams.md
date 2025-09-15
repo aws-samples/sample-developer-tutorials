@@ -4,13 +4,13 @@ This tutorial guides you through creating a CloudWatch dashboard that uses a pro
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Create Lambda functions for monitoring](#create-lambda-functions-for-monitoring)
-* [Create a CloudWatch dashboard](#create-a-cloudwatch-dashboard)
-* [Add a property variable to the dashboard](#add-a-property-variable-to-the-dashboard)
-* [Clean up resources](#clean-up-resources)
-* [Going to production](#going-to-production)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Create Lambda functions for monitoring](#create-lambda-functions-for-monitoring)
+- [Create a CloudWatch dashboard](#create-a-cloudwatch-dashboard)
+- [Add a property variable to the dashboard](#add-a-property-variable-to-the-dashboard)
+- [Clean up resources](#clean-up-resources)
+- [Going to production](#going-to-production)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 
@@ -128,7 +128,7 @@ Now that you have Lambda functions with metrics, you can create a CloudWatch das
 
 **Create a basic dashboard**
 
-First, create a simple dashboard with a widget showing Lambda invocation metrics. 
+First, create a simple dashboard with a widget showing Lambda invocation metrics.
 
 Note: The `region` property in the widget configuration should match the AWS Region where your Lambda function is deployed. In this example, we use "us-west-2" as the target Region.
 
@@ -151,13 +151,13 @@ cat > dashboard-body.json << EOF
         ],
         "view": "timeSeries",
         "stacked": false,
-        "region": "us-west-2",        
+        "region": "us-west-2",
         "title": "Lambda Invocations",
         "period": 300,
         "stat": "Sum",
         "annotations": {
             "horizontal": []
-        }            
+        }
       }
     }
   ]
@@ -207,7 +207,7 @@ After completing these steps, your dashboard will have a dropdown menu at the to
 
 **Add more widgets that use the variable**
 
-Once you've added the property variable through the console, you can add more widgets that use the same variable. For example, you might want to add widgets for errors and duration metrics as follows. 
+Once you've added the property variable through the console, you can add more widgets that use the same variable. For example, you might want to add widgets for errors and duration metrics as follows.
 
 Note: Specify the region to the AWS Region where your Lambda functions are located. In this example, we use "us-west-2".
 
@@ -227,13 +227,13 @@ cat > dashboard-body-updated.json << EOF
         ],
         "view": "timeSeries",
         "stacked": false,
-        "region": "us-west-2",        
+        "region": "us-west-2",
         "title": "Lambda Invocations for \${functionName}",
         "period": 300,
         "stat": "Sum",
-        "annotations": { 
+        "annotations": {
             "horizontal": []
-        }   
+        }
       }
     },
     {
@@ -248,7 +248,7 @@ cat > dashboard-body-updated.json << EOF
         ],
         "view": "timeSeries",
         "stacked": false,
-        "region": "us-west-2",        
+        "region": "us-west-2",
         "title": "Lambda Errors for \${functionName}",
         "period": 300,
         "stat": "Sum",
@@ -269,7 +269,7 @@ cat > dashboard-body-updated.json << EOF
         ],
         "view": "timeSeries",
         "stacked": false,
-        "region": "us-west-2",        
+        "region": "us-west-2",
         "title": "Lambda Duration for \${functionName}",
         "period": 300,
         "stat": "Average",

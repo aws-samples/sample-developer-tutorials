@@ -79,7 +79,7 @@ Make note of this endpoint as you'll need it for the next steps.
 
 ## Upload data to your domain
 
-Once your domain is active, you can upload data to it. In this section, you'll upload documents using the master user authentication method. 
+Once your domain is active, you can upload data to it. In this section, you'll upload documents using the master user authentication method.
 You'll upload a single document and upload multiple documents in bulk.
 
 ### Verify variables are set correctly

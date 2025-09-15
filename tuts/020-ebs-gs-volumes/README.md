@@ -8,9 +8,9 @@ You can either run the automated shell script (`ebs-gs-volumes.sh`) to quickly s
 
 The script creates the following AWS resources in order:
 
-• EC2 volume
-• EC2 security group
-• EC2 instances
-• EC2 volume (b)
+- EC2 volume
+- EC2 security group
+- EC2 instances
+- EC2 volume (b)
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

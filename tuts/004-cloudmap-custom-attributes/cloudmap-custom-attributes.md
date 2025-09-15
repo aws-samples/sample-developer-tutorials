@@ -203,38 +203,38 @@ import random
 def lambda_handler(event, context):
     try:
         serviceclient = boto3.client('servicediscovery')
-        
+
         response = serviceclient.discover_instances(
             NamespaceName='cloudmap-tutorial',
             ServiceName='data-service')
-        
+
         if not response.get("Instances"):
             return {
                 'statusCode': 500,
                 'body': json.dumps({"error": "No instances found"})
             }
-            
+
         tablename = response["Instances"][0]["Attributes"].get("tablename")
         if not tablename:
             return {
                 'statusCode': 500,
                 'body': json.dumps({"error": "Table name attribute not found"})
             }
-           
+
         dynamodbclient = boto3.resource('dynamodb')
-           
+
         table = dynamodbclient.Table(tablename)
-        
+
         # Validate input
         if not isinstance(event, str):
             return {
                 'statusCode': 400,
                 'body': json.dumps({"error": "Input must be a string"})
             }
-           
+
         response = table.put_item(
             Item={ 'id': str(random.randint(1,100)), 'todo': event })
-           
+
         return {
             'statusCode': 200,
             'body': json.dumps(response)
@@ -318,32 +318,32 @@ def lambda_handler(event, context):
         serviceclient = boto3.client('servicediscovery')
 
         response = serviceclient.discover_instances(
-            NamespaceName='cloudmap-tutorial', 
+            NamespaceName='cloudmap-tutorial',
             ServiceName='data-service')
-        
+
         if not response.get("Instances"):
             return {
                 'statusCode': 500,
                 'body': json.dumps({"error": "No instances found"})
             }
-            
+
         tablename = response["Instances"][0]["Attributes"].get("tablename")
         if not tablename:
             return {
                 'statusCode': 500,
                 'body': json.dumps({"error": "Table name attribute not found"})
             }
-           
+
         dynamodbclient = boto3.resource('dynamodb')
-           
+
         table = dynamodbclient.Table(tablename)
-        
+
         # Use pagination for larger tables
         response = table.scan(
             Select='ALL_ATTRIBUTES',
             Limit=50  # Limit results for demonstration purposes
         )
-        
+
         # For production, you would implement pagination like this:
         # items = []
         # while 'LastEvaluatedKey' in response:
@@ -417,33 +417,33 @@ try:
 
     print("Discovering write function...")
     response = serviceclient.discover_instances(
-        NamespaceName='cloudmap-tutorial', 
-        ServiceName='app-service', 
+        NamespaceName='cloudmap-tutorial',
+        ServiceName='app-service',
         QueryParameters={ 'action': 'write' }
     )
 
     if not response.get("Instances"):
         print("Error: No instances found")
         exit(1)
-        
+
     functionname = response["Instances"][0]["Attributes"].get("functionname")
     if not functionname:
         print("Error: Function name attribute not found")
         exit(1)
-        
+
     print(f"Found function: {functionname}")
 
     lambdaclient = boto3.client('lambda')
 
     print("Invoking Lambda function...")
     resp = lambdaclient.invoke(
-        FunctionName=functionname, 
+        FunctionName=functionname,
         Payload='"This is a test data"'
     )
 
     payload = resp["Payload"].read()
     print(f"Response: {payload.decode('utf-8')}")
-    
+
 except Exception as e:
     print(f"Error: {str(e)}")
 EOF
@@ -463,33 +463,33 @@ try:
 
     print("Discovering read function...")
     response = serviceclient.discover_instances(
-        NamespaceName='cloudmap-tutorial', 
-        ServiceName='app-service', 
+        NamespaceName='cloudmap-tutorial',
+        ServiceName='app-service',
         QueryParameters={ 'action': 'read' }
     )
 
     if not response.get("Instances"):
         print("Error: No instances found")
         exit(1)
-        
+
     functionname = response["Instances"][0]["Attributes"].get("functionname")
     if not functionname:
         print("Error: Function name attribute not found")
         exit(1)
-        
+
     print(f"Found function: {functionname}")
 
     lambdaclient = boto3.client('lambda')
 
     print("Invoking Lambda function...")
     resp = lambdaclient.invoke(
-        FunctionName=functionname, 
+        FunctionName=functionname,
         InvocationType='RequestResponse'
     )
 
     payload = resp["Payload"].read()
     print(f"Response: {payload.decode('utf-8')}")
-    
+
 except Exception as e:
     print(f"Error: {str(e)}")
 EOF

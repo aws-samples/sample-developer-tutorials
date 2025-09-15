@@ -8,14 +8,14 @@ You can either run the automated script `redshift-serverless.sh` to execute all 
 
 The script creates the following AWS resources in order:
 
-• Secrets Manager secret
-• IAM role
-• IAM role (b)
-• IAM role policy
-• IAM role policy (b)
-• Redshift-Serverless namespace
-• Redshift-Serverless namespace (b)
-• Redshift-Serverless workgroup
-• Redshift-Serverless workgroup (b)
+- Secrets Manager secret
+- IAM role
+- IAM role (b)
+- IAM role policy
+- IAM role policy (b)
+- Redshift-Serverless namespace
+- Redshift-Serverless namespace (b)
+- Redshift-Serverless workgroup
+- Redshift-Serverless workgroup (b)
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

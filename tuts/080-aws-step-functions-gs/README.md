@@ -8,14 +8,14 @@ You can either run the automated shell script (`aws-step-functions-gs.sh`) to qu
 
 The script creates the following AWS resources in order:
 
-• IAM role
-• IAM policy
-• IAM role policy
-• Step Functions state machine
-• Step Functions execution
-• Step Functions execution (b)
-• IAM policy (b)
-• IAM role policy (b)
-• Step Functions execution (c)
+- IAM role
+- IAM policy
+- IAM role policy
+- Step Functions state machine
+- Step Functions execution
+- Step Functions execution (b)
+- IAM policy (b)
+- IAM role policy (b)
+- Step Functions execution (c)
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

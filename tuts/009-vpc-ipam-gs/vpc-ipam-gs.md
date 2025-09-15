@@ -6,18 +6,18 @@ This tutorial guides you through the process of setting up and using Amazon VPC 
 
 Before you begin this tutorial, make sure you have:
 
-* An AWS account with permissions to create and manage IPAM resources
-* The AWS CLI installed and configured with appropriate credentials
-* Basic understanding of IP addressing and CIDR notation
-* Basic knowledge of Amazon VPC concepts
-* Approximately 30 minutes to complete the tutorial
+- An AWS account with permissions to create and manage IPAM resources
+- The AWS CLI installed and configured with appropriate credentials
+- Basic understanding of IP addressing and CIDR notation
+- Basic knowledge of Amazon VPC concepts
+- Approximately 30 minutes to complete the tutorial
 
 ### Cost considerations
 
 The resources you create in this tutorial will incur the following costs:
-* IPAM: $0.02 per hour for the Advanced tier (the default tier used in this tutorial)
-* IPAM Pools: No additional charge for pools created within IPAM
-* VPC: No charge for the VPC itself
+- IPAM: $0.02 per hour for the Advanced tier (the default tier used in this tutorial)
+- IPAM Pools: No additional charge for pools created within IPAM
+- VPC: No charge for the VPC itself
 
 The total cost for running the resources created in this tutorial for one hour is approximately $0.02. To avoid ongoing charges, make sure to follow the cleanup instructions at the end of the tutorial.
 
@@ -230,19 +230,19 @@ This command shows all allocations from the specified IPAM pool, including the V
 
 Here are some common issues you might encounter when working with IPAM:
 
-* **Permission errors**: Ensure that your IAM user or role has the necessary permissions to create and manage IPAM resources. You may need the `ec2:CreateIpam`, `ec2:CreateIpamPool`, and other related permissions.
+- **Permission errors**: Ensure that your IAM user or role has the necessary permissions to create and manage IPAM resources. You may need the `ec2:CreateIpam`, `ec2:CreateIpamPool`, and other related permissions.
 
-* **Resource limit exceeded**: By default, you can create only one IPAM per account. If you already have an IPAM, you'll need to delete it before creating a new one or use the existing one.
+- **Resource limit exceeded**: By default, you can create only one IPAM per account. If you already have an IPAM, you'll need to delete it before creating a new one or use the existing one.
 
-* **CIDR allocation failures**: When provisioning CIDRs to pools, ensure that the CIDR you're trying to provision doesn't overlap with existing allocations in other pools.
+- **CIDR allocation failures**: When provisioning CIDRs to pools, ensure that the CIDR you're trying to provision doesn't overlap with existing allocations in other pools.
 
-* **API request timeouts**: If you encounter "RequestExpired" errors, it might be due to network latency or time synchronization issues. Try the command again.
+- **API request timeouts**: If you encounter "RequestExpired" errors, it might be due to network latency or time synchronization issues. Try the command again.
 
-* **Incorrect state errors**: If you receive "IncorrectState" errors, it might be because you're trying to perform an operation on a resource that's not in the correct state. Wait for the resource to be fully created or provisioned before proceeding.
+- **Incorrect state errors**: If you receive "IncorrectState" errors, it might be because you're trying to perform an operation on a resource that's not in the correct state. Wait for the resource to be fully created or provisioned before proceeding.
 
-* **Allocation size errors**: If you receive "InvalidParameterValue" errors about allocation size, ensure that the netmask length you're requesting is appropriate for the pool size. For example, you can't allocate a /25 CIDR from a /24 pool.
+- **Allocation size errors**: If you receive "InvalidParameterValue" errors about allocation size, ensure that the netmask length you're requesting is appropriate for the pool size. For example, you can't allocate a /25 CIDR from a /24 pool.
 
-* **Dependency violations**: When cleaning up resources, you might encounter "DependencyViolation" errors. This is because resources have dependencies on each other. Make sure to delete resources in the reverse order of creation and deprovision CIDRs before deleting pools.
+- **Dependency violations**: When cleaning up resources, you might encounter "DependencyViolation" errors. This is because resources have dependencies on each other. Make sure to delete resources in the reverse order of creation and deprovision CIDRs before deleting pools.
 
 ## Clean up resources
 
@@ -304,10 +304,10 @@ Note: You may need to wait between these operations to allow the resources to be
 
 Now that you've learned how to create and use IPAM with the AWS CLI, you might want to explore more advanced features:
 
-* [Plan for IP address provisioning](https://docs.aws.amazon.com/vpc/latest/ipam/planning-ipam.html) - Learn how to plan your IP address space effectively
-* [Monitor CIDR usage by resource](https://docs.aws.amazon.com/vpc/latest/ipam/monitor-cidr-compliance-ipam.html) - Understand how to monitor IP address usage
-* [Share an IPAM pool using AWS RAM](https://docs.aws.amazon.com/vpc/latest/ipam/share-pool-ipam.html) - Learn how to share IPAM pools across AWS accounts
-* [Integrate IPAM with accounts in an AWS Organization](https://docs.aws.amazon.com/vpc/latest/ipam/enable-integ-ipam.html) - Discover how to use IPAM across your organization
+- [Plan for IP address provisioning](https://docs.aws.amazon.com/vpc/latest/ipam/planning-ipam.html) - Learn how to plan your IP address space effectively
+- [Monitor CIDR usage by resource](https://docs.aws.amazon.com/vpc/latest/ipam/monitor-cidr-compliance-ipam.html) - Understand how to monitor IP address usage
+- [Share an IPAM pool using AWS RAM](https://docs.aws.amazon.com/vpc/latest/ipam/share-pool-ipam.html) - Learn how to share IPAM pools across AWS accounts
+- [Integrate IPAM with accounts in an AWS Organization](https://docs.aws.amazon.com/vpc/latest/ipam/enable-integ-ipam.html) - Discover how to use IPAM across your organization
 
 ## Security Considerations
 

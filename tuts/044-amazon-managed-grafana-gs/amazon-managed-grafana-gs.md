@@ -4,15 +4,15 @@ This tutorial guides you through creating and configuring an Amazon Managed Graf
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Create an IAM role for your workspace](#create-an-iam-role-for-your-workspace)
-* [Create a Grafana workspace](#create-a-grafana-workspace)
-* [Configure authentication](#configure-authentication)
-* [Configure optional settings](#configure-optional-settings)
-* [Access your Grafana workspace](#access-your-grafana-workspace)
-* [Clean up resources](#clean-up-resources)
-* [Going to production](#going-to-production)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Create an IAM role for your workspace](#create-an-iam-role-for-your-workspace)
+- [Create a Grafana workspace](#create-a-grafana-workspace)
+- [Configure authentication](#configure-authentication)
+- [Configure optional settings](#configure-optional-settings)
+- [Access your Grafana workspace](#access-your-grafana-workspace)
+- [Clean up resources](#clean-up-resources)
+- [Going to production](#going-to-production)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 

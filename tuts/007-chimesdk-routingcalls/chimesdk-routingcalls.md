@@ -136,7 +136,7 @@ mkdir -p lambda
 cat > lambda/index.js << EOF
 exports.handler = async (event) => {
   console.log('Received event:', JSON.stringify(event, null, 2));
-  
+
   // Simple call handling logic
   const response = {
     SchemaVersion: '1.0',
@@ -157,7 +157,7 @@ exports.handler = async (event) => {
       }
     ]
   };
-  
+
   return response;
 };
 EOF
@@ -289,7 +289,7 @@ First, create a backup Lambda function in the same region.
 cat > lambda/backup-index.js << EOF
 exports.handler = async (event) => {
   console.log('Received event in backup handler:', JSON.stringify(event, null, 2));
-  
+
   // Simple call handling logic for backup
   const response = {
     SchemaVersion: '1.0',
@@ -310,7 +310,7 @@ exports.handler = async (event) => {
       }
     ]
   };
-  
+
   return response;
 };
 EOF

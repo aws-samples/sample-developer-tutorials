@@ -4,14 +4,14 @@ This tutorial guides you through the process of creating and managing an Amazon 
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Set up networking components](#set-up-networking-components)
-* [Create a DB subnet group](#create-a-db-subnet-group)
-* [Create a DB instance](#create-a-db-instance)
-* [Connect to your DB instance](#connect-to-your-db-instance)
-* [Clean up resources](#clean-up-resources)
-* [Going to production](#going-to-production)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Set up networking components](#set-up-networking-components)
+- [Create a DB subnet group](#create-a-db-subnet-group)
+- [Create a DB instance](#create-a-db-instance)
+- [Connect to your DB instance](#connect-to-your-db-instance)
+- [Clean up resources](#clean-up-resources)
+- [Going to production](#going-to-production)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 
@@ -373,7 +373,7 @@ mysql>
    );
 
    -- Insert some test data
-   INSERT INTO users (name, email) VALUES 
+   INSERT INTO users (name, email) VALUES
        ('Alice Johnson', 'alice@example.com'),
        ('Bob Smith', 'bob@example.com'),
        ('Carol Davis', 'carol@example.com');
@@ -582,10 +582,10 @@ For more information on building production-ready database environments, refer t
 
 Now that you've learned how to create and manage an RDS DB instance using the AWS CLI, you might want to explore these related topics:
 
-* [Working with automated backups](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_WorkingWithAutomatedBackups.html)
-* [Creating a DB snapshot](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_CreateSnapshot.html)
-* [Setting up Multi-AZ deployments](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.MultiAZ.html)
-* [Monitoring RDS metrics with CloudWatch](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/MonitoringOverview.html)
-* [Using parameter groups](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_WorkingWithParamGroups.html)
-* [Implementing connection pooling](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-proxy.html)
-* [Setting up read replicas](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ReadRepl.html)
+- [Working with automated backups](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_WorkingWithAutomatedBackups.html)
+- [Creating a DB snapshot](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_CreateSnapshot.html)
+- [Setting up Multi-AZ deployments](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.MultiAZ.html)
+- [Monitoring RDS metrics with CloudWatch](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/MonitoringOverview.html)
+- [Using parameter groups](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_WorkingWithParamGroups.html)
+- [Implementing connection pooling](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-proxy.html)
+- [Setting up read replicas](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ReadRepl.html)

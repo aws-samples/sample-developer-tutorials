@@ -8,7 +8,7 @@ You can either run the automated script `aws-account-management-gs.sh` to execut
 
 The script creates the following AWS resources in order:
 
-• Account Management alternate contact information
-• Account Management billing preferences
+- Account Management alternate contact information
+- Account Management billing preferences
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

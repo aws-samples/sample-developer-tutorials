@@ -8,12 +8,12 @@ You can either run the automated script `ec2-basics.sh` to execute all the steps
 
 The script creates the following AWS resources in order:
 
-• EC2 key pair
-• EC2 security group
-• EC2 instances
-• EC2 instances (b)
-• EC2 address
-• EC2 address (b)
-• EC2 instances (c)
+- EC2 key pair
+- EC2 security group
+- EC2 instances
+- EC2 instances (b)
+- EC2 address
+- EC2 address (b)
+- EC2 instances (c)
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

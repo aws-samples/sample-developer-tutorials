@@ -8,8 +8,8 @@ You can either run the automated script `cloudfront-gettingstarted.sh` to execut
 
 The script creates the following AWS resources in order:
 
-• CloudFront origin access control
-• CloudFront distribution
-• S3 bucket policy
+- CloudFront origin access control
+- CloudFront distribution
+- S3 bucket policy
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

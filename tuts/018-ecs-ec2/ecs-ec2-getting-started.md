@@ -4,13 +4,13 @@ This tutorial guides you through setting up an Amazon Elastic Container Service 
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Create an ECS cluster](#create-an-ecs-cluster)
-* [Launch a container instance](#launch-a-container-instance)
-* [Register a task definition](#register-a-task-definition)
-* [Create and monitor a service](#create-and-monitor-a-service)
-* [Clean up resources](#clean-up-resources)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Create an ECS cluster](#create-an-ecs-cluster)
+- [Launch a container instance](#launch-a-container-instance)
+- [Register a task definition](#register-a-task-definition)
+- [Create and monitor a service](#create-and-monitor-a-service)
+- [Clean up resources](#clean-up-resources)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 
@@ -22,7 +22,7 @@ Before you begin this tutorial, make sure you have the following.
 4. An AWS account with permissions to create and manage ECS, EC2, and IAM resources. Your IAM user should have the [AmazonECS_FullAccess](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/security-iam-awsmanpol.html#security-iam-awsmanpol-AmazonECS_FullAccess) policy attached.
 5. A default VPC in your AWS account. If you don't have one, you can [create a VPC](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/get-set-up-for-amazon-ecs.html#create-a-vpc) using the Amazon VPC console.
 
-Before you start, verify your AWS CLI configuration. 
+Before you start, verify your AWS CLI configuration.
 
 ```
 $ aws sts get-caller-identity
@@ -685,9 +685,9 @@ All resources have been successfully cleaned up.
 
 Now that you've learned how to create and manage Amazon ECS services with the EC2 launch type, you can explore more advanced features:
 
-* [Use Application Load Balancers](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-load-balancing.html) to distribute traffic across multiple tasks in your service
-* [Configure auto scaling](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-auto-scaling.html) to automatically adjust the number of running tasks based on demand
-* [Set up CloudWatch logging](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_awslogs.html) to collect and monitor logs from your containers
-* [Use Amazon ECR](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECR_on_ECS.html) to store and manage your container images
-* [Deploy multi-container applications](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definitions.html) using more complex task definitions
-* [Configure service discovery](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-discovery.html) to enable services to find and communicate with each other
+- [Use Application Load Balancers](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-load-balancing.html) to distribute traffic across multiple tasks in your service
+- [Configure auto scaling](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-auto-scaling.html) to automatically adjust the number of running tasks based on demand
+- [Set up CloudWatch logging](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_awslogs.html) to collect and monitor logs from your containers
+- [Use Amazon ECR](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECR_on_ECS.html) to store and manage your container images
+- [Deploy multi-container applications](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definitions.html) using more complex task definitions
+- [Configure service discovery](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-discovery.html) to enable services to find and communicate with each other

@@ -6,10 +6,10 @@ This tutorial guides you through the process of moving hardcoded secrets from yo
 
 Before you begin this tutorial, you need:
 
-* An AWS account with permissions to create IAM roles and use AWS Secrets Manager
-* The AWS Command Line Interface (AWS CLI) installed and configured
-* Basic knowledge of the AWS CLI and IAM
-* Approximately 15 minutes to complete the tutorial
+- An AWS account with permissions to create IAM roles and use AWS Secrets Manager
+- The AWS Command Line Interface (AWS CLI) installed and configured
+- Basic knowledge of the AWS CLI and IAM
+- Approximately 15 minutes to complete the tutorial
 
 ### Costs
 
@@ -19,8 +19,8 @@ This tutorial creates IAM roles and a secret in AWS Secrets Manager. The IAM rol
 
 In this tutorial, you'll use two IAM roles to manage permissions to your secret:
 
-* A role for managing secrets (SecretsManagerAdmin)
-* A role for retrieving secrets at runtime (RoleToRetrieveSecretAtRuntime)
+- A role for managing secrets (SecretsManagerAdmin)
+- A role for retrieving secrets at runtime (RoleToRetrieveSecretAtRuntime)
 
 First, create the SecretsManagerAdmin role. This role will have permissions to create and manage secrets.
 
@@ -199,14 +199,14 @@ from botocore.exceptions import ClientError
 def get_secret():
     secret_name = "MyAPIKey"
     region_name = "us-east-1"  # Replace with your region
-    
+
     # Create a Secrets Manager client
     session = boto3.session.Session()
     client = session.client(
         service_name='secretsmanager',
         region_name=region_name
     )
-    
+
     try:
         get_secret_value_response = client.get_secret_value(
             SecretId=secret_name
@@ -229,7 +229,7 @@ try:
     secret_dict = get_secret()
     client_id = secret_dict['ClientID']
     client_secret = secret_dict['ClientSecret']
-    
+
     # Now use client_id and client_secret in your application
     print(f"Successfully retrieved secret for client ID: {client_id}")
 except Exception as e:
@@ -355,8 +355,8 @@ aws iam delete-role --role-name "SecretsManagerAdmin"
 
 Now that you've learned how to move hardcoded secrets to AWS Secrets Manager, consider these next steps:
 
-* Implement [automatic rotation for your secrets](https://docs.aws.amazon.com/secretsmanager/latest/userguide/rotating-secrets.html) to enhance security
-* Learn how to [cache secrets in your application](https://docs.aws.amazon.com/secretsmanager/latest/userguide/retrieving-secrets.html) to improve performance and reduce costs
-* For multi-region applications, explore [replicating secrets across regions](https://docs.aws.amazon.com/secretsmanager/latest/userguide/replicate-secrets.html) to improve latency
-* Use [Amazon CodeGuru Reviewer](https://docs.aws.amazon.com/codeguru/latest/reviewer-ug/welcome.html) to find hardcoded secrets in your Java and Python applications
-* Learn about different ways to [grant permissions to secrets](https://docs.aws.amazon.com/secretsmanager/latest/userguide/auth-and-access_resource-policies.html) using resource-based policies
+- Implement [automatic rotation for your secrets](https://docs.aws.amazon.com/secretsmanager/latest/userguide/rotating-secrets.html) to enhance security
+- Learn how to [cache secrets in your application](https://docs.aws.amazon.com/secretsmanager/latest/userguide/retrieving-secrets.html) to improve performance and reduce costs
+- For multi-region applications, explore [replicating secrets across regions](https://docs.aws.amazon.com/secretsmanager/latest/userguide/replicate-secrets.html) to improve latency
+- Use [Amazon CodeGuru Reviewer](https://docs.aws.amazon.com/codeguru/latest/reviewer-ug/welcome.html) to find hardcoded secrets in your Java and Python applications
+- Learn about different ways to [grant permissions to secrets](https://docs.aws.amazon.com/secretsmanager/latest/userguide/auth-and-access_resource-policies.html) using resource-based policies

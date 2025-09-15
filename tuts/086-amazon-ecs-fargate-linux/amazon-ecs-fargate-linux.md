@@ -4,14 +4,14 @@ This tutorial shows you how to create and run an Amazon ECS Linux task using the
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Create the cluster](#create-the-cluster)
-* [Create a task definition](#create-a-task-definition)
-* [Create the service](#create-the-service)
-* [View your service](#view-your-service)
-* [Clean up](#clean-up)
-* [Going to production](#going-to-production)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Create the cluster](#create-the-cluster)
+- [Create a task definition](#create-a-task-definition)
+- [Create the service](#create-the-service)
+- [View your service](#view-your-service)
+- [Clean up](#clean-up)
+- [Going to production](#going-to-production)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 
@@ -24,9 +24,9 @@ Before you begin this tutorial, make sure you have the following.
 
 The AWS CLI attempts to automatically create the task execution IAM role, which is required for Fargate tasks. To ensure that the AWS CLI can create this IAM role, one of the following must be true:
 
-* Your user has administrator access.
-* Your user has the IAM permissions to create a service role.
-* A user with administrator access has manually created the task execution role so that it is available on the account to be used.
+- Your user has administrator access.
+- Your user has the IAM permissions to create a service role.
+- A user with administrator access has manually created the task execution role so that it is available on the account to be used.
 
 ### Cost considerations
 
@@ -80,7 +80,7 @@ A task definition is like a blueprint for your application. It specifies which D
 
 **Register a task definition**
 
-First, create a JSON file that defines your task. The following command creates a task definition file for a simple web application. Replace the `executionRoleArn` with your own. 
+First, create a JSON file that defines your task. The following command creates a task definition file for a simple web application. Replace the `executionRoleArn` with your own.
 
 ```
 $ cat > task-definition.json << 'EOF'
@@ -626,17 +626,17 @@ This tutorial is designed to help you understand how Amazon ECS and AWS Fargate 
 
 For comprehensive guidance on production-ready architectures and security best practices, see:
 
-* [AWS Well-Architected Framework](https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html)
-* [Amazon ECS security best practices](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/security.html)
-* [AWS Architecture Center](https://aws.amazon.com/architecture/)
-* [Amazon ECS Workshop](https://ecsworkshop.com/)
+- [AWS Well-Architected Framework](https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html)
+- [Amazon ECS security best practices](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/security.html)
+- [AWS Architecture Center](https://aws.amazon.com/architecture/)
+- [Amazon ECS Workshop](https://ecsworkshop.com/)
 
 ## Next steps
 
 Now that you've successfully created and run an Amazon ECS task using Fargate, you can explore additional features:
 
-* [Amazon ECS task definitions](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definitions.html) - Learn more about configuring task definitions with advanced options like environment variables, volumes, and logging.
-* [Amazon ECS services](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_services.html) - Discover how to configure load balancers, auto scaling, and service discovery for your services.
-* [Amazon ECS clusters](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/clusters.html) - Explore cluster management, capacity providers, and container insights.
-* [AWS Fargate](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html) - Learn about Fargate platform versions, task networking, and storage options.
-* [Amazon ECS security](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/security.html) - Understand security best practices for ECS tasks and services.
+- [Amazon ECS task definitions](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definitions.html) - Learn more about configuring task definitions with advanced options like environment variables, volumes, and logging.
+- [Amazon ECS services](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_services.html) - Discover how to configure load balancers, auto scaling, and service discovery for your services.
+- [Amazon ECS clusters](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/clusters.html) - Explore cluster management, capacity providers, and container insights.
+- [AWS Fargate](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html) - Learn about Fargate platform versions, task networking, and storage options.
+- [Amazon ECS security](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/security.html) - Understand security best practices for ECS tasks and services.

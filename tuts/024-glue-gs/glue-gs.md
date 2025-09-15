@@ -4,13 +4,13 @@ This tutorial guides you through creating and managing AWS Glue Data Catalog res
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Create a database](#create-a-database)
-* [Create a table](#create-a-table)
-* [Explore the Data Catalog](#explore-the-data-catalog)
-* [Clean up resources](#clean-up-resources)
-* [Going to production](#going-to-production)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Create a database](#create-a-database)
+- [Create a table](#create-a-table)
+- [Explore the Data Catalog](#explore-the-data-catalog)
+- [Clean up resources](#clean-up-resources)
+- [Going to production](#going-to-production)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 
@@ -441,11 +441,11 @@ For more information on building production-ready solutions, refer to:
 
 Now that you've learned how to create and manage AWS Glue Data Catalog resources using the AWS CLI, you can explore more advanced features:
 
-* [Create and run a crawler](https://docs.aws.amazon.com/glue/latest/dg/add-crawler.html) to automatically discover and catalog data
-* [Create ETL jobs](https://docs.aws.amazon.com/glue/latest/dg/author-job-glue.html) to transform your data
-* [Set up triggers](https://docs.aws.amazon.com/glue/latest/dg/trigger-job.html) to automate your ETL workflows
-* [Use the AWS Glue Schema Registry](https://docs.aws.amazon.com/glue/latest/dg/schema-registry.html) to manage and enforce schemas for your data
-* [Integrate with AWS Lake Formation](https://docs.aws.amazon.com/lake-formation/latest/dg/what-is-lake-formation.html) for fine-grained access control
+- [Create and run a crawler](https://docs.aws.amazon.com/glue/latest/dg/add-crawler.html) to automatically discover and catalog data
+- [Create ETL jobs](https://docs.aws.amazon.com/glue/latest/dg/author-job-glue.html) to transform your data
+- [Set up triggers](https://docs.aws.amazon.com/glue/latest/dg/trigger-job.html) to automate your ETL workflows
+- [Use the AWS Glue Schema Registry](https://docs.aws.amazon.com/glue/latest/dg/schema-registry.html) to manage and enforce schemas for your data
+- [Integrate with AWS Lake Formation](https://docs.aws.amazon.com/lake-formation/latest/dg/what-is-lake-formation.html) for fine-grained access control
 
 ## Troubleshooting
 

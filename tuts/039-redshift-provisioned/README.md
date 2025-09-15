@@ -8,8 +8,8 @@ You can run the shell script to automatically provision the Amazon Redshift clus
 
 The script creates the following AWS resources in order:
 
-• Redshift cluster
-• IAM role
-• IAM role policy
+- Redshift cluster
+- IAM role
+- IAM role policy
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

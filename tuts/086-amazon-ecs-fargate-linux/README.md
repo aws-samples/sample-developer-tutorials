@@ -8,10 +8,10 @@ You can either run the automated shell script (`amazon-ecs-fargate-linux.sh`) to
 
 The script creates the following AWS resources in order:
 
-• IAM role
-• IAM role policy
-• ECS cluster
-• ECS task definition
-• EC2 security group
+- IAM role
+- IAM role policy
+- ECS cluster
+- ECS task definition
+- EC2 security group
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

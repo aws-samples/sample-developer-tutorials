@@ -8,9 +8,9 @@ You can either run the automated shell script (`amazon-vpc-lattice-getting-start
 
 The script creates the following AWS resources in order:
 
-• Vpc-Lattice service network
-• Vpc-Lattice service
-• Vpc-Lattice service network service association
-• Vpc-Lattice service network vpc association
+- Vpc-Lattice service network
+- Vpc-Lattice service
+- Vpc-Lattice service network service association
+- Vpc-Lattice service network vpc association
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

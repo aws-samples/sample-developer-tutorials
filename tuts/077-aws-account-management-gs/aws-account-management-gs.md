@@ -6,16 +6,16 @@ This tutorial guides you through common AWS account management operations using 
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [View account identifiers](#view-account-identifiers)
-* [View account information](#view-account-information)
-* [Manage AWS regions](#manage-aws-regions)
-* [Manage alternate contacts](#manage-alternate-contacts)
-* [Update account name](#update-account-name)
-* [Manage root user email](#manage-root-user-email)
-* [Troubleshooting common issues](#troubleshooting-common-issues)
-* [Cleanup](#cleanup)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [View account identifiers](#view-account-identifiers)
+- [View account information](#view-account-information)
+- [Manage AWS regions](#manage-aws-regions)
+- [Manage alternate contacts](#manage-alternate-contacts)
+- [Update account name](#update-account-name)
+- [Manage root user email](#manage-root-user-email)
+- [Troubleshooting common issues](#troubleshooting-common-issues)
+- [Cleanup](#cleanup)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 
@@ -419,9 +419,9 @@ aws account put-account-name --account-name "Original Account Name"
 
 Now that you've learned how to manage your AWS account using the AWS CLI, you might want to explore these related topics:
 
-* [Managing AWS account alternate contacts](https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-update-contact-alternate.html)
-* [Enabling and disabling AWS Regions](https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-regions.html)
-* [Updating your AWS account name](https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-update-acct-name.html)
-* [Updating the root user email address](https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-update-root-user-email.html)
-* [Viewing AWS account identifiers](https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-identifiers.html)
-* [Setting up AWS Organizations](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_tutorials_basic.html) for managing multiple accounts
+- [Managing AWS account alternate contacts](https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-update-contact-alternate.html)
+- [Enabling and disabling AWS Regions](https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-regions.html)
+- [Updating your AWS account name](https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-update-acct-name.html)
+- [Updating the root user email address](https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-update-root-user-email.html)
+- [Viewing AWS account identifiers](https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-identifiers.html)
+- [Setting up AWS Organizations](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_tutorials_basic.html) for managing multiple accounts

@@ -4,13 +4,13 @@ This tutorial guides you through essential Amazon EBS operations using the AWS C
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Enable Amazon EBS encryption by default](#enable-amazon-ebs-encryption-by-default)
-* [Create an EBS snapshot](#create-an-ebs-snapshot)
-* [Create and initialize a volume from a snapshot](#create-and-initialize-a-volume-from-a-snapshot)
-* [Clean up resources](#clean-up-resources)
-* [Going to production](#going-to-production)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Enable Amazon EBS encryption by default](#enable-amazon-ebs-encryption-by-default)
+- [Create an EBS snapshot](#create-an-ebs-snapshot)
+- [Create and initialize a volume from a snapshot](#create-and-initialize-a-volume-from-a-snapshot)
+- [Clean up resources](#clean-up-resources)
+- [Going to production](#going-to-production)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 
@@ -119,7 +119,7 @@ $ VOLUME_ID=$(aws ec2 create-volume --availability-zone $AVAILABILITY_ZONE --siz
 $ echo $VOLUME_ID
 ```
 
-An example response is as follows: 
+An example response is as follows:
 ```
 vol-abcd1234
 ```
@@ -292,7 +292,7 @@ aws ec2 describe-volumes --volume-ids $NEW_VOLUME_ID \
 ### Step 3: Connect to the instance and find the device name
 
 #### 3.1: Ensure the instance has the required IAM role for Systems Manager
-Once the above steps are complete, you can connect using AWS Systems Manager Session Manager (no SSH key required). 
+Once the above steps are complete, you can connect using AWS Systems Manager Session Manager (no SSH key required).
 First, configure the EC2 instance to have an IAM role with Systems Manager permissions:
 
 ```
@@ -433,7 +433,7 @@ sudo fio --filename=$DEVICE_NAME --rw=read --bs=1M --iodepth=8 --ioengine=libaio
 tail -f /tmp/fio-init.log
 ```
 
-To exit from the instance session, type the following: 
+To exit from the instance session, type the following:
 ```
 exit
 ```
@@ -552,8 +552,8 @@ For more information on building production-ready solutions, refer to:
 
 Now that you've learned how to work with Amazon EBS encryption, snapshots, and volume initialization, you might want to explore these related topics:
 
-* [Amazon EBS volume types](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-volume-types.html)
-* [Amazon EBS fast snapshot restore](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-fast-snapshot-restore.html)
-* [Amazon Data Lifecycle Manager](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html)
-* [Amazon EBS encryption](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html)
-* [Amazon EBS performance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-optimized.html)
+- [Amazon EBS volume types](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-volume-types.html)
+- [Amazon EBS fast snapshot restore](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-fast-snapshot-restore.html)
+- [Amazon Data Lifecycle Manager](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html)
+- [Amazon EBS encryption](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html)
+- [Amazon EBS performance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-optimized.html)

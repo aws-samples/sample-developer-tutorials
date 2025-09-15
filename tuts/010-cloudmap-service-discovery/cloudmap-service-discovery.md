@@ -6,9 +6,9 @@ This tutorial demonstrates how to use AWS Cloud Map service discovery using the 
 
 Before you begin, make sure you have:
 
-* [Installed and configured](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) the AWS CLI with appropriate permissions
-* Completed the steps in [Set up to use AWS Cloud Map](https://docs.aws.amazon.com/cloud-map/latest/dg/setting-up-cloud-map.html)
-* Installed the `dig` DNS lookup utility command for DNS verification
+- [Installed and configured](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) the AWS CLI with appropriate permissions
+- Completed the steps in [Set up to use AWS Cloud Map](https://docs.aws.amazon.com/cloud-map/latest/dg/setting-up-cloud-map.html)
+- Installed the `dig` DNS lookup utility command for DNS verification
 
 ## Create an AWS Cloud Map namespace
 
@@ -305,10 +305,10 @@ aws route53 list-hosted-zones-by-name \
 
 Now that you've learned how to use AWS Cloud Map for service discovery, you can:
 
-* Integrate AWS Cloud Map with your microservices architecture
-* Explore health checking options for your service instances
-* Use AWS Cloud Map with Amazon ECS or Amazon EKS for container service discovery
-* Create private DNS namespaces for internal service discovery within your VPCs
+- Integrate AWS Cloud Map with your microservices architecture
+- Explore health checking options for your service instances
+- Use AWS Cloud Map with Amazon ECS or Amazon EKS for container service discovery
+- Create private DNS namespaces for internal service discovery within your VPCs
 
 ## Security Considerations
 

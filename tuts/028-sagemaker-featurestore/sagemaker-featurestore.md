@@ -4,15 +4,15 @@ This tutorial guides you through the process of using Amazon SageMaker Feature S
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Set up IAM permissions](#set-up-iam-permissions)
-* [Create a SageMaker execution role](#create-a-sagemaker-execution-role)
-* [Create feature groups](#create-feature-groups)
-* [Ingest data into feature groups](#ingest-data-into-feature-groups)
-* [Retrieve records from feature groups](#retrieve-records-from-feature-groups)
-* [Clean up resources](#clean-up-resources)
-* [Going to production](#going-to-production)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Set up IAM permissions](#set-up-iam-permissions)
+- [Create a SageMaker execution role](#create-a-sagemaker-execution-role)
+- [Create feature groups](#create-feature-groups)
+- [Ingest data into feature groups](#ingest-data-into-feature-groups)
+- [Retrieve records from feature groups](#retrieve-records-from-feature-groups)
+- [Clean up resources](#clean-up-resources)
+- [Going to production](#going-to-production)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 
@@ -72,7 +72,7 @@ aws iam create-policy \
                     "s3:ListBucket",
                     "s3:GetBucketAcl",
                     "s3:GetBucketLocation",
-                    "s3:GetBucketVersioning"                    
+                    "s3:GetBucketVersioning"
                 ],
                 "Resource": [
                     "arn:aws:s3:::amzndemo-s3-demo-bucket/*",
@@ -90,7 +90,7 @@ aws iam create-policy \
                     "glue:DeletePartition"
                 ],
                 "Resource": "*"
-            }            
+            }
         ]
     }'
 ```
@@ -135,7 +135,7 @@ aws iam create-role \
 
 **Attach the policy to your role**
 
-After creating the policy, attach it to the SageMaker execution role. Replace `YourSageMakerExecutionRole` with the name of your SageMaker execution role and `123456789012` with your AWS account ID. 
+After creating the policy, attach it to the SageMaker execution role. Replace `YourSageMakerExecutionRole` with the name of your SageMaker execution role and `123456789012` with your AWS account ID.
 
 ```
 aws iam attach-role-policy \
@@ -627,7 +627,7 @@ The following commands delete the SageMaker execution role that's created for th
 
 Note: Replace `123456789012` with your account ID.
 ```
-# Delete the custom policy 
+# Delete the custom policy
 aws iam detach-role-policy \
     --role-name YourSageMakerExecutionRole \
     --policy-arn "arn:aws:iam::123456789012:policy/SageMakerFeatureStorePolicy"

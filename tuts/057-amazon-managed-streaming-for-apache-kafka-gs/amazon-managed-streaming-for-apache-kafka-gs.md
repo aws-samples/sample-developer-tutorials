@@ -144,15 +144,15 @@ echo "Waiting for cluster to become active (this may take 15-20 minutes)..."
 
 while true; do
     CLUSTER_STATUS=$(aws kafka describe-cluster --cluster-arn "$CLUSTER_ARN" --query "ClusterInfo.State" --output text 2>/dev/null)
-    
+
     if [ $? -ne 0 ]; then
         echo "Failed to get cluster status. Retrying in 30 seconds..."
         sleep 30
         continue
     fi
-    
+
     echo "Current cluster status: $CLUSTER_STATUS"
-    
+
     if [ "$CLUSTER_STATUS" = "ACTIVE" ]; then
         echo "Cluster is now active!"
         break
@@ -160,7 +160,7 @@ while true; do
         echo "Error: Cluster creation failed"
         exit 1
     fi
-    
+
     echo "Still waiting for cluster to become active... (checking again in 60 seconds)"
     sleep 60
 done
@@ -338,31 +338,31 @@ Let's find a suitable combination of subnet and instance type that's available i
 find_suitable_subnet_and_instance_type() {
     local vpc_id="$1"
     local -a subnet_array=("${!2}")
-    
+
     # List of instance types to try, in order of preference
     local instance_types=("t3.micro" "t2.micro" "t3.small" "t2.small")
-    
+
     echo "Finding suitable subnet and instance type combination..."
-    
+
     for instance_type in "${instance_types[@]}"; do
         echo "Trying instance type: $instance_type"
-        
+
         for subnet_id in "${subnet_array[@]}"; do
             # Get the availability zone for this subnet
             local az=$(aws ec2 describe-subnets \
                 --subnet-ids "$subnet_id" \
                 --query 'Subnets[0].AvailabilityZone' \
                 --output text)
-            
+
             echo "  Checking subnet $subnet_id in AZ $az"
-            
+
             # Check if this instance type is available in this AZ
             local available=$(aws ec2 describe-instance-type-offerings \
                 --location-type availability-zone \
                 --filters "Name=location,Values=$az" "Name=instance-type,Values=$instance_type" \
                 --query 'InstanceTypeOfferings[0].InstanceType' \
                 --output text 2>/dev/null)
-            
+
             if [ "$available" = "$instance_type" ]; then
                 echo "  ✓ Found suitable combination: $instance_type in $az (subnet: $subnet_id)"
                 SELECTED_SUBNET_ID="$subnet_id"
@@ -373,7 +373,7 @@ find_suitable_subnet_and_instance_type() {
             fi
         done
     done
-    
+
     echo "Error: Could not find any suitable subnet and instance type combination"
     return 1
 }
@@ -580,7 +580,7 @@ if [ -z "$CLIENT_DNS" ] || [ "$CLIENT_DNS" = "None" ]; then
         --instance-ids "$INSTANCE_ID" \
         --query 'Reservations[0].Instances[0].PublicIpAddress' \
         --output text)
-    
+
     if [ -z "$CLIENT_DNS" ] || [ "$CLIENT_DNS" = "None" ]; then
         echo "Error: Failed to get public DNS name or IP address for instance"
         exit 1
@@ -608,7 +608,7 @@ while [ -z "$BOOTSTRAP_BROKERS" ] || [ "$BOOTSTRAP_BROKERS" = "None" ]; do
     # Get the full bootstrap brokers response
     BOOTSTRAP_RESPONSE=$(aws kafka get-bootstrap-brokers \
         --cluster-arn "$CLUSTER_ARN" 2>/dev/null)
-    
+
     if [ $? -eq 0 ] && [ -n "$BOOTSTRAP_RESPONSE" ]; then
         # Try to get IAM authentication brokers first using grep
         BOOTSTRAP_BROKERS=$(echo "$BOOTSTRAP_RESPONSE" | grep -o '"BootstrapBrokerStringSaslIam": "[^"]*' | cut -d'"' -f4)
@@ -622,9 +622,9 @@ while [ -z "$BOOTSTRAP_BROKERS" ] || [ "$BOOTSTRAP_BROKERS" = "None" ]; do
             fi
         fi
     fi
-    
+
     RETRY_COUNT=$((RETRY_COUNT + 1))
-    
+
     if [ "$RETRY_COUNT" -ge "$MAX_RETRIES" ]; then
         echo "Warning: Could not get bootstrap brokers after $MAX_RETRIES attempts."
         echo "You may need to manually retrieve them later using:"
@@ -633,7 +633,7 @@ while [ -z "$BOOTSTRAP_BROKERS" ] || [ "$BOOTSTRAP_BROKERS" = "None" ]; do
         AUTH_METHOD="UNKNOWN"
         break
     fi
-    
+
     if [ -z "$BOOTSTRAP_BROKERS" ] || [ "$BOOTSTRAP_BROKERS" = "None" ]; then
         echo "Bootstrap brokers not available yet. Retrying in 30 seconds... (Attempt $RETRY_COUNT/$MAX_RETRIES)"
         sleep 30

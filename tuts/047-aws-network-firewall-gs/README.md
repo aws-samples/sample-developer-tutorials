@@ -8,15 +8,15 @@ You can either run the automated script `aws-network-firewall-gs.sh` to execute 
 
 The script creates the following AWS resources in order:
 
-• EC2 route
-• Network-Firewall rule group
-• Network-Firewall rule group (b)
-• Network-Firewall firewall policy
-• Network-Firewall firewall
-• EC2 route table
-• EC2 route (b)
-• EC2 route (c)
-• EC2 route (d)
-• EC2 route (e)
+- EC2 route
+- Network-Firewall rule group
+- Network-Firewall rule group (b)
+- Network-Firewall firewall policy
+- Network-Firewall firewall
+- EC2 route table
+- EC2 route (b)
+- EC2 route (c)
+- EC2 route (d)
+- EC2 route (e)
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

@@ -157,7 +157,7 @@ aws iam add-role-to-instance-profile \
   --role-name EC2SSMRole
 ```
 
-Wait a few seconds for the IAM role to propagate, then confirm that the role name was added to the instance profile: 
+Wait a few seconds for the IAM role to propagate, then confirm that the role name was added to the instance profile:
 
 ```bash
 sleep 10
@@ -334,7 +334,7 @@ echo "Current alarm state: $ALARM_STATE"
 if [ "$ALARM_STATE" != "OK" ]; then
     echo "Alarm not in OK state. Waiting for alarm to stabilize (additional 60 seconds)..."
     sleep 60
-    
+
     ALARM_STATE=$(aws cloudwatch describe-alarms \
       --alarm-names "$ALARM_NAME" \
       --query "MetricAlarms[0].StateValue" \

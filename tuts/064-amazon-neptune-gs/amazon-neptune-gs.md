@@ -6,11 +6,11 @@ This tutorial guides you through setting up an Amazon Neptune graph database usi
 
 Before you begin, make sure you have:
 
-* An AWS account with permissions to create Neptune resources
-* AWS CLI installed and configured with appropriate credentials
-* Basic understanding of AWS networking concepts (VPC, subnets, security groups)
-* Approximately 20-30 minutes to complete the tutorial
-* Estimated cost: The resources created in this tutorial will incur charges. A db.r5.large Neptune instance costs approximately $0.35 per hour, with minimal storage costs (around $0.01 per hour for the minimum 10GB allocation). The total cost for completing this tutorial should be less than $0.20 if you delete all resources immediately after completion. Remember to delete all resources after completing the tutorial to avoid unnecessary charges.
+- An AWS account with permissions to create Neptune resources
+- AWS CLI installed and configured with appropriate credentials
+- Basic understanding of AWS networking concepts (VPC, subnets, security groups)
+- Approximately 20-30 minutes to complete the tutorial
+- Estimated cost: The resources created in this tutorial will incur charges. A db.r5.large Neptune instance costs approximately $0.35 per hour, with minimal storage costs (around $0.01 per hour for the minimum 10GB allocation). The total cost for completing this tutorial should be less than $0.20 if you delete all resources immediately after completion. Remember to delete all resources after completing the tutorial to avoid unnecessary charges.
 
 ## Create a VPC for your Neptune database
 
@@ -327,7 +327,7 @@ For more information on building production-ready applications with Neptune, see
 
 Now that you've learned how to create and use a Neptune database, you might want to explore:
 
-* [Using Neptune with graph notebooks](https://docs.aws.amazon.com/neptune/latest/userguide/graph-notebooks.html) - Learn how to use Jupyter notebooks to interact with your Neptune database
-* [Loading data into Neptune](https://docs.aws.amazon.com/neptune/latest/userguide/bulk-load.html) - Learn how to bulk load data into your Neptune database
-* [Neptune ML](https://docs.aws.amazon.com/neptune/latest/userguide/machine-learning.html) - Explore machine learning capabilities with Neptune
-* [Neptune analytics](https://docs.aws.amazon.com/neptune/latest/userguide/analytics.html) - Learn about Neptune's analytics features
+- [Using Neptune with graph notebooks](https://docs.aws.amazon.com/neptune/latest/userguide/graph-notebooks.html) - Learn how to use Jupyter notebooks to interact with your Neptune database
+- [Loading data into Neptune](https://docs.aws.amazon.com/neptune/latest/userguide/bulk-load.html) - Learn how to bulk load data into your Neptune database
+- [Neptune ML](https://docs.aws.amazon.com/neptune/latest/userguide/machine-learning.html) - Explore machine learning capabilities with Neptune
+- [Neptune analytics](https://docs.aws.amazon.com/neptune/latest/userguide/analytics.html) - Learn about Neptune's analytics features

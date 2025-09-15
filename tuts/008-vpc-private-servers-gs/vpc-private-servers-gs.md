@@ -6,13 +6,13 @@ This tutorial demonstrates how to create a VPC that you can use for servers in a
 
 Before you begin this tutorial, you need:
 
-* The AWS CLI installed and configured with permissions to create VPC resources, EC2 instances, load balancers, and Auto Scaling groups. For information about installing the AWS CLI, see [Installing or updating the latest version of the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
+- The AWS CLI installed and configured with permissions to create VPC resources, EC2 instances, load balancers, and Auto Scaling groups. For information about installing the AWS CLI, see [Installing or updating the latest version of the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
 
-* Basic knowledge of VPC concepts, including subnets, route tables, and internet gateways.
+- Basic knowledge of VPC concepts, including subnets, route tables, and internet gateways.
 
-* The `jq` command-line JSON processor installed. This is used to parse the output of AWS CLI commands. For information about installing jq, see [Download jq](https://stedolan.github.io/jq/download/).
+- The `jq` command-line JSON processor installed. This is used to parse the output of AWS CLI commands. For information about installing jq, see [Download jq](https://stedolan.github.io/jq/download/).
 
-* Sufficient service quotas for the resources you'll create, including:
+- Sufficient service quotas for the resources you'll create, including:
   * At least 2 available Elastic IP addresses
   * At least 2 NAT gateways
   * At least 1 VPC
@@ -20,10 +20,10 @@ Before you begin this tutorial, you need:
   * At least 1 Application Load Balancer
 
 **Estimated cost**: The resources created in this tutorial will incur charges in your AWS account:
-* NAT Gateways: approximately $0.045 per hour, plus data processing charges
-* Elastic IP addresses: Free when associated with running instances, approximately $0.005 per hour when not associated
-* EC2 instances: Varies by instance type (t3.micro used in this tutorial)
-* Application Load Balancer: approximately $0.0225 per hour, plus data processing charges
+- NAT Gateways: approximately $0.045 per hour, plus data processing charges
+- Elastic IP addresses: Free when associated with running instances, approximately $0.005 per hour when not associated
+- EC2 instances: Varies by instance type (t3.micro used in this tutorial)
+- Application Load Balancer: approximately $0.0225 per hour, plus data processing charges
 
 ## Create the VPC and subnets
 
@@ -115,10 +115,10 @@ aws ec2 create-subnet \
 
 Each command returns output containing the subnet ID. Note these IDs for use in subsequent commands:
 
-* Public Subnet 1: `subnet-abcd1234`
-* Private Subnet 1: `subnet-abcd5678`
-* Public Subnet 2: `subnet-efgh1234`
-* Private Subnet 2: `subnet-efgh5678`
+- Public Subnet 1: `subnet-abcd1234`
+- Private Subnet 1: `subnet-abcd5678`
+- Public Subnet 2: `subnet-efgh1234`
+- Private Subnet 2: `subnet-efgh5678`
 
 ## Create and configure internet connectivity
 
@@ -153,9 +153,9 @@ aws ec2 create-route-table --vpc-id vpc-abcd1234 --tag-specifications 'ResourceT
 
 Each command returns output containing the route table ID. Note these IDs:
 
-* Public Route Table: `rtb-abcd1234`
-* Private Route Table 1: `rtb-efgh1234`
-* Private Route Table 2: `rtb-ijkl1234`
+- Public Route Table: `rtb-abcd1234`
+- Private Route Table 1: `rtb-efgh1234`
+- Private Route Table 2: `rtb-ijkl1234`
 
 Add a route to the Internet Gateway in the public route table to enable internet access. Replace `rtb-abcd1234` with your actual public route table ID and `igw-abcd1234` with your actual Internet Gateway ID.
 
@@ -190,8 +190,8 @@ aws ec2 allocate-address --domain vpc --tag-specifications 'ResourceType=elastic
 
 Each command returns output containing the allocation ID. Note these IDs:
 
-* EIP 1 Allocation ID: `eipalloc-abcd1234`
-* EIP 2 Allocation ID: `eipalloc-efgh1234`
+- EIP 1 Allocation ID: `eipalloc-abcd1234`
+- EIP 2 Allocation ID: `eipalloc-efgh1234`
 
 Create NAT Gateways in each public subnet. Replace the subnet IDs and allocation IDs with your actual IDs.
 
@@ -211,8 +211,8 @@ aws ec2 create-nat-gateway \
 
 Each command returns output containing the NAT Gateway ID. Note these IDs:
 
-* NAT Gateway 1: `nat-abcd1234`
-* NAT Gateway 2: `nat-efgh1234`
+- NAT Gateway 1: `nat-abcd1234`
+- NAT Gateway 2: `nat-efgh1234`
 
 NAT Gateways take a few minutes to provision. Wait for them to be available before proceeding. Replace the NAT Gateway IDs with your actual IDs.
 
@@ -527,10 +527,10 @@ aws ec2 delete-vpc --vpc-id vpc-abcd1234
 
 Now that you've created a VPC with private subnets and NAT gateways, you might want to explore these related topics:
 
-* [VPC security best practices](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-security-best-practices.html)
-* [VPC Flow Logs](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html)
-* [Auto Scaling group scaling policies](https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-scaling-simple-step.html)
-* [Load balancer target group health checks](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/target-group-health-checks.html)
+- [VPC security best practices](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-security-best-practices.html)
+- [VPC Flow Logs](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html)
+- [Auto Scaling group scaling policies](https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-scaling-simple-step.html)
+- [Load balancer target group health checks](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/target-group-health-checks.html)
 
 ## Security Considerations
 

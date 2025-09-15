@@ -8,8 +8,8 @@ You can either run the provided shell script to automatically set up your Direct
 
 The script creates the following AWS resources in order:
 
-• Directconnect connection
-• EC2 vpn gateway
-• Directconnect private virtual interface
+- Directconnect connection
+- EC2 vpn gateway
+- Directconnect private virtual interface
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

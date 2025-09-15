@@ -237,7 +237,7 @@ public class AmazonMQExample {
     // Broker connection details
     private final static String WIRE_LEVEL_ENDPOINT = "$WIRE_ENDPOINT";
     private final static String SECRET_NAME = "$SECRET_NAME";
-    
+
     // Credentials will be retrieved from AWS Secrets Manager
     private static String username;
     private static String password;
@@ -245,7 +245,7 @@ public class AmazonMQExample {
     public static void main(String[] args) throws JMSException {
         // Retrieve credentials from AWS Secrets Manager
         retrieveCredentials();
-        
+
         final ActiveMQConnectionFactory connectionFactory = createActiveMQConnectionFactory();
         final PooledConnectionFactory pooledConnectionFactory = createPooledConnectionFactory(connectionFactory);
 
@@ -254,26 +254,26 @@ public class AmazonMQExample {
 
         pooledConnectionFactory.stop();
     }
-    
+
     private static void retrieveCredentials() {
         try {
             // Create a Secrets Manager client
             SecretsManagerClient client = SecretsManagerClient.builder()
                     .region(Region.of(System.getenv("AWS_REGION")))
                     .build();
-                    
+
             GetSecretValueRequest getSecretValueRequest = GetSecretValueRequest.builder()
                     .secretId(SECRET_NAME)
                     .build();
-                    
+
             GetSecretValueResponse getSecretValueResponse = client.getSecretValue(getSecretValueRequest);
             String secretString = getSecretValueResponse.secretString();
-            
+
             // Parse the JSON string
             JsonObject jsonObject = new Gson().fromJson(secretString, JsonObject.class);
             username = jsonObject.get("username").getAsString();
             password = jsonObject.get("password").getAsString();
-            
+
             System.out.println("Successfully retrieved credentials from AWS Secrets Manager");
         } catch (Exception e) {
             System.err.println("Error retrieving credentials from AWS Secrets Manager: " + e.getMessage());

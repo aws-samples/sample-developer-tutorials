@@ -4,14 +4,14 @@ This tutorial guides you through setting up an Amazon Redshift provisioned clust
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Create a Redshift cluster](#create-a-redshift-cluster)
-* [Create an IAM role for S3 access](#create-an-iam-role-for-s3-access)
-* [Create tables and load data](#create-tables-and-load-data)
-* [Run example queries](#run-example-queries)
-* [Clean up resources](#clean-up-resources)
-* [Going to production](#going-to-production)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Create a Redshift cluster](#create-a-redshift-cluster)
+- [Create an IAM role for S3 access](#create-an-iam-role-for-s3-access)
+- [Create tables and load data](#create-tables-and-load-data)
+- [Run example queries](#run-example-queries)
+- [Clean up resources](#clean-up-resources)
+- [Going to production](#going-to-production)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 
@@ -343,10 +343,10 @@ For more information on building production-ready solutions with Amazon Redshift
 
 Now that you've learned the basics of working with Amazon Redshift using the AWS CLI, you can explore more advanced features:
 
-* Learn about [Amazon Redshift Serverless](https://docs.aws.amazon.com/redshift/latest/mgmt/serverless-console.html) for on-demand data warehousing without managing clusters
-* Explore [Amazon Redshift query editor v2](https://docs.aws.amazon.com/redshift/latest/mgmt/query-editor-v2-using.html) for a web-based SQL client experience
-* Discover [Amazon Redshift data sharing](https://docs.aws.amazon.com/redshift/latest/dg/datashare-overview.html) to share data across clusters and AWS accounts
-* Implement [Amazon Redshift Spectrum](https://docs.aws.amazon.com/redshift/latest/dg/c-using-spectrum.html) to query data directly from files in Amazon S3
-* Set up [automated snapshots and backups](https://docs.aws.amazon.com/redshift/latest/mgmt/working-with-snapshots.html) for disaster recovery
+- Learn about [Amazon Redshift Serverless](https://docs.aws.amazon.com/redshift/latest/mgmt/serverless-console.html) for on-demand data warehousing without managing clusters
+- Explore [Amazon Redshift query editor v2](https://docs.aws.amazon.com/redshift/latest/mgmt/query-editor-v2-using.html) for a web-based SQL client experience
+- Discover [Amazon Redshift data sharing](https://docs.aws.amazon.com/redshift/latest/dg/datashare-overview.html) to share data across clusters and AWS accounts
+- Implement [Amazon Redshift Spectrum](https://docs.aws.amazon.com/redshift/latest/dg/c-using-spectrum.html) to query data directly from files in Amazon S3
+- Set up [automated snapshots and backups](https://docs.aws.amazon.com/redshift/latest/mgmt/working-with-snapshots.html) for disaster recovery
 
 For more information about Amazon Redshift features and best practices, see the [Amazon Redshift Database Developer Guide](https://docs.aws.amazon.com/redshift/latest/dg/welcome.html).

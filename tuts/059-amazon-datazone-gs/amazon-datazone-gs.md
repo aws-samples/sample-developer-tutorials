@@ -4,16 +4,16 @@ This tutorial guides you through setting up and using Amazon DataZone using the 
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Create an Amazon DataZone domain](#create-an-amazon-datazone-domain)
-* [Create projects](#create-projects)
-* [Create an environment profile and environment](#create-an-environment-profile-and-environment)
-* [Create a data source for AWS Glue](#create-a-data-source-for-aws-glue)
-* [Create and publish custom assets](#create-and-publish-custom-assets)
-* [Search for assets and subscribe](#search-for-assets-and-subscribe)
-* [Clean up resources](#clean-up-resources)
-* [Going to production](#going-to-production)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Create an Amazon DataZone domain](#create-an-amazon-datazone-domain)
+- [Create projects](#create-projects)
+- [Create an environment profile and environment](#create-an-environment-profile-and-environment)
+- [Create a data source for AWS Glue](#create-a-data-source-for-aws-glue)
+- [Create and publish custom assets](#create-and-publish-custom-assets)
+- [Search for assets and subscribe](#search-for-assets-and-subscribe)
+- [Clean up resources](#clean-up-resources)
+- [Going to production](#going-to-production)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 

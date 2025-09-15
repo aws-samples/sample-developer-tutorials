@@ -4,14 +4,14 @@ This tutorial shows you how to use the AWS CLI to set up a basic CloudFront dist
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Create an Amazon S3 bucket](#create-an-amazon-s3-bucket)
-* [Upload content to the bucket](#upload-content-to-the-bucket)
-* [Create a CloudFront distribution with OAC](#create-a-cloudfront-distribution-with-oac)
-* [Access your content through CloudFront](#access-your-content-through-cloudfront)
-* [Clean up resources](#clean-up-resources)
-* [Going to production](#going-to-production)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Create an Amazon S3 bucket](#create-an-amazon-s3-bucket)
+- [Upload content to the bucket](#upload-content-to-the-bucket)
+- [Create a CloudFront distribution with OAC](#create-a-cloudfront-distribution-with-oac)
+- [Access your content through CloudFront](#access-your-content-through-cloudfront)
+- [Clean up resources](#clean-up-resources)
+- [Going to production](#going-to-production)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 

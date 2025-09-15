@@ -8,23 +8,23 @@ You can either run the automated shell script (`aws-fault-injection-service-gett
 
 The script creates the following AWS resources in order:
 
-• IAM role
-• IAM role (b)
-• IAM role policy
-• IAM role policy (b)
-• IAM role (c)
-• IAM role (d)
-• IAM role policy (c)
-• IAM role policy (d)
-• IAM instance profile
-• IAM instance profile (b)
-• EC2 instances
-• EC2 instances (b)
-• CloudWatch metric alarm
-• CloudWatch metric alarm (b)
-• Fis experiment template
-• Fis experiment template (b)
-• Fis experiment
-• Fis experiment (b)
+- IAM role
+- IAM role (b)
+- IAM role policy
+- IAM role policy (b)
+- IAM role (c)
+- IAM role (d)
+- IAM role policy (c)
+- IAM role policy (d)
+- IAM instance profile
+- IAM instance profile (b)
+- EC2 instances
+- EC2 instances (b)
+- CloudWatch metric alarm
+- CloudWatch metric alarm (b)
+- Fis experiment template
+- Fis experiment template (b)
+- Fis experiment
+- Fis experiment (b)
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

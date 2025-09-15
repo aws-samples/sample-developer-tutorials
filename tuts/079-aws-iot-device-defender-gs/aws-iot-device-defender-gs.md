@@ -204,7 +204,7 @@ while [ "$TASK_STATUS" != "COMPLETED" ]; do
   TASK_DETAILS=$(aws iot describe-audit-task --task-id "$TASK_ID")
   TASK_STATUS=$(echo "$TASK_DETAILS" | grep -o '"taskStatus": "[^"]*' | cut -d'"' -f4)
   echo "Current task status: $TASK_STATUS"
-  
+
   # Exit the loop if the task fails
   if [ "$TASK_STATUS" == "FAILED" ]; then
     echo "Audit task failed"
@@ -272,23 +272,23 @@ If the audit found any non-compliant resources, we can apply our mitigation acti
 if [ "$HAS_FINDINGS" = true ]; then
   MITIGATION_TASK_ID="MitigationTask-$(date +%s)"
   echo "Starting mitigation actions task with ID: $MITIGATION_TASK_ID"
-  
+
   aws iot start-audit-mitigation-actions-task \
     --task-id "$MITIGATION_TASK_ID" \
     --target "{\"findingIds\":[\"$FINDING_ID\"]}" \
     --audit-check-to-actions-mapping "{\"LOGGING_DISABLED_CHECK\":[\"EnableErrorLoggingAction\"]}"
-    
+
   echo "Mitigation actions task started successfully"
-  
+
   # Wait for the mitigation task to complete
   echo "Waiting for mitigation task to complete..."
   sleep 10
-  
+
   # List mitigation tasks
   MITIGATION_TASKS=$(aws iot list-audit-mitigation-actions-tasks \
     --start-time "$(date -d 'today' '+%Y-%m-%d')" \
     --end-time "$(date -d 'tomorrow' '+%Y-%m-%d')")
-  
+
   echo "Mitigation tasks:"
   echo "$MITIGATION_TASKS"
 else
@@ -348,14 +348,14 @@ LOGGING_RESULT=$(aws iot set-v2-logging-options \
 # Check if v2 logging succeeded
 if echo "$LOGGING_RESULT" | grep -q "error\|Error\|ERROR"; then
     echo "Failed to set up AWS IoT v2 logging, trying v1 logging..."
-    
+
     # Create the logging options payload for v1 API
     LOGGING_OPTIONS_PAYLOAD="{\"roleArn\":\"$LOGGING_ROLE_ARN\",\"logLevel\":\"ERROR\"}"
-    
+
     # Try the older set-logging-options command with proper payload format
     LOGGING_RESULT_V1=$(aws iot set-logging-options \
       --logging-options-payload "$LOGGING_OPTIONS_PAYLOAD" 2>&1)
-    
+
     if echo "$LOGGING_RESULT_V1" | grep -q "error\|Error\|ERROR"; then
         echo "Failed to set up AWS IoT logging with both v1 and v2 methods"
         echo "V2 result: $LOGGING_RESULT"
@@ -403,7 +403,7 @@ if echo "$DISABLE_V2_RESULT" | grep -q "error\|Error\|ERROR"; then
     # Try v1 logging disable
     DISABLE_V1_RESULT=$(aws iot set-logging-options \
       --logging-options-payload "{\"logLevel\":\"DISABLED\"}" 2>&1)
-    
+
     if echo "$DISABLE_V1_RESULT" | grep -q "error\|Error\|ERROR"; then
         echo "Warning: Could not disable logging through either v1 or v2 methods"
     else

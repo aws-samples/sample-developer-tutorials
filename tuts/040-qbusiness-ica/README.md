@@ -8,10 +8,10 @@ You can either run the automated shell script `qbusiness-ica.sh` to create all t
 
 The script creates the following AWS resources in order:
 
-• IAM role for Amazon Q Business application (with CloudWatch and logging permissions)
-• IAM policy with necessary permissions for the application role
-• Amazon Q Business application
-• User assignment to the application
-• User subscription for the application
+- IAM role for Amazon Q Business application (with CloudWatch and logging permissions)
+- IAM policy with necessary permissions for the application role
+- Amazon Q Business application
+- User assignment to the application
+- User subscription for the application
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

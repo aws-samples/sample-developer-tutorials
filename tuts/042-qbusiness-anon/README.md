@@ -8,8 +8,8 @@ You can either run the automated script `qbusiness-anon.sh` to execute all opera
 
 The script creates the following AWS resources in order:
 
-• IAM role
-• IAM role policy
-• Qbusiness application
+- IAM role
+- IAM role policy
+- Qbusiness application
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

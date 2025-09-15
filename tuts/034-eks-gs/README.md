@@ -8,14 +8,14 @@ You can either run the provided shell script to automatically set up your EKS cl
 
 The script creates the following AWS resources in order:
 
-• CloudFormation stack
-• IAM role
-• IAM role policy
-• IAM role (b)
-• IAM role policy (b)
-• IAM role policy (c)
-• IAM role policy (d)
-• EKS cluster
-• EKS nodegroup
+- CloudFormation stack
+- IAM role
+- IAM role policy
+- IAM role (b)
+- IAM role policy (b)
+- IAM role policy (c)
+- IAM role policy (d)
+- EKS cluster
+- EKS nodegroup
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

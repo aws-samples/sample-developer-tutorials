@@ -8,13 +8,13 @@ You can either run the provided shell script to automatically set up your Amazon
 
 The script creates the following AWS resources in order:
 
-• MSK cluster
-• IAM policy
-• IAM role
-• IAM role policy
-• IAM instance profile
-• EC2 security group
-• EC2 key pair
-• EC2 instances
+- MSK cluster
+- IAM policy
+- IAM role
+- IAM role policy
+- IAM instance profile
+- EC2 security group
+- EC2 key pair
+- EC2 instances
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

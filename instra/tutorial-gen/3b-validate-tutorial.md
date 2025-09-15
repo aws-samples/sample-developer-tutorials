@@ -5,6 +5,11 @@ Validating the content of the AWS CLI tutorial and surface issues about the gene
 
 Review the tutorial markdown for proper formatting:
 
+**List formatting:**
+- Verify all unordered lists use hyphens (-) consistently, never asterisks (*) or bullet characters (•)
+- Check for consistent indentation in nested lists
+- Flag any mixed list marker usage within the same document
+
 **Backticks usage:**
 - Use backticks for all inline code, commands, file paths, resource IDs, status values, and technical terms
 - Examples: `aws s3 ls`, `my-bucket-name`, `ACTIVE`, `~/path/to/file`, `us-east-1`

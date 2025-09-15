@@ -4,17 +4,17 @@ This tutorial guides you through creating and configuring an Application Load Ba
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Create an Application Load Balancer](#create-an-application-load-balancer)
-* [Create a target group](#create-a-target-group)
-* [Register targets](#register-targets)
-* [Create a listener](#create-a-listener)
-* [Verify your configuration](#verify-your-configuration)
-* [Add an HTTPS listener (optional)](#add-an-https-listener-optional)
-* [Add path-based routing (optional)](#add-path-based-routing-optional)
-* [Going to production](#going-to-production)
-* [Clean up resources](#clean-up-resources)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Create an Application Load Balancer](#create-an-application-load-balancer)
+- [Create a target group](#create-a-target-group)
+- [Register targets](#register-targets)
+- [Create a listener](#create-a-listener)
+- [Verify your configuration](#verify-your-configuration)
+- [Add an HTTPS listener (optional)](#add-an-https-listener-optional)
+- [Add path-based routing (optional)](#add-path-based-routing-optional)
+- [Going to production](#going-to-production)
+- [Clean up resources](#clean-up-resources)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 
@@ -341,9 +341,9 @@ For more information on building production-ready architectures, refer to:
 
 Now that you've learned how to create and configure an Application Load Balancer using the AWS CLI, you might want to explore these related topics:
 
-* [Configure health checks for your target group](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/target-group-health-checks.html)
-* [Use sticky sessions with your load balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/sticky-sessions.html)
-* [Configure access logs for your load balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html)
-* [Monitor your load balancer with CloudWatch](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-cloudwatch-metrics.html)
-* [Create a Network Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/network-load-balancer-getting-started.html)
-* [Create a Gateway Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/gateway/getting-started.html)
+- [Configure health checks for your target group](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/target-group-health-checks.html)
+- [Use sticky sessions with your load balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/sticky-sessions.html)
+- [Configure access logs for your load balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html)
+- [Monitor your load balancer with CloudWatch](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-cloudwatch-metrics.html)
+- [Create a Network Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/network-load-balancer-getting-started.html)
+- [Create a Gateway Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/gateway/getting-started.html)

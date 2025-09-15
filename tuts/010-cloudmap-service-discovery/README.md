@@ -8,10 +8,10 @@ You can either run the automated script `cloudmap-service-discovery.sh` to execu
 
 The script creates the following AWS resources in order:
 
-• Service Discovery public dns namespace
-• Service Discovery service
-• Service Discovery service (b)
-• Service Discovery instance
-• Service Discovery instance (b)
+- Service Discovery public dns namespace
+- Service Discovery service
+- Service Discovery service (b)
+- Service Discovery instance
+- Service Discovery instance (b)
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.

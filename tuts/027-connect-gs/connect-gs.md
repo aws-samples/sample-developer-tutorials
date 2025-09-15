@@ -6,21 +6,21 @@ Set up a cloud-based contact center with Amazon Connect
 
 Before you begin this tutorial, you need:
 
-* An AWS account with permissions to create Amazon Connect resources
-* The AWS CLI installed and configured. For installation instructions, see [Installing or updating the latest version of the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
-* The `AmazonConnect_FullAccess` managed policy attached to your IAM user or role (for production environments, consider using more restrictive permissions)
-* Basic familiarity with command line interfaces and JSON formatting
-* Approximately 15-20 minutes to complete the tutorial
+- An AWS account with permissions to create Amazon Connect resources
+- The AWS CLI installed and configured. For installation instructions, see [Installing or updating the latest version of the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
+- The `AmazonConnect_FullAccess` managed policy attached to your IAM user or role (for production environments, consider using more restrictive permissions)
+- Basic familiarity with command line interfaces and JSON formatting
+- Approximately 15-20 minutes to complete the tutorial
 
 ## Cost estimate
 
 This tutorial creates resources that may incur charges to your AWS account:
 
-* Amazon Connect phone number: $1.00 per month for a toll-free number in the US
-* No charges for the Amazon Connect instance itself
-* No charges for creating users or configuring the instance
-* S3 storage for call recordings and chat transcripts: Standard S3 rates apply (approximately $0.023 per GB per month)
-* KMS key usage for encryption: $1.00 per month per key plus $0.03 per 10,000 API requests
+- Amazon Connect phone number: $1.00 per month for a toll-free number in the US
+- No charges for the Amazon Connect instance itself
+- No charges for creating users or configuring the instance
+- S3 storage for call recordings and chat transcripts: Standard S3 rates apply (approximately $0.023 per GB per month)
+- KMS key usage for encryption: $1.00 per month per key plus $0.03 per 10,000 API requests
 
 Total estimated cost: Less than $0.01 for completing the tutorial if you clean up resources afterward. If you keep the resources running, expect to pay approximately $1.00 per month for the phone number plus any applicable storage costs.
 
@@ -352,9 +352,9 @@ Deleting the instance will also delete all associated resources, including users
 
 Now that you've created an Amazon Connect instance, you can explore additional features:
 
-* [Set up contact flows](https://docs.aws.amazon.com/connect/latest/adminguide/contact-flow.html) to define how contacts are handled in your contact center
-* [Configure queues](https://docs.aws.amazon.com/connect/latest/adminguide/create-queue.html) to manage how contacts are distributed to agents
-* [Set up quick connects](https://docs.aws.amazon.com/connect/latest/adminguide/quick-connects.html) to enable agents to transfer contacts to specific destinations
-* [Enable contact recording](https://docs.aws.amazon.com/connect/latest/adminguide/set-up-recordings.html) to record customer interactions for quality assurance
-* [Integrate with Amazon Lex](https://docs.aws.amazon.com/connect/latest/adminguide/amazon-lex.html) to add chatbots to your contact center
-* [Set up real-time and historical metrics](https://docs.aws.amazon.com/connect/latest/adminguide/real-time-metrics-reports.html) to monitor your contact center performance
+- [Set up contact flows](https://docs.aws.amazon.com/connect/latest/adminguide/contact-flow.html) to define how contacts are handled in your contact center
+- [Configure queues](https://docs.aws.amazon.com/connect/latest/adminguide/create-queue.html) to manage how contacts are distributed to agents
+- [Set up quick connects](https://docs.aws.amazon.com/connect/latest/adminguide/quick-connects.html) to enable agents to transfer contacts to specific destinations
+- [Enable contact recording](https://docs.aws.amazon.com/connect/latest/adminguide/set-up-recordings.html) to record customer interactions for quality assurance
+- [Integrate with Amazon Lex](https://docs.aws.amazon.com/connect/latest/adminguide/amazon-lex.html) to add chatbots to your contact center
+- [Set up real-time and historical metrics](https://docs.aws.amazon.com/connect/latest/adminguide/real-time-metrics-reports.html) to monitor your contact center performance

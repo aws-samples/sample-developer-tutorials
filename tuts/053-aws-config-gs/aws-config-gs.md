@@ -4,17 +4,17 @@ This tutorial guides you through setting up AWS Config using the AWS Command Lin
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Create an Amazon S3 bucket](#create-an-amazon-s3-bucket)
-* [Create an Amazon SNS topic](#create-an-amazon-sns-topic)
-* [Create an IAM role for AWS Config](#create-an-iam-role-for-aws-config)
-* [Set up the AWS Config configuration recorder](#set-up-the-aws-config-configuration-recorder)
-* [Set up the AWS Config delivery channel](#set-up-the-aws-config-delivery-channel)
-* [Start the configuration recorder](#start-the-configuration-recorder)
-* [Verify the AWS Config setup](#verify-the-aws-config-setup)
-* [Going to production](#going-to-production)
-* [Clean up resources](#clean-up-resources)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Create an Amazon S3 bucket](#create-an-amazon-s3-bucket)
+- [Create an Amazon SNS topic](#create-an-amazon-sns-topic)
+- [Create an IAM role for AWS Config](#create-an-iam-role-for-aws-config)
+- [Set up the AWS Config configuration recorder](#set-up-the-aws-config-configuration-recorder)
+- [Set up the AWS Config delivery channel](#set-up-the-aws-config-delivery-channel)
+- [Start the configuration recorder](#start-the-configuration-recorder)
+- [Verify the AWS Config setup](#verify-the-aws-config-setup)
+- [Going to production](#going-to-production)
+- [Clean up resources](#clean-up-resources)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 

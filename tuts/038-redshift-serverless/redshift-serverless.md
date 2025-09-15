@@ -4,14 +4,14 @@ This tutorial guides you through setting up and using Amazon Redshift Serverless
 
 ## Topics
 
-* [Prerequisites](#prerequisites)
-* [Creating an IAM role for Amazon S3 access](#creating-an-iam-role-for-amazon-s3-access)
-* [Creating a Redshift Serverless namespace and workgroup](#creating-a-redshift-serverless-namespace-and-workgroup)
-* [Creating tables and loading sample data](#creating-tables-and-loading-sample-data)
-* [Running queries on your data](#running-queries-on-your-data)
-* [Cleaning up resources](#cleaning-up-resources)
-* [Going to production](#going-to-production)
-* [Next steps](#next-steps)
+- [Prerequisites](#prerequisites)
+- [Creating an IAM role for Amazon S3 access](#creating-an-iam-role-for-amazon-s3-access)
+- [Creating a Redshift Serverless namespace and workgroup](#creating-a-redshift-serverless-namespace-and-workgroup)
+- [Creating tables and loading sample data](#creating-tables-and-loading-sample-data)
+- [Running queries on your data](#running-queries-on-your-data)
+- [Cleaning up resources](#cleaning-up-resources)
+- [Going to production](#going-to-production)
+- [Next steps](#next-steps)
 
 ## Prerequisites
 
@@ -265,11 +265,11 @@ Now, let's load data into these tables from the public Amazon Redshift sample da
 aws redshift-data execute-statement \
   --database dev \
   --workgroup-name default-workgroup \
-  --sql "COPY users 
-    FROM 's3://redshift-downloads/tickit/allusers_pipe.txt' 
-    DELIMITER '|' 
+  --sql "COPY users
+    FROM 's3://redshift-downloads/tickit/allusers_pipe.txt'
+    DELIMITER '|'
     TIMEFORMAT 'YYYY-MM-DD HH:MI:SS'
-    IGNOREHEADER 1 
+    IGNOREHEADER 1
     IAM_ROLE '$ROLE_ARN';"
 ```
 
@@ -282,10 +282,10 @@ aws redshift-data execute-statement \
   --database dev \
   --workgroup-name default-workgroup \
   --sql "COPY event
-    FROM 's3://redshift-downloads/tickit/allevents_pipe.txt' 
-    DELIMITER '|' 
+    FROM 's3://redshift-downloads/tickit/allevents_pipe.txt'
+    DELIMITER '|'
     TIMEFORMAT 'YYYY-MM-DD HH:MI:SS'
-    IGNOREHEADER 1 
+    IGNOREHEADER 1
     IAM_ROLE '$ROLE_ARN';"
 ```
 
@@ -296,10 +296,10 @@ aws redshift-data execute-statement \
   --database dev \
   --workgroup-name default-workgroup \
   --sql "COPY sales
-    FROM 's3://redshift-downloads/tickit/sales_tab.txt' 
-    DELIMITER '\t' 
+    FROM 's3://redshift-downloads/tickit/sales_tab.txt'
+    DELIMITER '\t'
     TIMEFORMAT 'MM/DD/YYYY HH:MI:SS'
-    IGNOREHEADER 1 
+    IGNOREHEADER 1
     IAM_ROLE '$ROLE_ARN';"
 ```
 
@@ -363,7 +363,7 @@ First, let's find the top 10 buyers by quantity:
 QUERY1_ID=$(aws redshift-data execute-statement \
   --database dev \
   --workgroup-name default-workgroup \
-  --sql "SELECT firstname, lastname, total_quantity 
+  --sql "SELECT firstname, lastname, total_quantity
     FROM (SELECT buyerid, sum(qtysold) total_quantity
           FROM sales
           GROUP BY buyerid
@@ -394,8 +394,8 @@ Let's run another query to find events in the 99.9 percentile in terms of all-ti
 QUERY2_ID=$(aws redshift-data execute-statement \
   --database dev \
   --workgroup-name default-workgroup \
-  --sql "SELECT eventname, total_price 
-    FROM (SELECT eventid, total_price, ntile(1000) over(order by total_price desc) as percentile 
+  --sql "SELECT eventname, total_price
+    FROM (SELECT eventid, total_price, ntile(1000) over(order by total_price desc) as percentile
           FROM (SELECT eventid, sum(pricepaid) total_price
                 FROM sales
                 GROUP BY eventid)) Q, event E
@@ -483,10 +483,10 @@ For more information, see the [AWS Well-Architected Framework](https://aws.amazo
 
 Now that you've learned how to set up and use Amazon Redshift Serverless with the AWS CLI, you can explore more advanced features:
 
-* [Connect to Amazon Redshift Serverless using JDBC and ODBC drivers](https://docs.aws.amazon.com/redshift/latest/mgmt/serverless-connecting.html)
-* [Use the Amazon Redshift Data API for programmatic access](https://docs.aws.amazon.com/redshift/latest/mgmt/data-api.html)
-* [Build machine learning models with Amazon Redshift ML](https://docs.aws.amazon.com/redshift/latest/dg/getting-started-machine-learning.html)
-* [Query data directly from an Amazon S3 data lake](https://docs.aws.amazon.com/redshift/latest/dg/c-getting-started-using-spectrum.html)
-* [Manage Amazon Redshift Serverless workgroups and namespaces](https://docs.aws.amazon.com/redshift/latest/mgmt/serverless-workgroups-and-namespaces.html)
+- [Connect to Amazon Redshift Serverless using JDBC and ODBC drivers](https://docs.aws.amazon.com/redshift/latest/mgmt/serverless-connecting.html)
+- [Use the Amazon Redshift Data API for programmatic access](https://docs.aws.amazon.com/redshift/latest/mgmt/data-api.html)
+- [Build machine learning models with Amazon Redshift ML](https://docs.aws.amazon.com/redshift/latest/dg/getting-started-machine-learning.html)
+- [Query data directly from an Amazon S3 data lake](https://docs.aws.amazon.com/redshift/latest/dg/c-getting-started-using-spectrum.html)
+- [Manage Amazon Redshift Serverless workgroups and namespaces](https://docs.aws.amazon.com/redshift/latest/mgmt/serverless-workgroups-and-namespaces.html)
 
 You can also explore the [Amazon Redshift Serverless pricing](https://aws.amazon.com/redshift/serverless/pricing/) to understand the cost structure for your specific workloads.
