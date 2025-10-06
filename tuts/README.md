@@ -76,6 +76,7 @@ This directory contains a collection of AWS CLI tutorials and scripts for variou
 | [082](082-amazon-polly-gs/) | Amazon Polly | [Getting Started](082-amazon-polly-gs/) | Get started with Amazon Polly text-to-speech service |
 | [085](085-amazon-ecs-service-connect/) | Amazon ECS | [Service Connect](085-amazon-ecs-service-connect/) | Set up service-to-service communication in Amazon ECS |
 | [086](086-amazon-ecs-fargate-linux/) | Amazon ECS | [Fargate Linux](086-amazon-ecs-fargate-linux/) | Deploy containerized applications on Amazon ECS using Fargate |
+| [087](087-apigateway-lambda-integration/) | Amazon API Gateway | [Getting Started](087-apigateway-lambda-integration/) | Create REST API with Lambda proxy integration using AWS CLI |
 
 ## Using These Tutorials
 
@@ -118,7 +119,7 @@ The tutorials are organized by AWS service categories:
 - CloudWatch (031, 032), Systems Manager (046), CloudFormation (021), Support (062), Account Management (077)
 
 **Application Integration**
-- SNS (048), SES (033), MQ (043), Cloud Map (004, 010), Step Functions (080)
+- SNS (048), SES (033), MQ (043), Cloud Map (004, 010), Step Functions (080), API Gateway (087)
 
 **IoT & Edge**
 - IoT Core (063), IoT Device Defender (079)
