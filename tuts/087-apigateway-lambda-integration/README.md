@@ -27,6 +27,27 @@ chmod +x apigateway-lambda-integration.sh
 - AWS CLI configured
 - Appropriate IAM permissions
 
+## Security Warning
+
+This tutorial is for learning purposes only and is not production-ready.
+
+### High Risk Issues
+
+- **Public API**: Creates an unauthenticated API accessible to anyone on the internet
+- **Overly permissive permissions**: Lambda can be invoked by any API Gateway method/resource
+
+### Medium Risk Issues
+
+- **No input validation**: User inputs are processed without sanitization
+- **Information disclosure**: Lambda logs full request data to CloudWatch
+- **No rate limiting**: API has no protection against abuse
+
+Before production use, you must:
+- Add authentication (AWS_IAM, API keys, or Cognito)
+- Implement input validation and sanitization
+- Remove debug logging of sensitive data
+- Configure rate limiting and throttling
+
 ## Resources Created
 
 - Lambda function

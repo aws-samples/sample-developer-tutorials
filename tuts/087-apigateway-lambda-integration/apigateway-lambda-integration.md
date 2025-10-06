@@ -2,6 +2,8 @@
 
 This tutorial guides you through creating a REST API with Lambda proxy integration using the AWS Command Line Interface (AWS CLI). You'll learn how to create a Lambda function, set up an API Gateway REST API, configure Lambda proxy integration, and test your API endpoints.
 
+Note: This tutorial is for learning purposes only and is not production-ready. For more info, see [README.md](./README.md).
+
 ## Prerequisites
 
 Before you begin this tutorial, make sure you have the following:
