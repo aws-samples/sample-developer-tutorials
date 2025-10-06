@@ -111,7 +111,7 @@ CREATE_TABLE_QUERY="CREATE EXTERNAL TABLE IF NOT EXISTS $DATABASE_NAME.$TABLE_NA
 ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.RegexSerDe'
 WITH SERDEPROPERTIES (
   \"input.regex\" = \"^(?!#)([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+[^\\\\(]+[\\\\(]([^\\\\;]+).*\\\\%20([^\\\\/]+)[\\\\/](.*)$\"
-) LOCATION 's3://athena-examples-$AWS_REGION/cloudfront/plaintext/';"
+) LOCATION 's3://athena-examples-us-east-1/cloudfront/plaintext/';"
 
 CREATE_TABLE_RESULT=$(aws athena start-query-execution \
     --query-string "$CREATE_TABLE_QUERY" \

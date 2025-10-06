@@ -2,6 +2,8 @@
 
 This tutorial demonstrates how to get started with Amazon Athena using the AWS CLI. You'll learn the fundamental concepts and operations for working with this AWS service through command-line interface.
 
+**Note:** This tutorial uses the `athena-examples-us-east-1` S3 bucket for sample data, which is only available in the us-east-1 region. The tutorial and script have been configured to use this specific bucket regardless of your current AWS region.
+
 You can either run the automated script `amazon-athena-gs.sh` to execute all operations automatically with comprehensive error handling and resource cleanup, or follow the step-by-step instructions in the `amazon-athena-gs.md` tutorial to understand each AWS CLI command and concept in detail. The script includes interactive prompts and built-in safeguards, while the tutorial provides detailed explanations of features and best practices.
 
 ## Resources Created

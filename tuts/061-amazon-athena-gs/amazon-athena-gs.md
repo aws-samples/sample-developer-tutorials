@@ -142,7 +142,7 @@ CREATE EXTERNAL TABLE IF NOT EXISTS mydatabase.cloudfront_logs (
 ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.RegexSerDe'
 WITH SERDEPROPERTIES (
   "input.regex" = "^(?!#)([^ ]+)\\s+([^ ]+)\\s+([^ ]+)\\s+([^ ]+)\\s+([^ ]+)\\s+([^ ]+)\\s+([^ ]+)\\s+([^ ]+)\\s+([^ ]+)\\s+([^ ]+)\\s+[^\\(]+\\([^\\;]+\\).*\\%20([^\\/]+)[\\/](.*)$"
-) LOCATION 's3://athena-examples-${AWS_REGION}/cloudfront/plaintext/';
+) LOCATION 's3://athena-examples-us-east-1/cloudfront/plaintext/';
 EOF
 
 aws athena start-query-execution \
@@ -174,7 +174,7 @@ TABLE_QUERY="CREATE EXTERNAL TABLE IF NOT EXISTS mydatabase.cloudfront_logs (
   ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.RegexSerDe'
   WITH SERDEPROPERTIES (
     \"input.regex\" = \"^(?!#)([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+([^ ]+)\\\\s+[^\\\\(]+[\\\\(]([^\\\\;]+).*\\\\%20([^\\\\/]+)[\\\\/](.*)$\"
-  ) LOCATION 's3://athena-examples-$AWS_REGION/cloudfront/plaintext/';"
+  ) LOCATION 's3://athena-examples-us-east-1/cloudfront/plaintext/';"
 
 TABLE_QUERY_ID=$(aws athena start-query-execution \
   --query-string "$TABLE_QUERY" \
@@ -227,7 +227,7 @@ The output should include details about your new table:
             ],
             "Parameters": {
                 "EXTERNAL": "TRUE",
-                "location": "s3://athena-examples-us-east-2/cloudfront/plaintext"
+                "location": "s3://athena-examples-us-east-1/cloudfront/plaintext"
                 // Additional parameters omitted for brevity
             }
         }
