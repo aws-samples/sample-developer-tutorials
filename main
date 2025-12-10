@@ -4,12 +4,11 @@ Thank you for your interest in contributing to Developer Tutorials! We greatly v
 
 If you have suggestions for improving the tutorial generation instructions, you can submit them as pull requests or issues in the repository. Please also submit bugs for cases where Q CLI did not generate a working script after several revisions, or when a published script or tutorial has an error.
 
-To contribute new tutorials, see [instra/README.md](instra/README.md)
-
+To contribute new tutorials, see [instra/README.md](instra/
 ## Code of Conduct
 
-This project adheres to the [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
+This project adheres to the [Code of Conduct](CODE_OF_.md). By participating, you are expected to uphold this code.
 
 ## License
 
-By contributing to Developer Tutorials, you agree that your contributions will be licensed under the project's [Apache License 2.0](LICENSE).
+By contributing to Developer Tutorials, you agree that your contributions will be licensed under the project's [ License 2.0](LICENSE).
