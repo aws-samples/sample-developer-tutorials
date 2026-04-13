@@ -1,17 +1,54 @@
-# Amazon ECS Fargate Linux
+# ECS: Run a container on Fargate
 
-This tutorial shows you how to create and run an Amazon Elastic Container Service (Amazon ECS) Linux task using Fargate with the AWS Command Line Interface (AWS CLI). You'll learn how to create an ECS cluster, register a task definition, create a service, and access your running application.
+Create an ECS Fargate cluster, deploy an nginx web server, and access it via public IP.
 
-You can either run the automated shell script (`amazon-ecs-fargate-linux.sh`) to quickly set up the entire environment, or follow the step-by-step instructions in the tutorial (`amazon-ecs-fargate-linux.md`) to understand each component in detail. Both approaches will help you understand how to deploy containerized applications on Amazon ECS using Fargate.
+## Source
 
-## Resources Created
+https://docs.aws.amazon.com/AmazonECS/latest/developerguide/getting-started-ecs-ec2.html
 
-The script creates the following AWS resources in order:
+## Use case
 
-- IAM role
-- IAM role policy
+- ID: ecs/fargate-linux
+- Phase: create
+- Complexity: intermediate
+- Core actions: ecs:CreateCluster, ecs:RegisterTaskDefinition, ecs:CreateService
+
+## What it does
+
+1. Creates or verifies the ECS task execution role
+2. Creates an ECS cluster
+3. Registers a Fargate task definition with nginx
+4. Creates a security group allowing HTTP from your IP
+5. Creates an ECS Fargate service
+6. Waits for the task to start running
+7. Retrieves the public IP and displays the URL
+8. Cleans up all resources
+
+## Running
+
+```bash
+bash amazon-ecs-fargate-linux.sh
+```
+
+To auto-run with cleanup:
+
+```bash
+echo 'y' | bash amazon-ecs-fargate-linux.sh
+```
+
+## Resources created
+
+- IAM role (ecsTaskExecutionRole, if not already present)
 - ECS cluster
-- ECS task definition
-- EC2 security group
+- Task definition (Fargate, nginx on port 80)
+- Security group (HTTP from your IP only)
+- ECS service (1 Fargate task)
 
-The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.
+## Estimated time
+
+- Run: ~3 minutes (service stabilization)
+- Cleanup: ~2 minutes (service drain and deletion)
+
+## Cost
+
+Fargate tasks incur charges while running (256 CPU, 512 MiB ≈ $0.01/hour). Cleanup stops all charges.

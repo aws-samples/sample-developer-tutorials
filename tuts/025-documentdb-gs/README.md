@@ -1,16 +1,56 @@
-# Amazon DocumentDB getting started
+# DocumentDB: Create a cluster and connect
 
-This tutorial demonstrates how to get started with Amazon DocumentDB by creating a MongoDB-compatible database cluster, connecting to the database, and performing basic document operations.
+Create an Amazon DocumentDB cluster with encryption, configure network access, and display connection information.
 
-You can run the shell script to automatically set up the Amazon DocumentDB cluster and resources, or follow the step-by-step instructions in the tutorial to manually configure your document database environment.
+## Source
 
-## Resources Created
+https://docs.aws.amazon.com/documentdb/latest/developerguide/get-started-guide.html
 
-The script creates the following AWS resources in order:
+## Use case
 
-- Secrets Manager secret
-- Docdb db subnet group
-- Docdb db cluster
-- Docdb db instance
+- ID: docdb/getting-started
+- Phase: create
+- Complexity: intermediate
+- Core actions: docdb:CreateDBCluster, docdb:CreateDBInstance
 
-The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.
+## What it does
+
+1. Generates a secure password and stores it in Secrets Manager
+2. Finds the default VPC and subnets across availability zones
+3. Creates a DocumentDB subnet group
+4. Creates an encrypted DocumentDB cluster
+5. Creates a DocumentDB instance (db.t3.medium)
+6. Retrieves the cluster endpoint and security group
+7. Adds a security group rule for MongoDB access from your IP
+8. Downloads the TLS CA certificate
+9. Displays connection information (endpoint, mongosh command)
+10. Cleans up all resources including the security group rule
+
+## Running
+
+```bash
+bash documentdb-gs.sh
+```
+
+To auto-run with cleanup:
+
+```bash
+echo 'y' | bash documentdb-gs.sh
+```
+
+## Resources created
+
+- Secrets Manager secret (admin credentials)
+- DocumentDB subnet group
+- DocumentDB cluster (encrypted)
+- DocumentDB instance
+- Security group ingress rule (port 27017, your IP only)
+
+## Estimated time
+
+- Run: ~8 minutes (cluster and instance creation)
+- Cleanup: ~7 minutes (instance and cluster deletion)
+
+## Cost
+
+DocumentDB instances incur charges while running. The db.t3.medium instance costs approximately $0.08/hour. Cleanup deletes all resources to stop charges.

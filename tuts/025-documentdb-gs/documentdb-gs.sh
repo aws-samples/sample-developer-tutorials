@@ -1,538 +1,529 @@
 #!/bin/bash
+# Amazon DocumentDB - Getting Started
+# This script creates a DocumentDB cluster with encrypted storage, stores the
+# master password in Secrets Manager, and displays connection information.
 
-# Amazon DocumentDB Getting Started Script
-# This script creates an Amazon DocumentDB cluster, connects to it, and demonstrates basic operations
+set -eE
 
-# HIGH SEVERITY ISSUES FIXED:
-# 1. Added explicit region handling to ensure consistent region usage throughout the script
-# 2. Improved subnet selection logic to ensure subnets from different AZs are selected
-# 3. Fixed subnet parsing to correctly extract subnet IDs
-# 4. Improved status detection to be more robust with different JSON formatting
+###############################################################################
+# Configuration
+###############################################################################
+SUFFIX=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
+CLUSTER_ID="docdb-gs-${SUFFIX}"
+INSTANCE_ID="${CLUSTER_ID}-inst"
+SUBNET_GROUP_NAME="docdb-subnet-${SUFFIX}"
+SECRET_NAME="docdb-secret-${SUFFIX}"
+MASTER_USER="docdbadmin"
+ENGINE_VERSION="5.0.0"
+INSTANCE_CLASS="db.t3.medium"
+DOCDB_PORT=27017
+WAIT_TIMEOUT=900
 
-# Set up logging
-LOG_FILE="docdb_script_v9.log"
+TEMP_DIR=$(mktemp -d)
+LOG_FILE="${TEMP_DIR}/documentdb-gs.log"
+
+CREATED_RESOURCES=()
+
+###############################################################################
+# Logging
+###############################################################################
 exec > >(tee -a "$LOG_FILE") 2>&1
 
-echo "Starting Amazon DocumentDB Getting Started Script"
-echo "================================================="
-echo "$(date)"
-echo
+echo "Log file: $LOG_FILE"
+echo ""
 
-# Get the current AWS region or use a default
-# FIXED: HIGH SEVERITY - Added explicit region handling
-AWS_REGION=$(aws configure get region 2>/dev/null)
-if [ -z "$AWS_REGION" ]; then
-    AWS_REGION="us-east-1"  # Default region if none is configured
-    echo "No AWS region configured. Using default region: $AWS_REGION"
-else
-    echo "Using configured AWS region: $AWS_REGION"
+###############################################################################
+# Region pre-check
+###############################################################################
+CONFIGURED_REGION=$(aws configure get region 2>/dev/null || true)
+if [ -z "$CONFIGURED_REGION" ] && [ -z "$AWS_DEFAULT_REGION" ] && [ -z "$AWS_REGION" ]; then
+    echo "ERROR: No AWS region configured."
+    echo "Run 'aws configure set region <region>' or export AWS_DEFAULT_REGION."
+    exit 1
 fi
-export AWS_REGION
+REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-$CONFIGURED_REGION}}"
+echo "Using region: $REGION"
+echo ""
 
-# Error handling function
+###############################################################################
+# Error handler
+###############################################################################
 handle_error() {
-    echo "ERROR: $1"
-    echo "Attempting to clean up resources..."
-    
-    # Check if instance exists and delete it
-    if [ -n "$DB_INSTANCE_ID" ]; then
-        echo "Checking if DB instance exists: $DB_INSTANCE_ID"
-        INSTANCE_EXISTS=$(aws docdb describe-db-instances --db-instance-identifier "$DB_INSTANCE_ID" --region "$AWS_REGION" 2>&1)
-        echo "$INSTANCE_EXISTS"
-        
-        if ! echo "$INSTANCE_EXISTS" | grep -qi "DBInstanceNotFound"; then
-            echo "Deleting DB instance: $DB_INSTANCE_ID"
-            DELETE_INSTANCE_RESULT=$(aws docdb delete-db-instance --db-instance-identifier "$DB_INSTANCE_ID" --region "$AWS_REGION" 2>&1)
-            echo "$DELETE_INSTANCE_RESULT"
-            
-            echo "Waiting for DB instance to be deleted..."
-            while true; do
-                INSTANCE_STATUS=$(aws docdb describe-db-instances --db-instance-identifier "$DB_INSTANCE_ID" --region "$AWS_REGION" 2>&1)
-                echo "$INSTANCE_STATUS"
-                
-                if echo "$INSTANCE_STATUS" | grep -qi "DBInstanceNotFound"; then
-                    echo "DB instance deleted"
-                    break
-                fi
-                echo "DB instance still exists, waiting..."
-                sleep 10
-            done
-        else
-            echo "DB instance does not exist, skipping deletion"
-        fi
+    echo ""
+    echo "==========================================="
+    echo "ERROR at $1"
+    echo "==========================================="
+    echo ""
+    if [ ${#CREATED_RESOURCES[@]} -gt 0 ]; then
+        echo "Resources created before error:"
+        for r in "${CREATED_RESOURCES[@]}"; do
+            echo "  - $r"
+        done
+        echo ""
+        echo "Attempting cleanup..."
+        cleanup_resources
     fi
-    
-    # Check if cluster exists and delete it
-    if [ -n "$DB_CLUSTER_ID" ]; then
-        echo "Checking if DB cluster exists: $DB_CLUSTER_ID"
-        CLUSTER_EXISTS=$(aws docdb describe-db-clusters --db-cluster-identifier "$DB_CLUSTER_ID" --region "$AWS_REGION" 2>&1)
-        echo "$CLUSTER_EXISTS"
-        
-        if ! echo "$CLUSTER_EXISTS" | grep -qi "DBClusterNotFound"; then
-            echo "Deleting DB cluster: $DB_CLUSTER_ID"
-            DELETE_CLUSTER_RESULT=$(aws docdb delete-db-cluster --db-cluster-identifier "$DB_CLUSTER_ID" --skip-final-snapshot --region "$AWS_REGION" 2>&1)
-            echo "$DELETE_CLUSTER_RESULT"
-        else
-            echo "DB cluster does not exist, skipping deletion"
-        fi
-    fi
-    
-    # Delete DB subnet group if we created one
-    if [ -n "$DB_SUBNET_GROUP" ]; then
-        echo "Checking if DB subnet group exists: $DB_SUBNET_GROUP"
-        SUBNET_GROUP_EXISTS=$(aws docdb describe-db-subnet-groups --db-subnet-group-name "$DB_SUBNET_GROUP" --region "$AWS_REGION" 2>&1)
-        echo "$SUBNET_GROUP_EXISTS"
-        
-        if ! echo "$SUBNET_GROUP_EXISTS" | grep -qi "DBSubnetGroupNotFoundFault"; then
-            echo "Deleting DB subnet group: $DB_SUBNET_GROUP"
-            DELETE_SUBNET_GROUP_RESULT=$(aws docdb delete-db-subnet-group --db-subnet-group-name "$DB_SUBNET_GROUP" --region "$AWS_REGION" 2>&1)
-            echo "$DELETE_SUBNET_GROUP_RESULT"
-        else
-            echo "DB subnet group does not exist, skipping deletion"
-        fi
-    fi
-    
-    # Delete the secret if we created one
-    if [ -n "$SECRET_ARN" ]; then
-        echo "Deleting secret: $SECRET_NAME"
-        DELETE_SECRET_RESULT=$(aws secretsmanager delete-secret --secret-id "$SECRET_NAME" --force-delete-without-recovery --region "$AWS_REGION" 2>&1)
-        echo "$DELETE_SECRET_RESULT"
-    fi
-    
+    rm -rf "$TEMP_DIR"
     exit 1
 }
 
-# Generate a random identifier suffix to avoid naming conflicts
-RANDOM_SUFFIX=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
-DB_CLUSTER_ID="docdb-cluster-${RANDOM_SUFFIX}"
-DB_INSTANCE_ID="docdb-instance-${RANDOM_SUFFIX}"
-DB_SUBNET_GROUP="docdb-subnet-${RANDOM_SUFFIX}"
-DB_USERNAME="adminuser"
-SECRET_NAME="docdb-secret-${RANDOM_SUFFIX}"
+trap 'handle_error "line $LINENO"' ERR
 
-echo "Using the following resource names:"
-echo "- Cluster ID: $DB_CLUSTER_ID"
-echo "- Instance ID: $DB_INSTANCE_ID"
-echo "- Subnet Group: $DB_SUBNET_GROUP"
-echo "- Secret Name: $SECRET_NAME"
-echo "- AWS Region: $AWS_REGION"
-echo
+###############################################################################
+# Wait function
+###############################################################################
+wait_for_status() {
+    local resource_type="$1"
+    local resource_id="$2"
+    local target_status="$3"
+    local timeout="${4:-$WAIT_TIMEOUT}"
+    local elapsed=0
+    local interval=30
 
-# Step 0: Create a secure password and store it in AWS Secrets Manager
-echo "Step 0: Creating secure password in AWS Secrets Manager..."
-# Generate a secure password
-DB_PASSWORD=$(openssl rand -base64 16)
+    echo "Waiting for $resource_type '$resource_id' to reach '$target_status'..."
 
-# Store the password in AWS Secrets Manager
-echo "Creating secret in AWS Secrets Manager..."
-SECRET_RESULT=$(aws secretsmanager create-secret \
+    while true; do
+        local current_status=""
+        if [ "$resource_type" = "cluster" ]; then
+            current_status=$(aws docdb describe-db-clusters \
+                --db-cluster-identifier "$resource_id" \
+                --query "DBClusters[0].Status" --output text 2>&1)
+        elif [ "$resource_type" = "instance" ]; then
+            current_status=$(aws docdb describe-db-instances \
+                --db-instance-identifier "$resource_id" \
+                --query "DBInstances[0].DBInstanceStatus" --output text 2>&1)
+        fi
+
+        if echo "$current_status" | grep -iq "error"; then
+            echo "ERROR checking status: $current_status"
+            return 1
+        fi
+
+        echo "  Status: $current_status ($elapsed/${timeout}s)"
+
+        if [ "$current_status" = "$target_status" ]; then
+            echo "  $resource_type '$resource_id' is now '$target_status'."
+            return 0
+        fi
+
+        if [ "$elapsed" -ge "$timeout" ]; then
+            echo "ERROR: Timed out after ${timeout}s waiting for $resource_type '$resource_id'."
+            return 1
+        fi
+
+        sleep "$interval"
+        elapsed=$((elapsed + interval))
+    done
+}
+
+###############################################################################
+# Wait for deletion
+###############################################################################
+wait_for_deletion() {
+    local resource_type="$1"
+    local resource_id="$2"
+    local timeout="${3:-$WAIT_TIMEOUT}"
+    local elapsed=0
+    local interval=30
+
+    echo "Waiting for $resource_type '$resource_id' to be deleted..."
+
+    while true; do
+        local result=""
+        if [ "$resource_type" = "cluster" ]; then
+            result=$(aws docdb describe-db-clusters \
+                --db-cluster-identifier "$resource_id" \
+                --query "DBClusters[0].Status" --output text 2>&1) || true
+        elif [ "$resource_type" = "instance" ]; then
+            result=$(aws docdb describe-db-instances \
+                --db-instance-identifier "$resource_id" \
+                --query "DBInstances[0].DBInstanceStatus" --output text 2>&1) || true
+        fi
+
+        if echo "$result" | grep -iq "DBClusterNotFoundFault\|DBInstanceNotFound\|not found"; then
+            echo "  $resource_type '$resource_id' deleted."
+            return 0
+        fi
+
+        echo "  Still deleting... ($elapsed/${timeout}s)"
+
+        if [ "$elapsed" -ge "$timeout" ]; then
+            echo "WARNING: Timed out waiting for $resource_type '$resource_id' deletion."
+            return 1
+        fi
+
+        sleep "$interval"
+        elapsed=$((elapsed + interval))
+    done
+}
+
+###############################################################################
+# Cleanup
+###############################################################################
+cleanup_resources() {
+    echo ""
+    echo "Cleaning up resources..."
+    echo ""
+
+    # Revoke security group ingress rule
+    if [ -n "${SG_ID:-}" ] && [ -n "${MY_IP:-}" ]; then
+        echo "Revoking security group ingress rule..."
+        aws ec2 revoke-security-group-ingress \
+            --group-id "$SG_ID" \
+            --protocol tcp \
+            --port "$DOCDB_PORT" \
+            --cidr "${MY_IP}/32" 2>&1 || echo "WARNING: Failed to revoke SG ingress rule."
+    fi
+
+    # Delete instance (must be deleted before cluster)
+    if printf '%s\n' "${CREATED_RESOURCES[@]}" | grep -q "instance:"; then
+        echo "Deleting instance '${INSTANCE_ID}'..."
+        aws docdb delete-db-instance \
+            --db-instance-identifier "$INSTANCE_ID" 2>&1 || echo "WARNING: Failed to delete instance."
+        wait_for_deletion "instance" "$INSTANCE_ID" || true
+    fi
+
+    # Delete cluster (skip final snapshot)
+    if printf '%s\n' "${CREATED_RESOURCES[@]}" | grep -q "cluster:"; then
+        echo "Deleting cluster '${CLUSTER_ID}'..."
+        aws docdb delete-db-cluster \
+            --db-cluster-identifier "$CLUSTER_ID" \
+            --skip-final-snapshot 2>&1 || echo "WARNING: Failed to delete cluster."
+        wait_for_deletion "cluster" "$CLUSTER_ID" || true
+    fi
+
+    # Delete subnet group (must wait for cluster deletion)
+    if printf '%s\n' "${CREATED_RESOURCES[@]}" | grep -q "subnet-group:"; then
+        echo "Deleting subnet group '${SUBNET_GROUP_NAME}'..."
+        aws docdb delete-db-subnet-group \
+            --db-subnet-group-name "$SUBNET_GROUP_NAME" 2>&1 || echo "WARNING: Failed to delete subnet group."
+    fi
+
+    # Delete secret
+    if printf '%s\n' "${CREATED_RESOURCES[@]}" | grep -q "secret:"; then
+        echo "Deleting secret '${SECRET_NAME}'..."
+        aws secretsmanager delete-secret \
+            --secret-id "$SECRET_NAME" \
+            --force-delete-without-recovery 2>&1 || echo "WARNING: Failed to delete secret."
+    fi
+
+    echo ""
+    echo "Cleanup complete."
+}
+
+###############################################################################
+# Step 1: Generate password and store in Secrets Manager
+###############################################################################
+echo "==========================================="
+echo "Step 1: Create master password in Secrets Manager"
+echo "==========================================="
+echo ""
+
+# Generate a safe password (no / @ " or spaces)
+MASTER_PASSWORD=$(cat /dev/urandom | tr -dc 'A-Za-z0-9!#$%^&*()_+=-' | fold -w 20 | head -n 1)
+
+SECRET_OUTPUT=$(aws secretsmanager create-secret \
     --name "$SECRET_NAME" \
-    --description "DocumentDB admin credentials for $DB_CLUSTER_ID" \
-    --secret-string "{\"username\":\"$DB_USERNAME\",\"password\":\"$DB_PASSWORD\"}" \
-    --region "$AWS_REGION" 2>&1)
-echo "$SECRET_RESULT"
+    --description "DocumentDB master password for ${CLUSTER_ID}" \
+    --secret-string "$MASTER_PASSWORD" \
+    --output text --query "ARN" 2>&1)
 
-if echo "$SECRET_RESULT" | grep -qi "error"; then
-    handle_error "Failed to create secret in AWS Secrets Manager"
+if echo "$SECRET_OUTPUT" | grep -iq "error"; then
+    echo "ERROR creating secret: $SECRET_OUTPUT"
+    exit 1
 fi
 
-SECRET_ARN=$(echo "$SECRET_RESULT" | grep -o '"ARN": "[^"]*"' | cut -d'"' -f4)
-echo "Secret created with ARN: $SECRET_ARN"
+SECRET_ARN="$SECRET_OUTPUT"
+CREATED_RESOURCES+=("secret:${SECRET_NAME}")
+echo "Secret created: $SECRET_NAME"
+echo "Secret ARN: $SECRET_ARN"
+echo ""
 
-# Step 1: Get VPC and subnet information
-echo "Step 1: Getting VPC and subnet information..."
-DEFAULT_VPC_RESULT=$(aws ec2 describe-vpcs --filters "Name=isDefault,Values=true" --region "$AWS_REGION" 2>&1)
-echo "$DEFAULT_VPC_RESULT"
+###############################################################################
+# Step 2: Find default VPC and subnets
+###############################################################################
+echo "==========================================="
+echo "Step 2: Find default VPC and subnets"
+echo "==========================================="
+echo ""
 
-DEFAULT_VPC_ID=$(echo "$DEFAULT_VPC_RESULT" | grep -o '"VpcId": "[^"]*"' | head -1 | cut -d'"' -f4)
+VPC_ID=$(aws ec2 describe-vpcs \
+    --filters "Name=isDefault,Values=true" \
+    --query "Vpcs[0].VpcId" --output text 2>&1)
 
-if [ -z "$DEFAULT_VPC_ID" ] || [ "$DEFAULT_VPC_ID" == "None" ]; then
-    echo "No default VPC found. You need to specify a VPC."
-    handle_error "No default VPC found"
+if echo "$VPC_ID" | grep -iq "error"; then
+    echo "ERROR finding default VPC: $VPC_ID"
+    exit 1
 fi
 
-echo "Using default VPC: $DEFAULT_VPC_ID"
+if [ "$VPC_ID" = "None" ] || [ -z "$VPC_ID" ]; then
+    echo "ERROR: No default VPC found. Create one with 'aws ec2 create-default-vpc'."
+    exit 1
+fi
 
-# Get subnets in different AZs
-# FIXED: Improved subnet selection to ensure different AZs
-echo "Getting subnets from different Availability Zones..."
-SUBNETS_RESULT=$(aws ec2 describe-subnets \
-    --filters "Name=vpc-id,Values=$DEFAULT_VPC_ID" \
-    --query "Subnets[*].[SubnetId,AvailabilityZone]" \
-    --output text \
-    --region "$AWS_REGION" 2>&1)
-echo "$SUBNETS_RESULT"
+echo "Default VPC: $VPC_ID"
 
-# FIXED: Improved subnet parsing to correctly extract subnet IDs
-# Parse the text output to get subnet IDs and their AZs
+# Get subnets in at least 2 different AZs (space-separated)
+SUBNET_INFO=$(aws ec2 describe-subnets \
+    --filters "Name=vpc-id,Values=${VPC_ID}" "Name=default-for-az,Values=true" \
+    --query "Subnets[*].[SubnetId,AvailabilityZone]" --output text 2>&1)
+
+if echo "$SUBNET_INFO" | grep -iq "error"; then
+    echo "ERROR finding subnets: $SUBNET_INFO"
+    exit 1
+fi
+
+# Collect unique AZs and their subnet IDs
 declare -A AZ_SUBNETS
-while read -r SUBNET_ID AZ; do
-    if [[ -n "$SUBNET_ID" && -n "$AZ" ]]; then
-        AZ_SUBNETS["$AZ"]="$SUBNET_ID"
-        echo "Found subnet $SUBNET_ID in AZ $AZ"
+while IFS=$'\t' read -r sid az; do
+    if [ -z "${AZ_SUBNETS[$az]+x}" ]; then
+        AZ_SUBNETS[$az]="$sid"
     fi
-done <<< "$SUBNETS_RESULT"
+done <<< "$SUBNET_INFO"
 
-# Check if we have subnets from at least 2 different AZs
-if [ ${#AZ_SUBNETS[@]} -lt 2 ]; then
-    echo "Need subnets in at least 2 different AZs, but only found ${#AZ_SUBNETS[@]} AZs."
-    handle_error "Not enough AZs with subnets"
+AZ_COUNT=${#AZ_SUBNETS[@]}
+if [ "$AZ_COUNT" -lt 2 ]; then
+    echo "ERROR: DocumentDB requires subnets in at least 2 AZs. Found $AZ_COUNT."
+    exit 1
 fi
 
-# Select subnets from different AZs
-SUBNET_IDS=()
-for AZ in "${!AZ_SUBNETS[@]}"; do
-    SUBNET_IDS+=("${AZ_SUBNETS[$AZ]}")
-    echo "Selected subnet ${AZ_SUBNETS[$AZ]} from AZ $AZ"
-    # We only need 2 subnets from different AZs for DocumentDB
-    if [ ${#SUBNET_IDS[@]} -eq 2 ]; then
-        break
+# Build space-separated subnet ID list
+SUBNET_IDS=""
+for az in "${!AZ_SUBNETS[@]}"; do
+    if [ -n "$SUBNET_IDS" ]; then
+        SUBNET_IDS="${SUBNET_IDS} ${AZ_SUBNETS[$az]}"
+    else
+        SUBNET_IDS="${AZ_SUBNETS[$az]}"
     fi
 done
 
-echo "Selected ${#SUBNET_IDS[@]} subnets from different AZs for the DB subnet group"
+echo "Subnets (${AZ_COUNT} AZs): $SUBNET_IDS"
+echo ""
 
-# Step 2: Create a DB subnet group
-echo "Step 2: Creating DB subnet group..."
-SUBNET_IDS_PARAM=$(IFS=' ' ; echo "${SUBNET_IDS[*]}")
-echo "Running command: aws docdb create-db-subnet-group --db-subnet-group-name $DB_SUBNET_GROUP --db-subnet-group-description \"Subnet group for DocumentDB tutorial\" --subnet-ids $SUBNET_IDS_PARAM --region $AWS_REGION"
+###############################################################################
+# Step 3: Create subnet group
+###############################################################################
+echo "==========================================="
+echo "Step 3: Create DocumentDB subnet group"
+echo "==========================================="
+echo ""
 
-SUBNET_GROUP_RESULT=$(aws docdb create-db-subnet-group \
-    --db-subnet-group-name "$DB_SUBNET_GROUP" \
-    --db-subnet-group-description "Subnet group for DocumentDB tutorial" \
-    --subnet-ids "${SUBNET_IDS[@]}" \
-    --region "$AWS_REGION" 2>&1)
-echo "$SUBNET_GROUP_RESULT"
+SUBNET_GROUP_OUTPUT=$(aws docdb create-db-subnet-group \
+    --db-subnet-group-name "$SUBNET_GROUP_NAME" \
+    --db-subnet-group-description "Subnet group for DocumentDB getting started" \
+    --subnet-ids $SUBNET_IDS \
+    --query "DBSubnetGroup.DBSubnetGroupName" --output text 2>&1)
 
-if echo "$SUBNET_GROUP_RESULT" | grep -qi "error"; then
-    echo "Subnet group creation failed with error:"
-    echo "$SUBNET_GROUP_RESULT"
-    handle_error "Failed to create DB subnet group"
+if echo "$SUBNET_GROUP_OUTPUT" | grep -iq "error"; then
+    echo "ERROR creating subnet group: $SUBNET_GROUP_OUTPUT"
+    exit 1
 fi
 
-echo "DB subnet group created successfully."
+CREATED_RESOURCES+=("subnet-group:${SUBNET_GROUP_NAME}")
+echo "Subnet group created: $SUBNET_GROUP_NAME"
+echo ""
 
-# Step 3: Create a DocumentDB cluster
-echo "Step 3: Creating DocumentDB cluster..."
-echo "Running command: aws docdb create-db-cluster --db-cluster-identifier $DB_CLUSTER_ID --engine docdb --engine-version 5.0.0 --master-username $DB_USERNAME --master-user-password ******** --db-subnet-group-name $DB_SUBNET_GROUP --region $AWS_REGION"
+###############################################################################
+# Step 4: Create DocumentDB cluster
+###############################################################################
+echo "==========================================="
+echo "Step 4: Create DocumentDB cluster"
+echo "==========================================="
+echo ""
 
-CLUSTER_RESULT=$(aws docdb create-db-cluster \
-    --db-cluster-identifier "$DB_CLUSTER_ID" \
+CLUSTER_OUTPUT=$(aws docdb create-db-cluster \
+    --db-cluster-identifier "$CLUSTER_ID" \
     --engine docdb \
-    --engine-version 5.0.0 \
-    --master-username "$DB_USERNAME" \
-    --master-user-password "$DB_PASSWORD" \
-    --db-subnet-group-name "$DB_SUBNET_GROUP" \
-    --region "$AWS_REGION" 2>&1)
-echo "$CLUSTER_RESULT"
+    --engine-version "$ENGINE_VERSION" \
+    --master-username "$MASTER_USER" \
+    --master-user-password "$MASTER_PASSWORD" \
+    --db-subnet-group-name "$SUBNET_GROUP_NAME" \
+    --storage-encrypted \
+    --no-deletion-protection \
+    --query "DBCluster.DBClusterIdentifier" --output text 2>&1)
 
-# Case-insensitive check for errors
-if echo "$CLUSTER_RESULT" | grep -qi "error"; then
-    echo "Cluster creation failed with error:"
-    echo "$CLUSTER_RESULT"
-    handle_error "Failed to create DB cluster"
+if echo "$CLUSTER_OUTPUT" | grep -iq "error"; then
+    echo "ERROR creating cluster: $CLUSTER_OUTPUT"
+    exit 1
 fi
 
-echo "Cluster creation initiated. Waiting for cluster to become available..."
-TIMEOUT=600  # 10 minutes timeout
-START_TIME=$(date +%s)
-while true; do
-    CURRENT_TIME=$(date +%s)
-    ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
-    
-    if [ $ELAPSED_TIME -gt $TIMEOUT ]; then
-        handle_error "Timeout waiting for cluster to become available after $TIMEOUT seconds"
-    fi
-    
-    CLUSTER_INFO=$(aws docdb describe-db-clusters \
-        --db-cluster-identifier "$DB_CLUSTER_ID" \
-        --query "DBClusters[0].Status" \
-        --output text \
-        --region "$AWS_REGION" 2>&1)
-    echo "Cluster status (direct query): $CLUSTER_INFO"
-    
-    if [ "$CLUSTER_INFO" = "available" ]; then
-        echo "Cluster is now available!"
-        break
-    fi
-    
-    sleep 10
-done
+CREATED_RESOURCES+=("cluster:${CLUSTER_ID}")
+echo "Cluster created: $CLUSTER_ID"
+echo ""
 
-# Step 4: Create a DocumentDB instance
-echo "Step 4: Creating DocumentDB instance..."
-echo "Running command: aws docdb create-db-instance --db-instance-identifier $DB_INSTANCE_ID --db-instance-class db.t3.medium --engine docdb --db-cluster-identifier $DB_CLUSTER_ID --region $AWS_REGION"
+wait_for_status "cluster" "$CLUSTER_ID" "available"
+echo ""
 
-INSTANCE_RESULT=$(aws docdb create-db-instance \
-    --db-instance-identifier "$DB_INSTANCE_ID" \
-    --db-instance-class db.t3.medium \
+###############################################################################
+# Step 5: Create DocumentDB instance
+###############################################################################
+echo "==========================================="
+echo "Step 5: Create DocumentDB instance"
+echo "==========================================="
+echo ""
+
+INSTANCE_OUTPUT=$(aws docdb create-db-instance \
+    --db-instance-identifier "$INSTANCE_ID" \
+    --db-instance-class "$INSTANCE_CLASS" \
+    --db-cluster-identifier "$CLUSTER_ID" \
     --engine docdb \
-    --db-cluster-identifier "$DB_CLUSTER_ID" \
-    --region "$AWS_REGION" 2>&1)
-echo "$INSTANCE_RESULT"
+    --query "DBInstance.DBInstanceIdentifier" --output text 2>&1)
 
-if echo "$INSTANCE_RESULT" | grep -qi "error"; then
-    echo "Instance creation failed with error:"
-    echo "$INSTANCE_RESULT"
-    handle_error "Failed to create DB instance"
+if echo "$INSTANCE_OUTPUT" | grep -iq "error"; then
+    echo "ERROR creating instance: $INSTANCE_OUTPUT"
+    exit 1
 fi
 
-echo "Instance creation initiated. Waiting for instance to become available..."
-TIMEOUT=900  # 15 minutes timeout
-START_TIME=$(date +%s)
-while true; do
-    CURRENT_TIME=$(date +%s)
-    ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
-    
-    if [ $ELAPSED_TIME -gt $TIMEOUT ]; then
-        handle_error "Timeout waiting for instance to become available after $TIMEOUT seconds"
-    fi
-    
-    INSTANCE_INFO=$(aws docdb describe-db-instances \
-        --db-instance-identifier "$DB_INSTANCE_ID" \
-        --query "DBInstances[0].DBInstanceStatus" \
-        --output text \
-        --region "$AWS_REGION" 2>&1)
-    echo "Instance status (direct query): $INSTANCE_INFO"
-    
-    if [ "$INSTANCE_INFO" = "available" ]; then
-        echo "Instance is now available!"
-        break
-    fi
-    
-    sleep 10
-done
+CREATED_RESOURCES+=("instance:${INSTANCE_ID}")
+echo "Instance created: $INSTANCE_ID"
+echo ""
 
-# Step 5: Get cluster endpoint and security group information
-echo "Step 5: Getting cluster connection information..."
-CLUSTER_ENDPOINT=$(aws docdb describe-db-clusters \
-    --db-cluster-identifier "$DB_CLUSTER_ID" \
-    --query "DBClusters[0].Endpoint" \
-    --output text \
-    --region "$AWS_REGION" 2>&1)
+wait_for_status "instance" "$INSTANCE_ID" "available"
+echo ""
 
-if [ -z "$CLUSTER_ENDPOINT" ]; then
-    handle_error "Failed to get cluster endpoint"
+###############################################################################
+# Step 6: Get cluster endpoint and security group
+###############################################################################
+echo "==========================================="
+echo "Step 6: Get cluster endpoint and security group"
+echo "==========================================="
+echo ""
+
+CLUSTER_DETAILS=$(aws docdb describe-db-clusters \
+    --db-cluster-identifier "$CLUSTER_ID" \
+    --query "DBClusters[0].[Endpoint,VpcSecurityGroups[0].VpcSecurityGroupId]" \
+    --output text 2>&1)
+
+if echo "$CLUSTER_DETAILS" | grep -iq "error"; then
+    echo "ERROR getting cluster details: $CLUSTER_DETAILS"
+    exit 1
 fi
 
-SECURITY_GROUP_ID=$(aws docdb describe-db-clusters \
-    --db-cluster-identifier "$DB_CLUSTER_ID" \
-    --query "DBClusters[0].VpcSecurityGroups[0].VpcSecurityGroupId" \
-    --output text \
-    --region "$AWS_REGION" 2>&1)
-
-if [ -z "$SECURITY_GROUP_ID" ]; then
-    handle_error "Failed to get security group ID"
-fi
+CLUSTER_ENDPOINT=$(echo "$CLUSTER_DETAILS" | awk '{print $1}')
+SG_ID=$(echo "$CLUSTER_DETAILS" | awk '{print $2}')
 
 echo "Cluster endpoint: $CLUSTER_ENDPOINT"
-echo "Security group ID: $SECURITY_GROUP_ID"
+echo "Security group: $SG_ID"
+echo ""
 
-# Step 6: Update security group to allow MongoDB connections
-echo "Step 6: Updating security group to allow MongoDB connections..."
-MY_IP_RESULT=$(curl -s https://checkip.amazonaws.com)
-echo "IP address lookup result: $MY_IP_RESULT"
-MY_IP=$(echo "$MY_IP_RESULT" | tr -d '[:space:]')
+###############################################################################
+# Step 7: Add security group ingress for port 27017 from user's IP
+###############################################################################
+echo "==========================================="
+echo "Step 7: Add security group ingress rule"
+echo "==========================================="
+echo ""
 
-if [ -z "$MY_IP" ]; then
-    handle_error "Failed to get current IP address"
+# Get the user's public IP
+MY_IP=$(curl -s https://checkip.amazonaws.com 2>&1)
+
+if echo "$MY_IP" | grep -iq "error\|could not\|failed"; then
+    echo "ERROR: Could not determine public IP address."
+    exit 1
 fi
 
-echo "Your current IP address: $MY_IP"
-echo "Running command: aws ec2 authorize-security-group-ingress --group-id $SECURITY_GROUP_ID --protocol tcp --port 27017 --cidr ${MY_IP}/32 --region $AWS_REGION"
+# Trim whitespace
+MY_IP=$(echo "$MY_IP" | tr -d '[:space:]')
 
-SG_RESULT=$(aws ec2 authorize-security-group-ingress \
-    --group-id "$SECURITY_GROUP_ID" \
+echo "Your public IP: $MY_IP"
+
+SG_RULE_OUTPUT=$(aws ec2 authorize-security-group-ingress \
+    --group-id "$SG_ID" \
     --protocol tcp \
-    --port 27017 \
-    --cidr "${MY_IP}/32" \
-    --region "$AWS_REGION" 2>&1)
-echo "$SG_RESULT"
+    --port "$DOCDB_PORT" \
+    --cidr "${MY_IP}/32" 2>&1)
 
-# Ignore if the rule already exists
-if echo "$SG_RESULT" | grep -qi "error" && ! echo "$SG_RESULT" | grep -qi "already exists"; then
-    echo "Security group update failed with error:"
-    echo "$SG_RESULT"
-    handle_error "Failed to update security group"
+if echo "$SG_RULE_OUTPUT" | grep -iq "error"; then
+    # Ignore if rule already exists
+    if echo "$SG_RULE_OUTPUT" | grep -iq "Duplicate"; then
+        echo "Ingress rule already exists."
+    else
+        echo "ERROR adding ingress rule: $SG_RULE_OUTPUT"
+        exit 1
+    fi
+else
+    echo "Ingress rule added: TCP ${DOCDB_PORT} from ${MY_IP}/32"
 fi
 
-# Step 7: Download CA certificate for TLS connections
-echo "Step 7: Downloading CA certificate for TLS connections..."
-mkdir -p ~/certs
-WGET_RESULT=$(wget -v https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -O ~/certs/global-bundle.pem 2>&1)
-echo "$WGET_RESULT"
+CREATED_RESOURCES+=("sg-rule:${SG_ID}:${MY_IP}")
+echo ""
 
-if [ ! -f ~/certs/global-bundle.pem ]; then
-    handle_error "Failed to download CA certificate"
+###############################################################################
+# Step 8: Download CA certificate
+###############################################################################
+echo "==========================================="
+echo "Step 8: Download Amazon DocumentDB CA certificate"
+echo "==========================================="
+echo ""
+
+CA_CERT_PATH="${TEMP_DIR}/global-bundle.pem"
+curl -s -o "$CA_CERT_PATH" https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem 2>&1
+
+if [ ! -s "$CA_CERT_PATH" ]; then
+    echo "WARNING: Failed to download CA certificate."
+else
+    echo "CA certificate downloaded to: $CA_CERT_PATH"
 fi
+echo ""
 
-echo "CA certificate downloaded to ~/certs/global-bundle.pem"
+###############################################################################
+# Step 9: Display connection information
+###############################################################################
+echo "==========================================="
+echo "CONNECTION INFORMATION"
+echo "==========================================="
+echo ""
+echo "Cluster endpoint : $CLUSTER_ENDPOINT"
+echo "Port             : $DOCDB_PORT"
+echo "Master username  : $MASTER_USER"
+echo "Secret name      : $SECRET_NAME (contains password)"
+echo "Security group   : $SG_ID"
+echo "CA certificate   : $CA_CERT_PATH"
+echo ""
+echo "To connect with mongosh:"
+echo "  mongosh --tls --host ${CLUSTER_ENDPOINT} --tlsCAFile ${CA_CERT_PATH} \\"
+echo "    --retryWrites false --username ${MASTER_USER} --password \$(aws secretsmanager get-secret-value --secret-id ${SECRET_NAME} --query SecretString --output text)"
+echo ""
 
-# Step 8: Retrieve password from Secrets Manager for connection
-echo "Step 8: Retrieving password from Secrets Manager..."
-SECRET_VALUE_RESULT=$(aws secretsmanager get-secret-value --secret-id "$SECRET_NAME" --region "$AWS_REGION" 2>&1)
-echo "Secret retrieved (password redacted for security)"
-
-if echo "$SECRET_VALUE_RESULT" | grep -qi "error"; then
-    handle_error "Failed to retrieve secret from AWS Secrets Manager"
-fi
-
-# Extract password from secret (don't print it)
-DB_PASSWORD_FROM_SECRET=$(echo "$SECRET_VALUE_RESULT" | grep -o '"password":"[^"]*"' | cut -d'"' -f4)
-
-# Step 9: Display connection instructions
-echo
-echo "============================================================"
-echo "Connection Information"
-echo "============================================================"
-echo "Your DocumentDB cluster is now ready to use!"
-echo
-echo "To connect using the MongoDB shell, run:"
-echo "mongosh --tls --tlsCAFile ~/certs/global-bundle.pem \\"
-echo "    --host $CLUSTER_ENDPOINT:27017 \\"
-echo "    --username $DB_USERNAME \\"
-echo "    --password <password-from-secrets-manager>"
-echo
-echo "To retrieve your password from Secrets Manager:"
-echo "aws secretsmanager get-secret-value --secret-id $SECRET_NAME --region $AWS_REGION --query SecretString --output text | jq -r '.password'"
-echo
-echo "Once connected, you can run the following commands to test your cluster:"
-echo
-echo "# Insert a single document"
-echo "db.collection.insertOne({\"hello\":\"DocumentDB\"})"
-echo
-echo "# Read the document"
-echo "db.collection.findOne()"
-echo
-echo "# Insert multiple documents"
-echo "db.profiles.insertMany(["
-echo "  { _id: 1, name: 'Matt', status: 'active', level: 12, score: 202 },"
-echo "  { _id: 2, name: 'Frank', status: 'inactive', level: 2, score: 9 },"
-echo "  { _id: 3, name: 'Karen', status: 'active', level: 7, score: 87 },"
-echo "  { _id: 4, name: 'Katie', status: 'active', level: 3, score: 27 }"
-echo "])"
-echo
-echo "# Query all documents in a collection"
-echo "db.profiles.find()"
-echo
-echo "# Query with a filter"
-echo "db.profiles.find({name: \"Katie\"})"
-echo
-echo "# Find and modify a document"
-echo "db.profiles.findAndModify({"
-echo "  query: { name: \"Matt\", status: \"active\"},"
-echo "  update: { \$inc: { score: 10 } }"
-echo "})"
-echo
-echo "# Verify the modification"
-echo "db.profiles.find({name: \"Matt\"})"
-echo
-
-# Step 10: Cleanup confirmation
-echo
+###############################################################################
+# Step 10: Cleanup
+###############################################################################
+echo ""
 echo "==========================================="
 echo "CLEANUP CONFIRMATION"
 echo "==========================================="
+echo ""
 echo "Resources created:"
-echo "- DB Cluster: $DB_CLUSTER_ID"
-echo "- DB Instance: $DB_INSTANCE_ID"
-echo "- DB Subnet Group: $DB_SUBNET_GROUP"
-echo "- AWS Secrets Manager Secret: $SECRET_NAME"
-echo "- Security Group Rule: TCP 27017 from ${MY_IP}/32 to $SECURITY_GROUP_ID"
-echo
+for r in "${CREATED_RESOURCES[@]}"; do
+    echo "  - $r"
+done
+echo ""
 echo "Do you want to clean up all created resources? (y/n): "
 read -r CLEANUP_CHOICE
 
-if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
-    echo "Starting cleanup process..."
-    
-    # Delete DB instance
-    echo "Deleting DB instance: $DB_INSTANCE_ID"
-    DELETE_INSTANCE_RESULT=$(aws docdb delete-db-instance --db-instance-identifier "$DB_INSTANCE_ID" --region "$AWS_REGION" 2>&1)
-    echo "$DELETE_INSTANCE_RESULT"
-    
-    echo "Waiting for DB instance to be deleted..."
-    TIMEOUT=600  # 10 minutes timeout
-    START_TIME=$(date +%s)
-    while true; do
-        CURRENT_TIME=$(date +%s)
-        ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
-        
-        if [ $ELAPSED_TIME -gt $TIMEOUT ]; then
-            echo "Warning: Timeout waiting for instance to be deleted after $TIMEOUT seconds"
-            break
-        fi
-        
-        INSTANCE_INFO=$(aws docdb describe-db-instances --db-instance-identifier "$DB_INSTANCE_ID" --region "$AWS_REGION" 2>&1)
-        
-        if echo "$INSTANCE_INFO" | grep -qi "DBInstanceNotFound"; then
-            echo "DB instance deleted"
-            break
-        fi
-        
-        INSTANCE_STATUS=$(aws docdb describe-db-instances \
-            --db-instance-identifier "$DB_INSTANCE_ID" \
-            --query "DBInstances[0].DBInstanceStatus" \
-            --output text \
-            --region "$AWS_REGION" 2>/dev/null)
-        echo "Instance status: $INSTANCE_STATUS (elapsed time: $ELAPSED_TIME seconds)"
-        sleep 10
-    done
-    
-    # Delete DB cluster
-    echo "Deleting DB cluster: $DB_CLUSTER_ID"
-    DELETE_CLUSTER_RESULT=$(aws docdb delete-db-cluster --db-cluster-identifier "$DB_CLUSTER_ID" --skip-final-snapshot --region "$AWS_REGION" 2>&1)
-    echo "$DELETE_CLUSTER_RESULT"
-    
-    # Wait for cluster to be deleted before deleting subnet group
-    echo "Waiting for DB cluster to be deleted..."
-    TIMEOUT=600  # 10 minutes timeout
-    START_TIME=$(date +%s)
-    while true; do
-        CURRENT_TIME=$(date +%s)
-        ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
-        
-        if [ $ELAPSED_TIME -gt $TIMEOUT ]; then
-            echo "Warning: Timeout waiting for cluster to be deleted after $TIMEOUT seconds"
-            break
-        fi
-        
-        CLUSTER_INFO=$(aws docdb describe-db-clusters --db-cluster-identifier "$DB_CLUSTER_ID" --region "$AWS_REGION" 2>&1)
-        
-        if echo "$CLUSTER_INFO" | grep -qi "DBClusterNotFound"; then
-            echo "DB cluster deleted"
-            break
-        fi
-        
-        CLUSTER_STATUS=$(aws docdb describe-db-clusters \
-            --db-cluster-identifier "$DB_CLUSTER_ID" \
-            --query "DBClusters[0].Status" \
-            --output text \
-            --region "$AWS_REGION" 2>/dev/null)
-        echo "Cluster status: $CLUSTER_STATUS (elapsed time: $ELAPSED_TIME seconds)"
-        sleep 10
-    done
-    
-    # Delete DB subnet group
-    echo "Deleting DB subnet group: $DB_SUBNET_GROUP"
-    DELETE_SUBNET_GROUP_RESULT=$(aws docdb delete-db-subnet-group --db-subnet-group-name "$DB_SUBNET_GROUP" --region "$AWS_REGION" 2>&1)
-    echo "$DELETE_SUBNET_GROUP_RESULT"
-    
-    # Delete the secret
-    echo "Deleting secret: $SECRET_NAME"
-    DELETE_SECRET_RESULT=$(aws secretsmanager delete-secret --secret-id "$SECRET_NAME" --force-delete-without-recovery --region "$AWS_REGION" 2>&1)
-    echo "$DELETE_SECRET_RESULT"
-    
-    echo "Cleanup completed successfully!"
+if [ "$CLEANUP_CHOICE" = "y" ] || [ "$CLEANUP_CHOICE" = "Y" ]; then
+    cleanup_resources
 else
-    echo "Cleanup skipped. Resources will continue to incur charges until deleted."
-    echo "To delete resources later, run:"
-    echo "aws docdb delete-db-instance --db-instance-identifier $DB_INSTANCE_ID --region $AWS_REGION"
-    echo "aws docdb delete-db-cluster --db-cluster-identifier $DB_CLUSTER_ID --skip-final-snapshot --region $AWS_REGION"
-    echo "aws docdb delete-db-subnet-group --db-subnet-group-name $DB_SUBNET_GROUP --region $AWS_REGION"
-    echo "aws secretsmanager delete-secret --secret-id $SECRET_NAME --force-delete-without-recovery --region $AWS_REGION"
+    echo ""
+    echo "Resources were NOT deleted. To clean up manually, run:"
+    echo ""
+    echo "  # Revoke security group ingress rule"
+    echo "  aws ec2 revoke-security-group-ingress --group-id ${SG_ID} --protocol tcp --port ${DOCDB_PORT} --cidr ${MY_IP}/32"
+    echo ""
+    echo "  # Delete instance (wait for it to finish before deleting cluster)"
+    echo "  aws docdb delete-db-instance --db-instance-identifier ${INSTANCE_ID}"
+    echo "  aws docdb wait db-instance-deleted --db-instance-identifier ${INSTANCE_ID}"
+    echo ""
+    echo "  # Delete cluster"
+    echo "  aws docdb delete-db-cluster --db-cluster-identifier ${CLUSTER_ID} --skip-final-snapshot"
+    echo ""
+    echo "  # Delete subnet group (after cluster is deleted)"
+    echo "  aws docdb delete-db-subnet-group --db-subnet-group-name ${SUBNET_GROUP_NAME}"
+    echo ""
+    echo "  # Delete secret"
+    echo "  aws secretsmanager delete-secret --secret-id ${SECRET_NAME} --force-delete-without-recovery"
+    echo ""
 fi
 
-echo
-echo "Script completed at $(date)"
-echo "Log file: $LOG_FILE"
+rm -rf "$TEMP_DIR"
+echo "Done."

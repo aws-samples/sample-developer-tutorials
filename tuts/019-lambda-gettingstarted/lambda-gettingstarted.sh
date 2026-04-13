@@ -1,330 +1,401 @@
 #!/bin/bash
+# AWS Lambda - Create Your First Function
+# This script creates a Lambda function, invokes it with a test event,
+# views CloudWatch logs, and cleans up all resources.
+#
+# Source: https://docs.aws.amazon.com/lambda/latest/dg/getting-started.html
+#
+# Resources created:
+#   - IAM role (Lambda execution role with basic logging permissions)
+#   - Lambda function (Python 3.13 or Node.js 22.x runtime)
+#   - CloudWatch log group (created automatically by Lambda on invocation)
 
-# Lambda Getting Started Tutorial Script - Version 3
-# This script creates a Lambda function, tests it, and cleans up resources
+set -eE
 
-# Set up logging
-LOG_FILE="lambda_tutorial_$(date +%Y%m%d_%H%M%S).log"
+###############################################################################
+# Setup
+###############################################################################
+
+UNIQUE_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
+FUNCTION_NAME="my-lambda-function-${UNIQUE_ID}"
+ROLE_NAME="lambda-execution-role-${UNIQUE_ID}"
+LOG_GROUP_NAME="/aws/lambda/${FUNCTION_NAME}"
+
+TEMP_DIR=$(mktemp -d)
+LOG_FILE="${TEMP_DIR}/lambda-gettingstarted.log"
+
 exec > >(tee -a "$LOG_FILE") 2>&1
 
-echo "Starting Lambda Getting Started Tutorial Script"
-echo "Logging to $LOG_FILE"
-echo "=============================================="
+declare -a CREATED_RESOURCES
 
-# Function to handle errors
-handle_error() {
-  echo "ERROR: $1"
-  echo "Resources created:"
-  if [ -n "$ROLE_NAME" ]; then echo "- IAM Role: $ROLE_NAME"; fi
-  if [ -n "$FUNCTION_NAME" ]; then echo "- Lambda Function: $FUNCTION_NAME"; fi
-  if [ -n "$LOG_GROUP_NAME" ]; then echo "- CloudWatch Log Group: $LOG_GROUP_NAME"; fi
-  
-  echo "Attempting to clean up resources..."
-  cleanup
-  exit 1
-}
+###############################################################################
+# Helper functions
+###############################################################################
 
-# Function to clean up resources
-cleanup() {
-  echo "Cleaning up resources..."
-  
-  # Delete Lambda function if it exists
-  if [ -n "$FUNCTION_NAME" ]; then
-    echo "Deleting Lambda function: $FUNCTION_NAME"
-    aws lambda delete-function --function-name "$FUNCTION_NAME" || echo "Failed to delete Lambda function"
-  fi
-  
-  # Wait for Lambda function to be deleted before deleting the role
-  if [ -n "$FUNCTION_NAME" ]; then
-    echo "Waiting for Lambda function to be deleted..."
-    aws lambda get-function --function-name "$FUNCTION_NAME" 2>/dev/null
-    while [ $? -eq 0 ]; do
-      sleep 2
-      aws lambda get-function --function-name "$FUNCTION_NAME" 2>/dev/null
+cleanup_resources() {
+    # Disable error trap to prevent recursion during cleanup
+    trap - ERR
+    set +eE
+
+    echo ""
+    echo "Cleaning up resources..."
+    echo ""
+
+    for ((i=${#CREATED_RESOURCES[@]}-1; i>=0; i--)); do
+        local RESOURCE="${CREATED_RESOURCES[$i]}"
+        local TYPE="${RESOURCE%%:*}"
+        local NAME="${RESOURCE#*:}"
+
+        case "$TYPE" in
+            log-group)
+                echo "Deleting CloudWatch log group: ${NAME}"
+                aws logs delete-log-group \
+                    --log-group-name "$NAME" 2>&1 || echo "  WARNING: Could not delete log group ${NAME}."
+                ;;
+            lambda-function)
+                echo "Deleting Lambda function: ${NAME}"
+                aws lambda delete-function \
+                    --function-name "$NAME" 2>&1 || echo "  WARNING: Could not delete Lambda function ${NAME}."
+                echo "  Waiting for function deletion to complete..."
+                local DELETE_WAIT=0
+                while aws lambda get-function --function-name "$NAME" > /dev/null 2>&1; do
+                    sleep 2
+                    DELETE_WAIT=$((DELETE_WAIT + 2))
+                    if [ "$DELETE_WAIT" -ge 60 ]; then
+                        echo "  WARNING: Timed out waiting for function deletion."
+                        break
+                    fi
+                done
+                ;;
+            iam-role-policy)
+                local ROLE_PART="${NAME%%|*}"
+                local POLICY_PART="${NAME#*|}"
+                echo "Detaching policy from role: ${ROLE_PART}"
+                aws iam detach-role-policy \
+                    --role-name "$ROLE_PART" \
+                    --policy-arn "$POLICY_PART" 2>&1 || echo "  WARNING: Could not detach policy from role ${ROLE_PART}."
+                ;;
+            iam-role)
+                echo "Deleting IAM role: ${NAME}"
+                aws iam delete-role \
+                    --role-name "$NAME" 2>&1 || echo "  WARNING: Could not delete IAM role ${NAME}."
+                ;;
+        esac
     done
-  fi
-  
-  # Delete CloudWatch log group if it exists
-  if [ -n "$LOG_GROUP_NAME" ]; then
-    echo "Deleting CloudWatch log group: $LOG_GROUP_NAME"
-    aws logs delete-log-group --log-group-name "$LOG_GROUP_NAME" 2>/dev/null || echo "Log group not found or already deleted"
-  fi
-  
-  # Delete IAM role if it exists
-  if [ -n "$ROLE_NAME" ]; then
-    echo "Detaching policy from role: $ROLE_NAME"
-    aws iam detach-role-policy --role-name "$ROLE_NAME" --policy-arn "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole" || echo "Failed to detach policy"
-    
-    echo "Deleting IAM role: $ROLE_NAME"
-    aws iam delete-role --role-name "$ROLE_NAME" || echo "Failed to delete IAM role"
-  fi
-  
-  # Remove temporary files
-  rm -f function.zip test-event.json output.json trust-policy.json 2>/dev/null
-  
-  echo "Cleanup completed"
-}
 
-# Function to prompt for runtime choice
-choose_runtime() {
-  echo ""
-  echo "=============================================="
-  echo "CHOOSE RUNTIME"
-  echo "=============================================="
-  echo "Select a runtime for your Lambda function:"
-  echo "1) Node.js 22.x"
-  echo "2) Python 3.13"
-  echo "Enter your choice (1 or 2): "
-  read -r RUNTIME_CHOICE
-  
-  if [ "$RUNTIME_CHOICE" = "1" ]; then
-    RUNTIME="nodejs22.x"
-    HANDLER="index.handler"
-    CODE_FILE="index.mjs"
-    echo "You selected Node.js 22.x"
-  elif [ "$RUNTIME_CHOICE" = "2" ]; then
-    RUNTIME="python3.13"
-    HANDLER="lambda_function.lambda_handler"
-    CODE_FILE="lambda_function.py"
-    echo "You selected Python 3.13"
-  else
-    echo "Invalid choice. Defaulting to Node.js 22.x"
-    RUNTIME="nodejs22.x"
-    HANDLER="index.handler"
-    CODE_FILE="index.mjs"
-  fi
-}
-
-# Function to wait for Lambda function to be active
-wait_for_function_active() {
-  local function_name=$1
-  local max_attempts=30
-  local attempt=1
-  local state=""
-  
-  echo "Waiting for Lambda function to become active..."
-  
-  while [ $attempt -le $max_attempts ]; do
-    state=$(aws lambda get-function --function-name "$function_name" --query 'Configuration.State' --output text 2>/dev/null)
-    
-    if [ "$state" = "Active" ]; then
-      echo "Lambda function is now active"
-      return 0
+    if [ -d "$TEMP_DIR" ]; then
+        rm -rf "$TEMP_DIR"
     fi
-    
-    echo "Function state: $state (attempt $attempt/$max_attempts)"
-    sleep 2
-    ((attempt++))
-  done
-  
-  echo "Timed out waiting for function to become active"
-  return 1
+
+    echo ""
+    echo "Cleanup complete."
 }
 
-# Set variables
-FUNCTION_NAME="myLambdaFunction"
-ROLE_NAME="lambda-tutorial-role-$(date +%s)"
-LOG_GROUP_NAME="/aws/lambda/$FUNCTION_NAME"
-
-# Choose runtime
-choose_runtime
-
-echo "Creating resources for Lambda tutorial..."
-
-# Step 1: Create IAM role for Lambda
-echo "Creating IAM role: $ROLE_NAME"
-
-# Create trust policy document
-cat > trust-policy.json << EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "lambda.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    }
-  ]
+handle_error() {
+    echo ""
+    echo "==========================================="
+    echo "ERROR: Script failed at $1"
+    echo "==========================================="
+    echo ""
+    if [ ${#CREATED_RESOURCES[@]} -gt 0 ]; then
+        echo "Attempting to clean up ${#CREATED_RESOURCES[@]} resource(s)..."
+        cleanup_resources
+    fi
+    exit 1
 }
-EOF
 
-# Create IAM role
-ROLE_ARN=$(aws iam create-role \
-  --role-name "$ROLE_NAME" \
-  --assume-role-policy-document file://trust-policy.json \
-  --query 'Role.Arn' \
-  --output text)
+trap 'handle_error "line $LINENO"' ERR
 
-if [ -z "$ROLE_ARN" ]; then
-  handle_error "Failed to create IAM role"
+wait_for_resource() {
+    local DESCRIPTION="$1"
+    local COMMAND="$2"
+    local TARGET_VALUE="$3"
+    local TIMEOUT=300
+    local ELAPSED=0
+    local INTERVAL=5
+
+    echo "Waiting for ${DESCRIPTION}..."
+    while true; do
+        local RESULT
+        RESULT=$(eval "$COMMAND" 2>&1) || true
+        if echo "$RESULT" | grep -q "$TARGET_VALUE"; then
+            echo "  ${DESCRIPTION} is ready."
+            return 0
+        fi
+        if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+            echo "ERROR: Timed out waiting for ${DESCRIPTION} after ${TIMEOUT} seconds."
+            return 1
+        fi
+        sleep "$INTERVAL"
+        ELAPSED=$((ELAPSED + INTERVAL))
+    done
+}
+
+###############################################################################
+# Region pre-check
+###############################################################################
+
+CONFIGURED_REGION=$(aws configure get region 2>/dev/null || true)
+if [ -z "$CONFIGURED_REGION" ] && [ -z "$AWS_DEFAULT_REGION" ] && [ -z "$AWS_REGION" ]; then
+    echo "ERROR: No AWS region configured."
+    echo "Run 'aws configure set region <region>' or export AWS_DEFAULT_REGION."
+    exit 1
 fi
 
-echo "Created IAM role: $ROLE_ARN"
+###############################################################################
+# Runtime selection
+###############################################################################
 
-# Attach Lambda basic execution policy to the role
-echo "Attaching Lambda basic execution policy to role"
+echo ""
+echo "==========================================="
+echo "AWS Lambda - Create Your First Function"
+echo "==========================================="
+echo ""
+echo "Select a runtime for your Lambda function:"
+echo "  1) Python 3.13"
+echo "  2) Node.js 22.x"
+echo ""
+echo "Enter your choice (1 or 2): "
+read -r RUNTIME_CHOICE
+
+case "$RUNTIME_CHOICE" in
+    1)
+        RUNTIME="python3.13"
+        HANDLER="lambda_function.lambda_handler"
+        CODE_FILE="lambda_function.py"
+        cat > "${TEMP_DIR}/${CODE_FILE}" << 'PYTHON_EOF'
+import json
+import logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+def lambda_handler(event, context):
+    length = event['length']
+    width = event['width']
+    area = calculate_area(length, width)
+    print(f'The area is {area}')
+    logger.info(f'CloudWatch logs group: {context.log_group_name}')
+    return json.dumps({'area': area})
+def calculate_area(length, width):
+    return length * width
+PYTHON_EOF
+        echo "Selected runtime: Python 3.13"
+        ;;
+    2)
+        RUNTIME="nodejs22.x"
+        HANDLER="index.handler"
+        CODE_FILE="index.mjs"
+        cat > "${TEMP_DIR}/${CODE_FILE}" << 'NODEJS_EOF'
+export const handler = async (event, context) => {
+  const area = event.length * event.width;
+  console.log(`The area is ${area}`);
+  console.log('CloudWatch log group: ', context.logGroupName);
+  return JSON.stringify({area});
+};
+NODEJS_EOF
+        echo "Selected runtime: Node.js 22.x"
+        ;;
+    *)
+        echo "ERROR: Invalid choice. Please enter 1 or 2."
+        exit 1
+        ;;
+esac
+
+###############################################################################
+# Step 1: Create IAM execution role
+###############################################################################
+
+echo ""
+echo "==========================================="
+echo "Step 1: Create IAM execution role"
+echo "==========================================="
+echo ""
+
+TRUST_POLICY='{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "lambda.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole"
+        }
+    ]
+}'
+
+echo "Creating IAM role: ${ROLE_NAME}"
+ROLE_OUTPUT=$(aws iam create-role \
+    --role-name "$ROLE_NAME" \
+    --assume-role-policy-document "$TRUST_POLICY" \
+    --query 'Role.Arn' \
+    --output text 2>&1)
+echo "$ROLE_OUTPUT"
+ROLE_ARN="$ROLE_OUTPUT"
+CREATED_RESOURCES+=("iam-role:${ROLE_NAME}")
+echo "Role ARN: ${ROLE_ARN}"
+
+echo ""
+echo "Attaching AWSLambdaBasicExecutionRole policy..."
 aws iam attach-role-policy \
-  --role-name "$ROLE_NAME" \
-  --policy-arn "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole" || handle_error "Failed to attach policy to role"
+    --role-name "$ROLE_NAME" \
+    --policy-arn "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole" 2>&1
+CREATED_RESOURCES+=("iam-role-policy:${ROLE_NAME}|arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole")
+echo "Policy attached."
 
-# Wait for role to propagate
+# IAM roles can take a few seconds to propagate
 echo "Waiting for IAM role to propagate..."
 sleep 10
 
-# Step 2: Create function code
-echo "Creating function code for $RUNTIME"
+###############################################################################
+# Step 2: Create Lambda function
+###############################################################################
 
-if [ "$RUNTIME" = "nodejs22.x" ]; then
-  # Create Node.js function code
-  cat > index.mjs << EOF
-export const handler = async (event, context) => {
-  
-  const length = event.length;
-  const width = event.width;
-  let area = calculateArea(length, width);
-  console.log(\`The area is \${area}\`);
-        
-  console.log('CloudWatch log group: ', context.logGroupName);
-  
-  let data = {
-    "area": area,
-  };
-    return JSON.stringify(data);
-    
-  function calculateArea(length, width) {
-    return length * width;
-  }
-};
-EOF
-else
-  # Create Python function code
-  cat > lambda_function.py << EOF
-import json
-import logging
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-
-def lambda_handler(event, context):
-    
-    # Get the length and width parameters from the event object
-    length = event['length']
-    width = event['width']
-    
-    area = calculate_area(length, width)
-    print(f"The area is {area}")
-        
-    logger.info(f"CloudWatch logs group: {context.log_group_name}")
-    
-    # return the calculated area as a JSON string
-    data = {"area": area}
-    return json.dumps(data)
-    
-def calculate_area(length, width):
-    return length*width
-EOF
-fi
-
-# Create ZIP deployment package
-echo "Creating deployment package"
-zip function.zip "$CODE_FILE" || handle_error "Failed to create ZIP file"
-
-# Step 3: Create Lambda function
-echo "Creating Lambda function: $FUNCTION_NAME"
-FUNCTION_ARN=$(aws lambda create-function \
-  --function-name "$FUNCTION_NAME" \
-  --runtime "$RUNTIME" \
-  --handler "$HANDLER" \
-  --role "$ROLE_ARN" \
-  --zip-file fileb://function.zip \
-  --architectures x86_64 \
-  --query 'FunctionArn' \
-  --output text)
-
-if [ -z "$FUNCTION_ARN" ]; then
-  handle_error "Failed to create Lambda function"
-fi
-
-echo "Created Lambda function: $FUNCTION_ARN"
-
-# Wait for the function to become active
-wait_for_function_active "$FUNCTION_NAME" || handle_error "Function did not become active in time"
-
-# Step 4: Create test event
-echo "Creating test event"
-cat > test-event.json << EOF
-{
-  "length": 6,
-  "width": 7
-}
-EOF
-
-# Step 5: Invoke the function
-echo "Invoking Lambda function with test event"
-aws lambda invoke \
-  --function-name "$FUNCTION_NAME" \
-  --payload fileb://test-event.json \
-  output.json || handle_error "Failed to invoke Lambda function"
-
-echo "Function response:"
-cat output.json
+echo ""
+echo "==========================================="
+echo "Step 2: Create Lambda function"
+echo "==========================================="
 echo ""
 
-# Step 6: Wait for logs to be available
-echo "Waiting for logs to be available..."
-sleep 10
+echo "Creating deployment package..."
+ORIGINAL_DIR=$(pwd)
+cd "$TEMP_DIR"
+zip -j function.zip "$CODE_FILE" > /dev/null 2>&1
+cd "$ORIGINAL_DIR"
 
-echo "Getting CloudWatch logs for function"
+echo "Creating Lambda function: ${FUNCTION_NAME}"
+echo "  Runtime: ${RUNTIME}"
+echo "  Handler: ${HANDLER}"
+echo ""
+
+CREATE_OUTPUT=$(aws lambda create-function \
+    --function-name "$FUNCTION_NAME" \
+    --runtime "$RUNTIME" \
+    --role "$ROLE_ARN" \
+    --handler "$HANDLER" \
+    --zip-file "fileb://${TEMP_DIR}/function.zip" \
+    --query '[FunctionName, FunctionArn, Runtime, State]' \
+    --output text 2>&1)
+echo "$CREATE_OUTPUT"
+CREATED_RESOURCES+=("lambda-function:${FUNCTION_NAME}")
+
+wait_for_resource "Lambda function to become Active" \
+    "aws lambda get-function-configuration --function-name ${FUNCTION_NAME} --query State --output text" \
+    "Active"
+
+###############################################################################
+# Step 3: Invoke the function
+###############################################################################
+
+echo ""
+echo "==========================================="
+echo "Step 3: Invoke the function"
+echo "==========================================="
+echo ""
+
+TEST_EVENT='{"length": 6, "width": 7}'
+echo "Invoking function with test event: ${TEST_EVENT}"
+echo ""
+
+INVOKE_OUTPUT=$(aws lambda invoke \
+    --function-name "$FUNCTION_NAME" \
+    --payload "$TEST_EVENT" \
+    --cli-read-timeout 30 \
+    "${TEMP_DIR}/response.json" 2>&1)
+echo "$INVOKE_OUTPUT"
+
+RESPONSE=$(cat "${TEMP_DIR}/response.json")
+echo ""
+echo "Function response: ${RESPONSE}"
+echo ""
+
+if echo "$INVOKE_OUTPUT" | grep -qi "functionerror"; then
+    echo "WARNING: Function returned an error."
+fi
+
+###############################################################################
+# Step 4: View CloudWatch logs
+###############################################################################
+
+echo ""
+echo "==========================================="
+echo "Step 4: View CloudWatch Logs"
+echo "==========================================="
+echo ""
+
+echo "Log group: ${LOG_GROUP_NAME}"
+echo ""
+
+echo "Waiting for CloudWatch logs to be available..."
+sleep 5
+
 LOG_STREAMS=$(aws logs describe-log-streams \
-  --log-group-name "$LOG_GROUP_NAME" \
-  --order-by LastEventTime \
-  --descending \
-  --limit 1 \
-  --query 'logStreams[0].logStreamName' \
-  --output text 2>/dev/null)
+    --log-group-name "$LOG_GROUP_NAME" \
+    --order-by LastEventTime \
+    --descending \
+    --query 'logStreams[0].logStreamName' \
+    --output text 2>&1) || true
 
 if [ -n "$LOG_STREAMS" ] && [ "$LOG_STREAMS" != "None" ]; then
-  echo "Log stream found: $LOG_STREAMS"
-  echo "Log events:"
-  aws logs get-log-events \
-    --log-group-name "$LOG_GROUP_NAME" \
-    --log-stream-name "$LOG_STREAMS" \
-    --query 'events[*].message' \
-    --output text
+    echo "Latest log stream: ${LOG_STREAMS}"
+    echo ""
+    echo "--- Log events ---"
+    LOG_EVENTS=$(aws logs get-log-events \
+        --log-group-name "$LOG_GROUP_NAME" \
+        --log-stream-name "$LOG_STREAMS" \
+        --query 'events[].message' \
+        --output text 2>&1) || true
+    echo "$LOG_EVENTS"
+    echo "--- End of log events ---"
 else
-  echo "No log streams found yet. Logs may take a moment to appear."
-  echo "You can check logs later in the CloudWatch console at:"
-  echo "https://console.aws.amazon.com/cloudwatch/home#logsV2:log-groups/log-group/$LOG_GROUP_NAME"
+    echo "No log streams found yet. Logs may take a moment to appear."
+    echo "You can view them in the CloudWatch console:"
+    echo "  Log group: ${LOG_GROUP_NAME}"
 fi
 
-# Display summary of created resources
-echo ""
-echo "=============================================="
-echo "RESOURCES CREATED"
-echo "=============================================="
-echo "- IAM Role: $ROLE_NAME"
-echo "- Lambda Function: $FUNCTION_NAME"
-echo "- CloudWatch Log Group: $LOG_GROUP_NAME"
+CREATED_RESOURCES+=("log-group:${LOG_GROUP_NAME}")
 
-# Prompt for cleanup
+###############################################################################
+# Summary and cleanup
+###############################################################################
+
 echo ""
-echo "=============================================="
+echo "==========================================="
+echo "SUMMARY"
+echo "==========================================="
+echo ""
+echo "Resources created:"
+echo "  IAM role:          ${ROLE_NAME}"
+echo "  Lambda function:   ${FUNCTION_NAME}"
+echo "  CloudWatch logs:   ${LOG_GROUP_NAME}"
+echo ""
+echo "==========================================="
 echo "CLEANUP CONFIRMATION"
-echo "=============================================="
+echo "==========================================="
+echo ""
 echo "Do you want to clean up all created resources? (y/n): "
 read -r CLEANUP_CHOICE
 
-if [[ "$CLEANUP_CHOICE" =~ ^[Yy] ]]; then
-  cleanup
+if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
+    cleanup_resources
 else
-  echo "Resources were not cleaned up. You can manually delete them later."
-  echo "To clean up resources manually:"
-  echo "1. Delete Lambda function: aws lambda delete-function --function-name $FUNCTION_NAME"
-  echo "2. Delete CloudWatch log group: aws logs delete-log-group --log-group-name $LOG_GROUP_NAME"
-  echo "3. Detach policy: aws iam detach-role-policy --role-name $ROLE_NAME --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-  echo "4. Delete IAM role: aws iam delete-role --role-name $ROLE_NAME"
+    echo ""
+    echo "Resources were NOT deleted. To clean up manually, run:"
+    echo ""
+    echo "  # Delete the Lambda function"
+    echo "  aws lambda delete-function --function-name ${FUNCTION_NAME}"
+    echo ""
+    echo "  # Delete the CloudWatch log group"
+    echo "  aws logs delete-log-group --log-group-name ${LOG_GROUP_NAME}"
+    echo ""
+    echo "  # Detach the policy and delete the IAM role"
+    echo "  aws iam detach-role-policy --role-name ${ROLE_NAME} --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    echo "  aws iam delete-role --role-name ${ROLE_NAME}"
+    echo ""
+
+    if [ -d "$TEMP_DIR" ]; then
+        rm -rf "$TEMP_DIR"
+    fi
 fi
 
-echo "Script completed successfully"
+echo ""
+echo "Done."
