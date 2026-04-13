@@ -52,3 +52,10 @@ echo 'y' | bash amazon-ecs-fargate-linux.sh
 ## Cost
 
 Fargate tasks incur charges while running (256 CPU, 512 MiB ≈ $0.01/hour). Cleanup stops all charges.
+
+## Related docs
+
+- [Getting started with Amazon ECS](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/getting-started-ecs-ec2.html)
+- [Amazon ECS on AWS Fargate](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html)
+- [Amazon ECS task execution IAM role](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html)
+- [Amazon ECS Service Connect](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-connect.html)

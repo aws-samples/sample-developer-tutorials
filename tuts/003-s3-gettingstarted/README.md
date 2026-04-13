@@ -50,3 +50,10 @@ echo 'y' | bash s3-gettingstarted.sh
 ## Cost
 
 Free tier eligible. Minimal charges for a few small objects.
+
+## Related docs
+
+- [Getting started with Amazon S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide/GetStartedWithS3.html)
+- [Using versioning in S3 buckets](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Versioning.html)
+- [Setting default server-side encryption](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucket-encryption.html)
+- [Blocking public access to your S3 storage](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html)

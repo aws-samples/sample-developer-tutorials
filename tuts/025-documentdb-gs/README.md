@@ -54,3 +54,10 @@ echo 'y' | bash documentdb-gs.sh
 ## Cost
 
 DocumentDB instances incur charges while running. The db.t3.medium instance costs approximately $0.08/hour. Cleanup deletes all resources to stop charges.
+
+## Related docs
+
+- [Get started with Amazon DocumentDB](https://docs.aws.amazon.com/documentdb/latest/developerguide/get-started-guide.html)
+- [Managing Amazon DocumentDB clusters](https://docs.aws.amazon.com/documentdb/latest/developerguide/db-cluster-manage.html)
+- [Connecting to Amazon DocumentDB with TLS](https://docs.aws.amazon.com/documentdb/latest/developerguide/connect_programmatically.html)
+- [Encrypting data at rest](https://docs.aws.amazon.com/documentdb/latest/developerguide/encryption-at-rest.html)

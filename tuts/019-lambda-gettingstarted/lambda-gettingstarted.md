@@ -47,7 +47,7 @@ This command creates a file named `trust-policy.json` with the necessary trust p
 Now, create the IAM role using the trust policy document you just created.
 
 ```bash
-ROLE_NAME="lambda-tutorial-role"
+ROLE_NAME="lambda-execution-role-a1b2c3d4"
 ROLE_ARN=$(aws iam create-role \
   --role-name "$ROLE_NAME" \
   --assume-role-policy-document file://trust-policy.json \
@@ -57,7 +57,7 @@ ROLE_ARN=$(aws iam create-role \
 echo "Created IAM role: $ROLE_ARN"
 ```
 
-This command creates an IAM role named `lambda-tutorial-role` and captures its ARN (Amazon Resource Name) in the `ROLE_ARN` variable.
+This command creates an IAM role named `lambda-execution-role-a1b2c3d4` and captures its ARN (Amazon Resource Name) in the `ROLE_ARN` variable. The script generates a unique suffix to avoid name collisions.
 
 **Attach permissions to the role**
 
@@ -86,22 +86,10 @@ Create a file named `index.mjs` with the following content:
 
 ```javascript
 export const handler = async (event, context) => {
-
-  const length = event.length;
-  const width = event.width;
-  let area = calculateArea(length, width);
+  const area = event.length * event.width;
   console.log(`The area is ${area}`);
-
   console.log('CloudWatch log group: ', context.logGroupName);
-
-  let data = {
-    "area": area,
-  };
-    return JSON.stringify(data);
-
-  function calculateArea(length, width) {
-    return length * width;
-  }
+  return JSON.stringify({area});
 };
 ```
 
@@ -119,22 +107,15 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 def lambda_handler(event, context):
-
-    # Get the length and width parameters from the event object
     length = event['length']
     width = event['width']
-
     area = calculate_area(length, width)
-    print(f"The area is {area}")
-
-    logger.info(f"CloudWatch logs group: {context.log_group_name}")
-
-    # return the calculated area as a JSON string
-    data = {"area": area}
-    return json.dumps(data)
+    print(f'The area is {area}')
+    logger.info(f'CloudWatch logs group: {context.log_group_name}')
+    return json.dumps({'area': area})
 
 def calculate_area(length, width):
-    return length*width
+    return length * width
 ```
 
 This Python function performs the same calculation as the Node.js version, taking an event object with `length` and `width` parameters and returning the calculated area.
@@ -160,64 +141,52 @@ Now you'll create the Lambda function using the deployment package and IAM role 
 **For Node.js**
 
 ```bash
-FUNCTION_NAME="myLambdaFunction"
+FUNCTION_NAME="my-lambda-function-a1b2c3d4"
 aws lambda create-function \
   --function-name "$FUNCTION_NAME" \
   --runtime nodejs22.x \
   --handler index.handler \
   --role "$ROLE_ARN" \
-  --zip-file fileb://function.zip \
-  --architectures x86_64
+  --architectures x86_64 \
+  --zip-file fileb://function.zip
 ```
 
 **For Python**
 
 ```bash
-FUNCTION_NAME="myLambdaFunction"
+FUNCTION_NAME="my-lambda-function-a1b2c3d4"
 aws lambda create-function \
   --function-name "$FUNCTION_NAME" \
   --runtime python3.13 \
   --handler lambda_function.lambda_handler \
   --role "$ROLE_ARN" \
-  --zip-file fileb://function.zip \
-  --architectures x86_64
+  --architectures x86_64 \
+  --zip-file fileb://function.zip
 ```
 
-This command creates a Lambda function with the specified runtime, handler, and role. The `--zip-file` parameter specifies the deployment package containing your function code.
+This command creates a Lambda function with the specified runtime, handler, and role. The `--zip-file` parameter specifies the deployment package containing your function code. The script generates a unique suffix for the function name to avoid collisions.
 
-After creating the function, wait for it to become active before proceeding to the next step.
+After creating the function, wait for it to become `Active` before invoking it. New functions typically become active within a few seconds.
 
 ```bash
 echo "Waiting for Lambda function to become active..."
-sleep 10
+while true; do
+  STATE=$(aws lambda get-function-configuration \
+    --function-name "$FUNCTION_NAME" \
+    --query 'State' \
+    --output text)
+  if [ "$STATE" = "Active" ]; then
+    echo "Function is active."
+    break
+  fi
+  echo "  Current state: $STATE. Checking again in 5 seconds..."
+  sleep 5
+done
 ```
-
-You can verify the function's status with the following command:
-
-```bash
-aws lambda get-function --function-name "$FUNCTION_NAME" --query 'Configuration.State' --output text
-```
-
-The output should be "Active" before you proceed.
 
 ## Test your Lambda function
 
-Now that your function is created, you'll create a test event and invoke the function.
-
-**Create a test event**
-
-Create a JSON file containing the test event data:
-
-```bash
-cat > test-event.json << EOF
-{
-  "length": 6,
-  "width": 7
-}
-EOF
-```
-
-This creates a file named `test-event.json` with the test event data.
+Now that your function is created, you can invoke it with a test event.
 
 **Invoke the function**
 
@@ -226,7 +195,8 @@ Invoke your Lambda function with the test event:
 ```bash
 aws lambda invoke \
   --function-name "$FUNCTION_NAME" \
-  --payload fileb://test-event.json \
+  --payload '{"length": 6, "width": 7}' \
+  --cli-read-timeout 30 \
   output.json
 ```
 
@@ -289,7 +259,9 @@ LOG_STREAM=$(aws logs describe-log-streams \
 
 aws logs get-log-events \
   --log-group-name "$LOG_GROUP_NAME" \
-  --log-stream-name "$LOG_STREAM"
+  --log-stream-name "$LOG_STREAM" \
+  --query 'events[].message' \
+  --output text
 ```
 
 The log events will show details about your function's execution, including:
@@ -338,7 +310,7 @@ These commands clean up the IAM role you created for your Lambda function.
 **Remove temporary files**
 
 ```bash
-rm -f function.zip test-event.json output.json trust-policy.json
+rm -f function.zip output.json trust-policy.json index.mjs lambda_function.py
 ```
 
 This command removes the temporary files created during this tutorial.
@@ -347,7 +319,7 @@ This command removes the temporary files created during this tutorial.
 
 This tutorial is designed to help you learn the basics of AWS Lambda and the AWS CLI. If you're planning to use Lambda in a production environment, consider the following best practices:
 
-### Security considerations
+**Security considerations**
 
 1. **Use custom IAM policies**: Instead of the managed `AWSLambdaBasicExecutionRole` policy, create a custom policy that grants only the specific permissions your function needs.
 
@@ -359,7 +331,7 @@ This tutorial is designed to help you learn the basics of AWS Lambda and the AWS
 
 For more information on Lambda security best practices, see [Security in AWS Lambda](https://docs.aws.amazon.com/lambda/latest/dg/lambda-security.html).
 
-### Architecture considerations
+**Architecture considerations**
 
 1. **Error handling**: Implement robust error handling in your function code.
 

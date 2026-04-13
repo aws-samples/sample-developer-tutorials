@@ -19,7 +19,7 @@ Amazon S3 stores data as objects within containers called buckets. Each bucket m
 First, let's generate a unique bucket name and determine your AWS region:
 
 ```
-BUCKET_NAME="demo-s3-bucket-$(openssl rand -hex 6)"
+BUCKET_NAME="amzn-s3-demo-$(cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 12 | head -n 1)"
 REGION=$(aws configure get region)
 REGION=${REGION:-us-east-1}
 
@@ -36,7 +36,6 @@ aws s3api create-bucket --bucket "$BUCKET_NAME"
 # For all other regions
 aws s3api create-bucket \
     --bucket "$BUCKET_NAME" \
-    --region "$REGION" \
     --create-bucket-configuration LocationConstraint="$REGION"
 ```
 
@@ -44,42 +43,16 @@ The output shows the location URL of your new bucket:
 
 ```
 {
-    "Location": "http://demo-s3-bucket-abcd1234.s3.amazonaws.com/"
+    "Location": "http://amzn-s3-demo-abcd1234abcd.s3.amazonaws.com/"
 }
 ```
 
-After creating your bucket, it's important to configure security settings. Let's apply some best practices:
+## Upload an object
 
-**Block public access (recommended for security)**
-
-```
-aws s3api put-public-access-block \
-    --bucket "$BUCKET_NAME" \
-    --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
-```
-
-**Enable versioning (helps protect against accidental deletion)**
+Now that your bucket is created, let's upload a file. First, create a sample text file:
 
 ```
-aws s3api put-bucket-versioning \
-    --bucket "$BUCKET_NAME" \
-    --versioning-configuration Status=Enabled
-```
-
-**Set default encryption (protects your data at rest)**
-
-```
-aws s3api put-bucket-encryption \
-    --bucket "$BUCKET_NAME" \
-    --server-side-encryption-configuration '{"Rules": [{"ApplyServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}]}'
-```
-
-## Upload objects to your bucket
-
-Now that your bucket is configured, let's upload some files. First, create a sample text file:
-
-```
-echo "This is a sample file for the S3 tutorial." > sample-file.txt
+echo "Hello, Amazon S3! This is a sample file for the getting started tutorial." > sample.txt
 ```
 
 Upload this file to your bucket:
@@ -87,34 +60,17 @@ Upload this file to your bucket:
 ```
 aws s3api put-object \
     --bucket "$BUCKET_NAME" \
-    --key "sample-file.txt" \
-    --body "sample-file.txt"
+    --key "sample.txt" \
+    --body "sample.txt"
 ```
 
-The response includes an ETag (entity tag) that uniquely identifies the content of the object, and since we enabled encryption, it also shows the encryption method:
+The response includes an ETag (entity tag) that uniquely identifies the content of the object:
 
 ```
 {
-    "ETag": "\"4f4cf806569737e1f3ea064a1d4813db\"",
-    "ServerSideEncryption": "AES256",
-    "VersionId": "9RCg6lFF_CmB.r_YlMS8sdPBiv878gQI"
+    "ETag": "\"abcd1234abcd1234abcd1234abcd1234\""
 }
 ```
-
-You can also upload files with additional metadata. Let's create another file and add some metadata to it:
-
-```
-echo "This is a document with metadata." > sample-document.txt
-
-aws s3api put-object \
-    --bucket "$BUCKET_NAME" \
-    --key "documents/sample-document.txt" \
-    --body "sample-document.txt" \
-    --content-type "text/plain" \
-    --metadata "author=AWSDocumentation,purpose=tutorial"
-```
-
-Notice that we used `documents/` in the key name. This creates a logical folder structure in your bucket, even though S3 is actually a flat object store.
 
 ## Download and verify objects
 
@@ -123,113 +79,107 @@ To download an object from your bucket to your local machine:
 ```
 aws s3api get-object \
     --bucket "$BUCKET_NAME" \
-    --key "sample-file.txt" \
-    "downloaded-sample-file.txt"
+    --key "sample.txt" \
+    "downloaded-sample.txt"
 ```
 
-The command downloads the object and saves it as `downloaded-sample-file.txt` in your current directory. The output provides metadata about the object:
+The command downloads the object and saves it as `downloaded-sample.txt` in your current directory. The output provides metadata about the object:
 
 ```
 {
     "AcceptRanges": "bytes",
-    "LastModified": "Thu, 22 May 2025 20:39:53 GMT",
-    "ContentLength": 43,
-    "ETag": "\"4f4cf806569737e1f3ea064a1d4813db\"",
-    "VersionId": "9RCg6lFF_CmB.r_YlMS8sdPBiv878gQI",
+    "LastModified": "2026-01-13T20:39:53+00:00",
+    "ContentLength": 75,
+    "ETag": "\"abcd1234abcd1234abcd1234abcd1234\"",
     "ContentType": "binary/octet-stream",
-    "ServerSideEncryption": "AES256",
     "Metadata": {}
 }
 ```
 
-If you just want to check if an object exists or view its metadata without downloading it:
+## Copy an object to a folder prefix
 
-```
-aws s3api head-object \
-    --bucket "$BUCKET_NAME" \
-    --key "sample-file.txt"
-```
-
-This returns the same metadata information without transferring the actual object content.
-
-## Organize objects with folders
-
-Although S3 is a flat object store, you can simulate folders by using key name prefixes. Let's create a folder structure and copy an existing object into it.
-
-First, create a folder by uploading an empty object with a trailing slash:
-
-```
-touch empty-file.tmp
-aws s3api put-object \
-    --bucket "$BUCKET_NAME" \
-    --key "favorite-files/" \
-    --body empty-file.tmp
-```
-
-Now, copy the sample file into this folder:
+Although S3 is a flat object store, you can simulate folders by using key name prefixes. Let's copy the sample file into a `backup/` prefix:
 
 ```
 aws s3api copy-object \
     --bucket "$BUCKET_NAME" \
-    --copy-source "$BUCKET_NAME/sample-file.txt" \
-    --key "favorite-files/sample-file.txt"
+    --copy-source "$BUCKET_NAME/sample.txt" \
+    --key "backup/sample.txt"
 ```
 
 The response includes information about the copy operation:
 
 ```
 {
-    "CopySourceVersionId": "9RCg6lFF_CmB.r_YlMS8sdPBiv878gQI",
-    "VersionId": "rBtZnoxd0V6rPxUPDUYmPz1CzRXbIIS7",
-    "ServerSideEncryption": "AES256",
     "CopyObjectResult": {
-        "ETag": "\"4f4cf806569737e1f3ea064a1d4813db\"",
-        "LastModified": "2025-05-22T20:39:59.000Z"
+        "ETag": "\"abcd1234abcd1234abcd1234abcd1234\"",
+        "LastModified": "2026-01-13T20:39:59+00:00"
     }
 }
 ```
 
-Let's list all objects in the bucket to see our folder structure:
+## Enable versioning
+
+Versioning helps protect against accidental deletion by keeping multiple variants of an object in the same bucket.
 
 ```
-aws s3api list-objects-v2 \
+aws s3api put-bucket-versioning \
     --bucket "$BUCKET_NAME" \
-    --query 'Contents[].Key' \
-    --output table
+    --versioning-configuration Status=Enabled
 ```
 
-The output shows all objects, including our folder structure:
+With versioning enabled, uploading a file with the same key creates a new version instead of overwriting the original. Let's upload a second version of the sample file:
 
 ```
-------------------------------------
-|           ListObjectsV2          |
-+----------------------------------+
-|  documents/sample-document.txt   |
-|  favorite-files/                 |
-|  favorite-files/sample-file.txt  |
-|  sample-file.txt                 |
-+----------------------------------+
-```
+echo "Hello, Amazon S3! This is version 2 of the sample file." > sample.txt
 
-You can also list objects within a specific folder:
-
-```
-aws s3api list-objects-v2 \
+aws s3api put-object \
     --bucket "$BUCKET_NAME" \
-    --prefix "favorite-files/" \
-    --query 'Contents[].Key' \
-    --output table
+    --key "sample.txt" \
+    --body "sample.txt"
 ```
 
-This shows only the objects within the "favorite-files" folder:
+The response now includes a `VersionId`:
 
 ```
-------------------------------------
-|           ListObjectsV2          |
-+----------------------------------+
-|  favorite-files/                 |
-|  favorite-files/sample-file.txt  |
-+----------------------------------+
+{
+    "ETag": "\"abcd1234abcd1234abcd1234abcd1234\"",
+    "VersionId": "abcdxmpl1234abcd1234abcd1234abcd"
+}
+```
+
+## Configure default encryption
+
+Default encryption ensures that all objects stored in the bucket are encrypted at rest using server-side encryption with Amazon S3 managed keys (SSE-S3):
+
+```
+aws s3api put-bucket-encryption \
+    --bucket "$BUCKET_NAME" \
+    --server-side-encryption-configuration '{
+        "Rules": [
+            {
+                "ApplyServerSideEncryptionByDefault": {
+                    "SSEAlgorithm": "AES256"
+                },
+                "BucketKeyEnabled": true
+            }
+        ]
+    }'
+```
+
+## Block public access
+
+Blocking public access is a security best practice that prevents objects in your bucket from being made public:
+
+```
+aws s3api put-public-access-block \
+    --bucket "$BUCKET_NAME" \
+    --public-access-block-configuration '{
+        "BlockPublicAcls": true,
+        "IgnorePublicAcls": true,
+        "BlockPublicPolicy": true,
+        "RestrictPublicBuckets": true
+    }'
 ```
 
 ## Add tags to your bucket
@@ -239,7 +189,56 @@ Tags help you categorize your AWS resources for cost allocation, access control,
 ```
 aws s3api put-bucket-tagging \
     --bucket "$BUCKET_NAME" \
-    --tagging 'TagSet=[{Key=Project,Value=S3Tutorial},{Key=Environment,Value=Demo}]'
+    --tagging '{
+        "TagSet": [
+            {
+                "Key": "Environment",
+                "Value": "Tutorial"
+            },
+            {
+                "Key": "Project",
+                "Value": "S3-GettingStarted"
+            }
+        ]
+    }'
+```
+
+Verify the tags were applied:
+
+```
+aws s3api get-bucket-tagging \
+    --bucket "$BUCKET_NAME"
+```
+
+```
+{
+    "TagSet": [
+        {
+            "Key": "Environment",
+            "Value": "Tutorial"
+        },
+        {
+            "Key": "Project",
+            "Value": "S3-GettingStarted"
+        }
+    ]
+}
+```
+
+## List objects and versions
+
+List all objects in the bucket to see your folder structure:
+
+```
+aws s3api list-objects-v2 \
+    --bucket "$BUCKET_NAME"
+```
+
+Since versioning is enabled, you can also list all versions of objects in the bucket. This shows both the current and previous versions of `sample.txt`:
+
+```
+aws s3api list-object-versions \
+    --bucket "$BUCKET_NAME"
 ```
 
 ## Clean up resources
@@ -250,20 +249,30 @@ For buckets with versioning enabled, you need to delete all object versions befo
 
 ```
 # Delete all object versions
-VERSIONS=$(aws s3api list-object-versions --bucket "$BUCKET_NAME" --query 'Versions[].{Key:Key,VersionId:VersionId}' --output json)
-if [ -n "$VERSIONS" ] && [ "$VERSIONS" != "null" ]; then
-    echo "{\"Objects\": $VERSIONS}" > versions.json
-    aws s3api delete-objects --bucket "$BUCKET_NAME" --delete file://versions.json
-    rm versions.json
-fi
+aws s3api list-object-versions \
+    --bucket "$BUCKET_NAME" \
+    --query "Versions[].{Key:Key,VersionId:VersionId}" \
+    --output text | while IFS=$'\t' read -r KEY VERSION_ID; do
+    if [ -n "$KEY" ] && [ "$KEY" != "None" ]; then
+        aws s3api delete-object \
+            --bucket "$BUCKET_NAME" \
+            --key "$KEY" \
+            --version-id "$VERSION_ID"
+    fi
+done
 
 # Delete all delete markers
-MARKERS=$(aws s3api list-object-versions --bucket "$BUCKET_NAME" --query 'DeleteMarkers[].{Key:Key,VersionId:VersionId}' --output json)
-if [ -n "$MARKERS" ] && [ "$MARKERS" != "null" ]; then
-    echo "{\"Objects\": $MARKERS}" > markers.json
-    aws s3api delete-objects --bucket "$BUCKET_NAME" --delete file://markers.json
-    rm markers.json
-fi
+aws s3api list-object-versions \
+    --bucket "$BUCKET_NAME" \
+    --query "DeleteMarkers[].{Key:Key,VersionId:VersionId}" \
+    --output text | while IFS=$'\t' read -r KEY VERSION_ID; do
+    if [ -n "$KEY" ] && [ "$KEY" != "None" ]; then
+        aws s3api delete-object \
+            --bucket "$BUCKET_NAME" \
+            --key "$KEY" \
+            --version-id "$VERSION_ID"
+    fi
+done
 ```
 
 After deleting all object versions, you can delete the bucket:
@@ -275,7 +284,7 @@ aws s3api delete-bucket --bucket "$BUCKET_NAME"
 Don't forget to clean up local files:
 
 ```
-rm -f sample-file.txt sample-document.txt downloaded-sample-file.txt empty-file.tmp
+rm -f sample.txt downloaded-sample.txt
 ```
 
 ## Next steps

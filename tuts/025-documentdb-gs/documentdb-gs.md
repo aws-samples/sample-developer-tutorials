@@ -37,19 +37,19 @@ Before creating the cluster, generate a secure password and store it in AWS Secr
 **Generate a password and create a secret**
 
 ```bash
-DB_PASSWORD=$(openssl rand -base64 16)
+DB_PASSWORD=$(cat /dev/urandom | tr -dc 'A-Za-z0-9!#$%^&*()_+=-' | fold -w 20 | head -n 1)
 aws secretsmanager create-secret \
-    --name docdb-tutorial-credentials \
-    --description "Credentials for DocumentDB tutorial" \
-    --secret-string "{\"username\":\"adminuser\",\"password\":\"${DB_PASSWORD}\"}"
+    --name docdb-secret-tutorial \
+    --description "DocumentDB master password for docdb-gs-tutorial" \
+    --secret-string "$DB_PASSWORD"
 ```
 
-This command generates a random password and stores it along with the username in Secrets Manager. You should see output similar to this:
+The password uses `/dev/urandom` filtered to characters that are safe for DocumentDB (no `/`, `@`, `"`, or spaces). The secret stores the password as a plain string. You should see output similar to this:
 
 ```json
 {
-    "ARN": "arn:aws:secretsmanager:us-east-1:123456789012:secret:docdb-tutorial-credentials-AbCdEf",
-    "Name": "docdb-tutorial-credentials",
+    "ARN": "arn:aws:secretsmanager:us-east-1:123456789012:secret:docdb-secret-tutorial-AbCdEf",
+    "Name": "docdb-secret-tutorial",
     "VersionId": "a1b2c3d4-xmpl-5678-abcd-ee1234567890"
 }
 ```
@@ -60,8 +60,8 @@ When you need the password for subsequent commands, retrieve it from Secrets Man
 
 ```bash
 DB_PASSWORD=$(aws secretsmanager get-secret-value \
-    --secret-id docdb-tutorial-credentials \
-    --query SecretString --output text | grep -o '"password":"[^"]*"' | cut -d'"' -f4)
+    --secret-id docdb-secret-tutorial \
+    --query SecretString --output text)
 ```
 
 ## Create a DB subnet group
@@ -96,8 +96,8 @@ Create a DB subnet group using subnets from different Availability Zones. Replac
 
 ```bash
 aws docdb create-db-subnet-group \
-    --db-subnet-group-name docdb-subnet-group \
-    --db-subnet-group-description "Subnet group for DocumentDB tutorial" \
+    --db-subnet-group-name docdb-subnet-tutorial \
+    --db-subnet-group-description "Subnet group for DocumentDB getting started" \
     --subnet-ids subnet-abcd1234 subnet-efgh5678
 ```
 
@@ -108,8 +108,8 @@ You should see output similar to this:
 ```json
 {
     "DBSubnetGroup": {
-        "DBSubnetGroupName": "docdb-subnet-group",
-        "DBSubnetGroupDescription": "Subnet group for DocumentDB tutorial",
+        "DBSubnetGroupName": "docdb-subnet-tutorial",
+        "DBSubnetGroupDescription": "Subnet group for DocumentDB getting started",
         "VpcId": "vpc-abcd1234",
         "SubnetGroupStatus": "Complete",
         "Subnets": [
@@ -142,20 +142,21 @@ Retrieve the password from Secrets Manager and pass it to the create command:
 
 ```bash
 DB_PASSWORD=$(aws secretsmanager get-secret-value \
-    --secret-id docdb-tutorial-credentials \
-    --query SecretString --output text | grep -o '"password":"[^"]*"' | cut -d'"' -f4)
+    --secret-id docdb-secret-tutorial \
+    --query SecretString --output text)
 
 aws docdb create-db-cluster \
-    --db-cluster-identifier docdb-cluster \
+    --db-cluster-identifier docdb-gs-tutorial \
     --engine docdb \
     --engine-version 5.0.0 \
-    --master-username adminuser \
+    --master-username docdbadmin \
     --master-user-password "$DB_PASSWORD" \
-    --db-subnet-group-name docdb-subnet-group \
-    --storage-encrypted
+    --db-subnet-group-name docdb-subnet-tutorial \
+    --storage-encrypted \
+    --no-deletion-protection
 ```
 
-The `--storage-encrypted` flag enables encryption at rest for the cluster. This is a security best practice for all data stores.
+The `--storage-encrypted` flag enables encryption at rest for the cluster. The `--no-deletion-protection` flag allows you to delete the cluster during cleanup without an extra step.
 
 **Wait for the cluster to become available**
 
@@ -163,12 +164,12 @@ Creating a cluster takes a few minutes. Check its status with the following comm
 
 ```bash
 aws docdb describe-db-clusters \
-    --db-cluster-identifier docdb-cluster \
+    --db-cluster-identifier docdb-gs-tutorial \
     --query "DBClusters[0].Status" \
     --output text
 ```
 
-Wait until the status shows `available` before proceeding to the next step. This typically takes 3-5 minutes.
+Wait until the status shows `available` before proceeding to the next step. This typically takes 3-5 minutes. The companion script automates this with a polling loop that checks every 30 seconds.
 
 ## Create a DocumentDB instance
 
@@ -180,10 +181,10 @@ The following command creates a `db.t3.medium` instance in your cluster:
 
 ```bash
 aws docdb create-db-instance \
-    --db-instance-identifier docdb-instance \
+    --db-instance-identifier docdb-gs-tutorial-inst \
     --db-instance-class db.t3.medium \
     --engine docdb \
-    --db-cluster-identifier docdb-cluster
+    --db-cluster-identifier docdb-gs-tutorial
 ```
 
 The `db.t3.medium` instance type is eligible for the AWS Free Tier for new customers.
@@ -194,12 +195,12 @@ Creating an instance also takes a few minutes. Check its status with:
 
 ```bash
 aws docdb describe-db-instances \
-    --db-instance-identifier docdb-instance \
+    --db-instance-identifier docdb-gs-tutorial-inst \
     --query "DBInstances[0].DBInstanceStatus" \
     --output text
 ```
 
-Wait until the status shows `available` before proceeding. This typically takes 5-10 minutes.
+Wait until the status shows `available` before proceeding. This typically takes 5-10 minutes. The companion script automates this with a polling loop that checks every 30 seconds.
 
 ## Configure security and connectivity
 
@@ -211,7 +212,7 @@ Retrieve your cluster's endpoint:
 
 ```bash
 aws docdb describe-db-clusters \
-    --db-cluster-identifier docdb-cluster \
+    --db-cluster-identifier docdb-gs-tutorial \
     --query "DBClusters[0].Endpoint" \
     --output text
 ```
@@ -222,7 +223,7 @@ Retrieve the security group ID associated with your cluster:
 
 ```bash
 aws docdb describe-db-clusters \
-    --db-cluster-identifier docdb-cluster \
+    --db-cluster-identifier docdb-gs-tutorial \
     --query "DBClusters[0].VpcSecurityGroups[0].VpcSecurityGroupId" \
     --output text
 ```
@@ -274,12 +275,13 @@ Retrieve the password from Secrets Manager and connect to your cluster. Replace 
 
 ```bash
 DB_PASSWORD=$(aws secretsmanager get-secret-value \
-    --secret-id docdb-tutorial-credentials \
-    --query SecretString --output text | grep -o '"password":"[^"]*"' | cut -d'"' -f4)
+    --secret-id docdb-secret-tutorial \
+    --query SecretString --output text)
 
 mongosh --tls --tlsCAFile ~/certs/global-bundle.pem \
-    --host docdb-cluster.cluster-abcd1234xmpl.us-east-1.docdb.amazonaws.com:27017 \
-    --username adminuser \
+    --host docdb-gs-tutorial.cluster-abcd1234xmpl.us-east-1.docdb.amazonaws.com:27017 \
+    --retryWrites false \
+    --username docdbadmin \
     --password "${DB_PASSWORD}"
 ```
 
@@ -397,19 +399,17 @@ First, delete the instance:
 
 ```bash
 aws docdb delete-db-instance \
-    --db-instance-identifier docdb-instance
+    --db-instance-identifier docdb-gs-tutorial-inst
 ```
 
-Wait for the instance to be deleted before proceeding:
+Wait for the instance to be deleted before proceeding. You can use the `wait` command to block until deletion completes:
 
 ```bash
-aws docdb describe-db-instances \
-    --db-instance-identifier docdb-instance \
-    --query "DBInstances[0].DBInstanceStatus" \
-    --output text
+aws docdb wait db-instance-deleted \
+    --db-instance-identifier docdb-gs-tutorial-inst
 ```
 
-Run this command periodically until it returns an error indicating the instance was not found. This typically takes 5-10 minutes.
+This typically takes 5-10 minutes.
 
 **Delete the DB cluster**
 
@@ -417,22 +417,20 @@ Next, delete the cluster:
 
 ```bash
 aws docdb delete-db-cluster \
-    --db-cluster-identifier docdb-cluster \
+    --db-cluster-identifier docdb-gs-tutorial \
     --skip-final-snapshot
 ```
 
 The `--skip-final-snapshot` parameter tells DocumentDB not to create a final snapshot before deletion. In a production environment, you might want to create a final snapshot for backup purposes.
 
-Wait for the cluster to be deleted:
+Wait for the cluster to be deleted before deleting the subnet group. You can poll the status or wait until the describe command returns a "not found" error:
 
 ```bash
 aws docdb describe-db-clusters \
-    --db-cluster-identifier docdb-cluster \
+    --db-cluster-identifier docdb-gs-tutorial \
     --query "DBClusters[0].Status" \
     --output text
 ```
-
-Run this command periodically until it returns an error indicating the cluster was not found.
 
 **Delete the DB subnet group**
 
@@ -440,7 +438,7 @@ Delete the subnet group:
 
 ```bash
 aws docdb delete-db-subnet-group \
-    --db-subnet-group-name docdb-subnet-group
+    --db-subnet-group-name docdb-subnet-tutorial
 ```
 
 **Delete the secret**
@@ -449,7 +447,7 @@ Delete the secret from Secrets Manager:
 
 ```bash
 aws secretsmanager delete-secret \
-    --secret-id docdb-tutorial-credentials \
+    --secret-id docdb-secret-tutorial \
     --force-delete-without-recovery
 ```
 

@@ -48,3 +48,10 @@ y' | bash lambda-gettingstarted.sh
 ## Cost
 
 Free tier eligible. No charges expected for a single invocation.
+
+## Related docs
+
+- [Create your first Lambda function](https://docs.aws.amazon.com/lambda/latest/dg/getting-started.html)
+- [Lambda execution role](https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html)
+- [Deploy Node.js Lambda functions with .zip file archives](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-package.html)
+- [Deploy Python Lambda functions with .zip file archives](https://docs.aws.amazon.com/lambda/latest/dg/python-package.html)

@@ -272,6 +272,7 @@ CREATE_OUTPUT=$(aws lambda create-function \
     --runtime "$RUNTIME" \
     --role "$ROLE_ARN" \
     --handler "$HANDLER" \
+    --architectures x86_64 \
     --zip-file "fileb://${TEMP_DIR}/function.zip" \
     --query '[FunctionName, FunctionArn, Runtime, State]' \
     --output text 2>&1)
@@ -296,9 +297,11 @@ TEST_EVENT='{"length": 6, "width": 7}'
 echo "Invoking function with test event: ${TEST_EVENT}"
 echo ""
 
+echo "$TEST_EVENT" > "${TEMP_DIR}/test-event.json"
+
 INVOKE_OUTPUT=$(aws lambda invoke \
     --function-name "$FUNCTION_NAME" \
-    --payload "$TEST_EVENT" \
+    --payload "fileb://${TEMP_DIR}/test-event.json" \
     --cli-read-timeout 30 \
     "${TEMP_DIR}/response.json" 2>&1)
 echo "$INVOKE_OUTPUT"
@@ -326,14 +329,21 @@ echo "Log group: ${LOG_GROUP_NAME}"
 echo ""
 
 echo "Waiting for CloudWatch logs to be available..."
-sleep 5
 
-LOG_STREAMS=$(aws logs describe-log-streams \
-    --log-group-name "$LOG_GROUP_NAME" \
-    --order-by LastEventTime \
-    --descending \
-    --query 'logStreams[0].logStreamName' \
-    --output text 2>&1) || true
+LOG_STREAMS=""
+for i in $(seq 1 6); do
+    LOG_STREAMS=$(aws logs describe-log-streams \
+        --log-group-name "$LOG_GROUP_NAME" \
+        --order-by LastEventTime \
+        --descending \
+        --query 'logStreams[0].logStreamName' \
+        --output text 2>/dev/null) || true
+    if [ -n "$LOG_STREAMS" ] && [ "$LOG_STREAMS" != "None" ]; then
+        break
+    fi
+    LOG_STREAMS=""
+    sleep 5
+done
 
 if [ -n "$LOG_STREAMS" ] && [ "$LOG_STREAMS" != "None" ]; then
     echo "Latest log stream: ${LOG_STREAMS}"
