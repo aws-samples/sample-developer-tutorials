@@ -3,8 +3,6 @@
 # EMR Getting Started Tutorial Script
 # This script automates the steps in the Amazon EMR Getting Started tutorial
 
-# FIXED HIGH SEVERITY ISSUES:
-# 1. Added check for jq availability before attempting to use it for JSON parsing
 
 # Set up logging
 LOG_FILE="emr-tutorial.log"

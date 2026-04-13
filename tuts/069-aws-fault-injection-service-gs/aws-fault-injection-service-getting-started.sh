@@ -3,8 +3,6 @@
 # AWS FIS CPU Stress Test Tutorial Script
 # This script automates the steps in the AWS FIS CPU stress test tutorial
 
-# FIXED HIGH SEVERITY ISSUES:
-# 1. Date command compatibility issue - Replaced multiple date command attempts with a more robust
 #    approach using epoch time calculations that work across all Linux distributions
 
 # Set up logging

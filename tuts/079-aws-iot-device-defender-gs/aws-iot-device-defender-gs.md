@@ -143,10 +143,19 @@ aws iam put-role-policy \
           "iot:SetV2LoggingOptions",
           "iot:SetLoggingOptions",
           "iot:AddThingToThingGroup",
-          "iot:PublishToTopic",
-          "iam:PassRole"
+          "iot:PublishToTopic"
         ],
         "Resource": "*"
+      },
+      {
+        "Effect": "Allow",
+        "Action": "iam:PassRole",
+        "Resource": "*",
+        "Condition": {
+          "StringEquals": {
+            "iam:PassedToService": "iot.amazonaws.com"
+          }
+        }
       }
     ]
   }'

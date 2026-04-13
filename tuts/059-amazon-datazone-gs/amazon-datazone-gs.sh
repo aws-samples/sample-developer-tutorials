@@ -3,9 +3,6 @@
 # Amazon DataZone Getting Started Script
 # This script automates the steps in the Amazon DataZone Getting Started tutorial
 
-# FIXES FOR HIGH SEVERITY ISSUES:
-# 1. Enhanced IAM role permissions for DataZone domain execution
-# 2. Improved asset type availability verification before asset creation
 
 # Setup logging
 LOG_FILE="datazone_script_v3_fixed.log"

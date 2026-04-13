@@ -3,7 +3,6 @@
 # Amazon MQ Getting Started Script
 # This script creates an Amazon MQ broker and demonstrates connecting to it with a Java application
 
-# FIXES APPLIED:
 # - Added checks for Java and Maven installations before creating the Java application
 # - Generate secure password and store in AWS Secrets Manager instead of hardcoding
 

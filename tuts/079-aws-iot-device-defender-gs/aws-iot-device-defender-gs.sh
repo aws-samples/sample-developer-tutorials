@@ -90,10 +90,19 @@ create_iam_role() {
                             "iot:SetV2LoggingOptions",
                             "iot:SetLoggingOptions",
                             "iot:AddThingToThingGroup",
-                            "iot:PublishToTopic",
-                            "iam:PassRole"
+                            "iot:PublishToTopic"
                         ],
                         "Resource": "*"
+                    },
+                    {
+                        "Effect": "Allow",
+                        "Action": "iam:PassRole",
+                        "Resource": "*",
+                        "Condition": {
+                            "StringEquals": {
+                                "iam:PassedToService": "iot.amazonaws.com"
+                            }
+                        }
                     }
                 ]
             }'
@@ -331,7 +340,7 @@ if [ "$HAS_FINDINGS" = true ]; then
     
     # Use a more reliable date format for the API call
     START_TIME=$(date -u -d 'today' '+%Y-%m-%dT%H:%M:%S.000Z')
-    END_TIME=$(date -u -d 'tomorrow' '+%Y-%m-%dT%H:%M:%S.000Z')
+    END_TIME=$(date -u '+%Y-%m-%dT%H:%M:%S.000Z')
     
     MITIGATION_TASKS=$(aws iot list-audit-mitigation-actions-tasks \
       --start-time "$START_TIME" \
@@ -483,6 +492,12 @@ if [[ $CLEANUP_CHOICE =~ ^[Yy]$ ]]; then
     # Delete mitigation action
     echo "Deleting mitigation action..."
     aws iot delete-mitigation-action --action-name "EnableErrorLoggingAction"
+    
+    # Reset audit configuration
+    echo "Resetting IoT Device Defender audit configuration..."
+    aws iot update-account-audit-configuration \
+      --audit-check-configurations '{"LOGGING_DISABLED_CHECK":{"enabled":false}}' 2>&1 | grep -qi "error" && echo "Warning: Failed to disable audit check"
+    aws iot delete-account-audit-configuration --delete-scheduled-audits 2>&1 | grep -qi "error" && echo "Warning: Failed to delete audit configuration"
     
     # Delete SNS topic
     echo "Deleting SNS topic..."

@@ -9,7 +9,12 @@ set -e  # Exit on any error
 # Configuration
 SCRIPT_NAME="ECS Service Connect Tutorial"
 LOG_FILE="ecs-service-connect-tutorial-v4-default-vpc.log"
-REGION=$(aws configure get region)
+REGION=${AWS_DEFAULT_REGION:-${AWS_REGION:-$(aws configure get region 2>/dev/null)}}
+if [ -z "$REGION" ]; then
+    echo "ERROR: No AWS region configured."
+    echo "Set one with: aws configure set region us-east-1"
+    exit 1
+fi
 ENV_PREFIX="tutorial"
 CLUSTER_NAME="${ENV_PREFIX}-cluster"
 NAMESPACE_NAME="service-connect"
@@ -208,8 +213,23 @@ create_iam_roles() {
     if aws iam get-role --role-name ecsTaskExecutionRole >/dev/null 2>&1; then
         log "IAM role ecsTaskExecutionRole exists"
     else
-        log "ERROR: ecsTaskExecutionRole does not exist. Please create it first."
-        exit 1
+        log "Creating ecsTaskExecutionRole..."
+        aws iam create-role \
+            --role-name ecsTaskExecutionRole \
+            --assume-role-policy-document '{
+                "Version": "2012-10-17",
+                "Statement": [{
+                    "Effect": "Allow",
+                    "Principal": {"Service": "ecs-tasks.amazonaws.com"},
+                    "Action": "sts:AssumeRole"
+                }]
+            }' >/dev/null 2>&1
+        aws iam attach-role-policy \
+            --role-name ecsTaskExecutionRole \
+            --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy >/dev/null 2>&1
+        track_resource "ROLE:ecsTaskExecutionRole"
+        log "Created ecsTaskExecutionRole"
+        sleep 10
     fi
     
     # Check if ecsTaskRole exists, create if not
@@ -263,7 +283,7 @@ create_task_definition() {
     "containerDefinitions": [
         {
             "name": "nginx",
-            "image": "nginx:latest",
+            "image": "public.ecr.aws/docker/library/nginx:latest",
             "portMappings": [
                 {
                     "containerPort": 80,
@@ -447,33 +467,38 @@ cleanup_resources() {
         
         case "$resource_type" in
             "SERVICE")
-                # Scale service to 0 first
-                aws ecs update-service --cluster "$CLUSTER_NAME" --service "$resource_id" --desired-count 0 >/dev/null 2>&1 || true
-                # Wait for service to scale down
+                aws ecs update-service --cluster "$CLUSTER_NAME" --service "$resource_id" --desired-count 0 2>&1 | grep -qi "error" && log "Warning: Failed to scale down service $resource_id"
                 aws ecs wait services-stable --cluster "$CLUSTER_NAME" --services "$resource_id" 2>/dev/null || true
-                # Delete service
-                aws ecs delete-service --cluster "$CLUSTER_NAME" --service "$resource_id" >/dev/null 2>&1 || true
+                aws ecs delete-service --cluster "$CLUSTER_NAME" --service "$resource_id" --force 2>&1 | grep -qi "error" && log "Warning: Failed to delete service $resource_id"
                 ;;
             "TASK_DEF")
-                # Deregister all revisions of the task definition
-                TASK_DEF_ARNS=$(aws ecs list-task-definitions --family-prefix "$resource_id" --query 'taskDefinitionArns' --output text)
+                TASK_DEF_ARNS=$(aws ecs list-task-definitions --family-prefix "$resource_id" --query 'taskDefinitionArns' --output text 2>/dev/null)
                 for arn in $TASK_DEF_ARNS; do
                     aws ecs deregister-task-definition --task-definition "$arn" >/dev/null 2>&1 || true
                 done
                 ;;
+            "ROLE")
+                aws iam detach-role-policy --role-name "$resource_id" --policy-arn "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy" 2>/dev/null || true
+                aws iam delete-role --role-name "$resource_id" 2>&1 | grep -qi "error" && log "Warning: Failed to delete role $resource_id"
+                ;;
             "IAM_ROLE")
-                # Detach policies and delete role
-                aws iam detach-role-policy --role-name "$resource_id" --policy-arn "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy" >/dev/null 2>&1 || true
-                aws iam delete-role --role-name "$resource_id" >/dev/null 2>&1 || true
+                aws iam detach-role-policy --role-name "$resource_id" --policy-arn "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy" 2>/dev/null || true
+                aws iam delete-role --role-name "$resource_id" 2>&1 | grep -qi "error" && log "Warning: Failed to delete role $resource_id"
                 ;;
             "CLUSTER")
-                aws ecs delete-cluster --cluster "$resource_id" >/dev/null 2>&1 || true
+                aws ecs delete-cluster --cluster "$resource_id" 2>&1 | grep -qi "error" && log "Warning: Failed to delete cluster $resource_id"
                 ;;
             "SG")
-                aws ec2 delete-security-group --group-id "$resource_id" >/dev/null 2>&1 || true
+                for attempt in 1 2 3 4 5; do
+                    if aws ec2 delete-security-group --group-id "$resource_id" 2>/dev/null; then
+                        break
+                    fi
+                    log "Security group $resource_id still has dependencies, retrying in 30s ($attempt/5)..."
+                    sleep 30
+                done
                 ;;
             "LOG_GROUP")
-                aws logs delete-log-group --log-group-name "$resource_id" >/dev/null 2>&1 || true
+                aws logs delete-log-group --log-group-name "$resource_id" 2>&1 | grep -qi "error" && log "Warning: Failed to delete log group $resource_id"
                 ;;
             "NAMESPACE")
                 # First, delete any services in the namespace

@@ -5,6 +5,7 @@ This tutorial guides you through the process of creating and using an Amazon Doc
 ## Topics
 
 - [Prerequisites](#prerequisites)
+- [Store credentials in Secrets Manager](#store-credentials-in-secrets-manager)
 - [Create a DB subnet group](#create-a-db-subnet-group)
 - [Create a DocumentDB cluster](#create-a-documentdb-cluster)
 - [Create a DocumentDB instance](#create-a-documentdb-instance)
@@ -19,15 +20,49 @@ This tutorial guides you through the process of creating and using an Amazon Doc
 
 Before you begin this tutorial, make sure you have the following:
 
-1. The AWS CLI. If you need to install it, follow the [AWS CLI installation guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
-2. Configured your AWS CLI with appropriate credentials. Run `aws configure` if you haven't set up your credentials yet.
-3. MongoDB Shell (mongosh) installed on your local machine. To install the MongoDB Shell, follow the [Install mongosh](https://www.mongodb.com/docs/mongodb-shell/install/) instructions.
-4. [Sufficient permissions](https://docs.aws.amazon.com/documentdb/latest/developerguide/security-iam.html) to create and manage Amazon DocumentDB resources in your AWS account.
-5. A default VPC in your AWS account with at least two subnets in different Availability Zones.
+- The AWS CLI. If you need to install it, follow the [AWS CLI installation guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
+- Configured your AWS CLI with appropriate credentials. Run `aws configure` if you haven't set up your credentials yet.
+- MongoDB Shell (`mongosh`) installed on your local machine. To install the MongoDB Shell, follow the [Install mongosh](https://www.mongodb.com/docs/mongodb-shell/install/) instructions.
+- [Sufficient permissions](https://docs.aws.amazon.com/documentdb/latest/developerguide/security-iam.html) to create and manage Amazon DocumentDB, Secrets Manager, and EC2 resources in your AWS account.
+- A default VPC in your AWS account with at least two subnets in different Availability Zones.
 
 **Estimated time to complete:** 30-45 minutes
 
 **Estimated cost:** If you're eligible for the AWS Free Tier, you can run the resources in this tutorial for up to 750 hours per month for the first 6 months at no cost. Outside the Free Tier, the resources in this tutorial cost approximately $0.08 per hour. Remember to follow the cleanup instructions to avoid ongoing charges.
+
+## Store credentials in Secrets Manager
+
+Before creating the cluster, generate a secure password and store it in AWS Secrets Manager. This avoids passing plaintext passwords in CLI commands.
+
+**Generate a password and create a secret**
+
+```bash
+DB_PASSWORD=$(openssl rand -base64 16)
+aws secretsmanager create-secret \
+    --name docdb-tutorial-credentials \
+    --description "Credentials for DocumentDB tutorial" \
+    --secret-string "{\"username\":\"adminuser\",\"password\":\"${DB_PASSWORD}\"}"
+```
+
+This command generates a random password and stores it along with the username in Secrets Manager. You should see output similar to this:
+
+```json
+{
+    "ARN": "arn:aws:secretsmanager:us-east-1:123456789012:secret:docdb-tutorial-credentials-AbCdEf",
+    "Name": "docdb-tutorial-credentials",
+    "VersionId": "a1b2c3d4-xmpl-5678-abcd-ee1234567890"
+}
+```
+
+**Retrieve the password for later use**
+
+When you need the password for subsequent commands, retrieve it from Secrets Manager:
+
+```bash
+DB_PASSWORD=$(aws secretsmanager get-secret-value \
+    --secret-id docdb-tutorial-credentials \
+    --query SecretString --output text | grep -o '"password":"[^"]*"' | cut -d'"' -f4)
+```
 
 ## Create a DB subnet group
 
@@ -38,20 +73,26 @@ Amazon DocumentDB requires a DB subnet group that includes subnets in at least t
 First, identify your default VPC:
 
 ```bash
-aws ec2 describe-vpcs --filters "Name=isDefault,Values=true" --query "Vpcs[0].VpcId" --output text
+aws ec2 describe-vpcs \
+    --filters "Name=isDefault,Values=true" \
+    --query "Vpcs[0].VpcId" \
+    --output text
 ```
 
 This command returns the ID of your default VPC. Next, find subnets in this VPC. Replace `vpc-abcd1234` with your actual VPC ID.
 
 ```bash
-aws ec2 describe-subnets --filters "Name=vpc-id,Values=vpc-abcd1234" --query "Subnets[*].[SubnetId,AvailabilityZone]" --output text
+aws ec2 describe-subnets \
+    --filters "Name=vpc-id,Values=vpc-abcd1234" \
+    --query "Subnets[*].[SubnetId,AvailabilityZone]" \
+    --output text
 ```
 
-The output will show subnet IDs and their Availability Zones. You'll need to select subnets from at least two different Availability Zones.
+The output shows subnet IDs and their Availability Zones. You need to select subnets from at least two different Availability Zones.
 
 **Create the DB subnet group**
 
-Now, create a DB subnet group using subnets from different Availability Zones. Replace `subnet-abcd1234` and `subnet-efgh5678` with actual subnet IDs from different Availability Zones.
+Create a DB subnet group using subnets from different Availability Zones. Replace `subnet-abcd1234` and `subnet-efgh5678` with actual subnet IDs from different Availability Zones.
 
 ```bash
 aws docdb create-db-subnet-group \
@@ -60,7 +101,7 @@ aws docdb create-db-subnet-group \
     --subnet-ids subnet-abcd1234 subnet-efgh5678
 ```
 
-This command creates a subnet group that Amazon DocumentDB will use to deploy your cluster.
+This command creates a subnet group that Amazon DocumentDB uses to deploy your cluster.
 
 You should see output similar to this:
 
@@ -93,40 +134,32 @@ You should see output similar to this:
 
 ## Create a DocumentDB cluster
 
-With the subnet group in place, you can now create your DocumentDB cluster.
-
-**Store credentials securely**
-
-For better security, let's store our database credentials in AWS Secrets Manager instead of using them directly in commands. Replace `YourStrongPassword123!` with a secure password of your choice.
-
-```bash
-aws secretsmanager create-secret \
-    --name docdb-tutorial-credentials \
-    --description "Credentials for DocumentDB tutorial" \
-    --secret-string '{"username":"adminuser","password":"YourStrongPassword123!"}'
-```
-
-This command stores your credentials securely and returns information about the created secret.
+With the subnet group in place, you can now create your DocumentDB cluster. The following command creates a cluster with engine version 5.0.0 and encryption at rest enabled.
 
 **Create the cluster**
 
-The following command creates a DocumentDB cluster with version 5.0.0. Replace `YourStrongPassword123!` with the same password you stored in Secrets Manager.
+Retrieve the password from Secrets Manager and pass it to the create command:
 
 ```bash
+DB_PASSWORD=$(aws secretsmanager get-secret-value \
+    --secret-id docdb-tutorial-credentials \
+    --query SecretString --output text | grep -o '"password":"[^"]*"' | cut -d'"' -f4)
+
 aws docdb create-db-cluster \
     --db-cluster-identifier docdb-cluster \
     --engine docdb \
     --engine-version 5.0.0 \
     --master-username adminuser \
-    --master-user-password YourStrongPassword123! \
-    --db-subnet-group-name docdb-subnet-group
+    --master-user-password "$DB_PASSWORD" \
+    --db-subnet-group-name docdb-subnet-group \
+    --storage-encrypted
 ```
 
-In a production environment, you would retrieve this password directly from Secrets Manager rather than typing it in the command.
+The `--storage-encrypted` flag enables encryption at rest for the cluster. This is a security best practice for all data stores.
 
 **Wait for the cluster to become available**
 
-Creating a cluster takes a few minutes. You can check its status with the following command:
+Creating a cluster takes a few minutes. Check its status with the following command:
 
 ```bash
 aws docdb describe-db-clusters \
@@ -143,7 +176,7 @@ A DocumentDB cluster requires at least one instance to process requests. Let's c
 
 **Create the instance**
 
-The following command creates a db.t3.medium instance in your cluster:
+The following command creates a `db.t3.medium` instance in your cluster:
 
 ```bash
 aws docdb create-db-instance \
@@ -153,7 +186,7 @@ aws docdb create-db-instance \
     --db-cluster-identifier docdb-cluster
 ```
 
-The db.t3.medium instance type is eligible for the AWS Free Tier for new customers.
+The `db.t3.medium` instance type is eligible for the AWS Free Tier for new customers.
 
 **Wait for the instance to become available**
 
@@ -174,7 +207,7 @@ Before connecting to your cluster, you need to configure security and download t
 
 **Get cluster endpoint and security group information**
 
-First, retrieve your cluster's endpoint and security group ID:
+Retrieve your cluster's endpoint:
 
 ```bash
 aws docdb describe-db-clusters \
@@ -185,6 +218,8 @@ aws docdb describe-db-clusters \
 
 This returns the endpoint you'll use to connect to your cluster. Save this value for later use.
 
+Retrieve the security group ID associated with your cluster:
+
 ```bash
 aws docdb describe-db-clusters \
     --db-cluster-identifier docdb-cluster \
@@ -192,11 +227,11 @@ aws docdb describe-db-clusters \
     --output text
 ```
 
-This returns the security group ID associated with your cluster. Save this value as well.
+Save this value as well.
 
 **Update security group to allow MongoDB connections**
 
-To connect to your cluster, you need to allow inbound traffic on port 27017 (the default MongoDB port) from your IP address:
+To connect to your cluster, allow inbound traffic on port 27017 (the default MongoDB port) from your IP address. Replace `sg-abcd1234` with your security group ID.
 
 ```bash
 MY_IP=$(curl -s https://checkip.amazonaws.com)
@@ -207,7 +242,7 @@ aws ec2 authorize-security-group-ingress \
     --cidr ${MY_IP}/32
 ```
 
-Replace `sg-abcd1234` with your security group ID. This command automatically detects your current IP address and allows connections only from that address.
+This command detects your current IP address and allows connections only from that address.
 
 > **Note:** If you have a dynamic IP address that changes frequently, you may need to update this security group rule whenever your IP changes. For production environments, consider using AWS VPN or AWS Direct Connect for more stable connectivity.
 
@@ -215,17 +250,13 @@ Replace `sg-abcd1234` with your security group ID. This command automatically de
 
 Amazon DocumentDB requires TLS connections. Download the CA certificate:
 
-First, install wget on macOS (if needed):
-```bash
-brew install wget
-```
-Second, use Linux/Windows with wget to download the CA certificate.
 ```bash
 mkdir -p ~/certs
-wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -O ~/certs/global-bundle.pem
+curl -sS -o ~/certs/global-bundle.pem \
+    https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
 ```
 
-This certificate will be used to establish a secure connection to your cluster. Verify the certificate was downloaded correctly:
+Verify the certificate was downloaded:
 
 ```bash
 ls -la ~/certs/global-bundle.pem
@@ -235,48 +266,27 @@ You should see the certificate file in the output.
 
 ## Connect to your cluster
 
-Since DocumentDB clusters are only accessible from within the VPC, we'll use AWS Systems Manager Session Manager to connect through the EC2 instance.
+With the security group configured and the certificate downloaded, you can connect to your cluster using the MongoDB Shell.
 
-**Get your EC2 Instance ID**
-Find the Instance ID of the EC2 instance that's created before:
-```bash
-aws ec2 describe-instances \
-   --filters "Name=tag:Name,Values=DocumentDB-Tutorial-Instance" \
-   --query "Reservations[0].Instances[0].InstanceId" \
-   --output text
-```
+**Retrieve your password and connect**
 
-Save the instance ID for the following use.
-
-**Start Session Manager**
-Replace `YOUR_INSTANCE_ID` with the actual Instance ID from the previous step.
-```bash
-aws ssm start-session --target YOUR_INSTANCE_ID
-```
-
-**Set up certificate for SSM user**
-Once in the session (you'll see `sh-4.2$` prompt), run the following commands:
-```bash
-sudo mkdir -p /home/ssm-user/certs
-sudo cp /root/certs/global-bundle.pem /home/ssm-user/certs/
-sudo chown ssm-user:ssm-user /home/ssm-user/certs/global-bundle.pem
-```
-
-**Connect to MongoDB Shell**
-
-Use the following command to connect to your cluster. Replace `/home/ssm-user/certs/global-bundle.pem` with the certificate path that you created in the previous step. Replace the host with your actual cluster endpoint and the password with your actual password.
+Retrieve the password from Secrets Manager and connect to your cluster. Replace the `--host` value with your actual cluster endpoint from the previous step.
 
 ```bash
-mongosh --tls --tlsCAFile /home/ssm-user/certs/global-bundle.pem \
-    --host docdb-cluster.cluster-abcd1234.us-east-1.docdb.amazonaws.com:27017 \
+DB_PASSWORD=$(aws secretsmanager get-secret-value \
+    --secret-id docdb-tutorial-credentials \
+    --query SecretString --output text | grep -o '"password":"[^"]*"' | cut -d'"' -f4)
+
+mongosh --tls --tlsCAFile ~/certs/global-bundle.pem \
+    --host docdb-cluster.cluster-abcd1234xmpl.us-east-1.docdb.amazonaws.com:27017 \
     --username adminuser \
-    --password YourStrongPassword123! \
-   --retryWrites=false
+    --password "${DB_PASSWORD}"
 ```
 
 If the connection is successful, you'll see the MongoDB Shell prompt: `test>`.
 
 **Verify connection**
+
 ```javascript
 db.runCommand({connectionStatus: 1})
 ```
@@ -293,7 +303,7 @@ Insert a simple document into a collection:
 db.collection.insertOne({"hello":"DocumentDB"})
 ```
 
-This command inserts a document with a field "hello" and value "DocumentDB" into a collection named "collection". You should see output confirming the insertion with an ObjectId.
+This command inserts a document with a field `hello` and value `DocumentDB` into a collection named `collection`. You should see output confirming the insertion with an ObjectId.
 
 **Read the document**
 
@@ -322,17 +332,17 @@ db.profiles.insertMany([
 ])
 ```
 
-This creates a new collection called "profiles" and inserts four documents. You should see output confirming the insertion of all four documents.
+This creates a new collection called `profiles` and inserts four documents. You should see output confirming the insertion of all four documents.
 
 **Query all documents in a collection**
 
-Retrieve all documents in the profiles collection:
+Retrieve all documents in the `profiles` collection:
 
 ```javascript
 db.profiles.find()
 ```
 
-This returns all documents in the profiles collection. You should see all four profiles you inserted.
+This returns all documents in the `profiles` collection. You should see all four profiles you inserted.
 
 **Query with a filter**
 
@@ -342,7 +352,7 @@ Find a specific document using a filter:
 db.profiles.find({name: "Katie"})
 ```
 
-This returns only the document where the name field equals "Katie". You should see just Katie's profile in the output.
+This returns only the document where the `name` field equals `Katie`. You should see just Katie's profile in the output.
 
 **Find and modify a document**
 
@@ -374,17 +384,12 @@ When you're done exploring, exit the MongoDB Shell:
 ```javascript
 exit
 ```
-**Exit the SSM Session**
-To disconnect and return to your local terminal, run the following command:
-```bash
-exit
-```
 
 This returns you to your system command prompt.
 
 ## Clean up resources
 
-When you're finished with this tutorial, you should delete the resources to avoid incurring additional charges.
+When you're finished with this tutorial, delete the resources to avoid incurring additional charges.
 
 **Delete the DB instance**
 
@@ -440,7 +445,7 @@ aws docdb delete-db-subnet-group \
 
 **Delete the secret**
 
-Finally, delete the secret from Secrets Manager:
+Delete the secret from Secrets Manager:
 
 ```bash
 aws secretsmanager delete-secret \
@@ -448,34 +453,44 @@ aws secretsmanager delete-secret \
     --force-delete-without-recovery
 ```
 
-This completes the cleanup process. All resources created during this tutorial have now been deleted, and you won't incur any further charges.
+**Revoke the security group rule**
+
+Remove the inbound rule you added to allow MongoDB connections. Replace `sg-abcd1234` with your security group ID:
+
+```bash
+aws ec2 revoke-security-group-ingress \
+    --group-id sg-abcd1234 \
+    --protocol tcp \
+    --port 27017 \
+    --cidr 203.0.113.75/32
+```
+
+This completes the cleanup process. All resources created during this tutorial have been deleted, and you won't incur any further charges.
 
 ## Going to production
 
-This tutorial is designed for learning purposes and demonstrates basic Amazon DocumentDB functionality. For production deployments, consider the following additional best practices:
+This tutorial is designed for learning purposes and demonstrates basic Amazon DocumentDB functionality. For production deployments, consider the following additional best practices.
 
-### Security enhancements
+**Security enhancements**
 
-1. **IAM authentication** - Use [IAM authentication](https://docs.aws.amazon.com/documentdb/latest/developerguide/iam-auth.html) instead of password authentication for stronger security.
-2. **VPC endpoints** - Use [VPC endpoints](https://docs.aws.amazon.com/documentdb/latest/developerguide/vpc-endpoints.html) to keep traffic within the AWS network.
-3. **Encryption** - Ensure [encryption at rest](https://docs.aws.amazon.com/documentdb/latest/developerguide/encryption-at-rest.html) is enabled for all sensitive data.
-4. **Audit logging** - Enable [audit logging](https://docs.aws.amazon.com/documentdb/latest/developerguide/event-auditing.html) to track database activities.
+- Use IAM authentication instead of password authentication for stronger security.
+- Use VPC endpoints to keep traffic within the AWS network.
+- Enable audit logging to track database activities.
+- Rotate credentials stored in Secrets Manager on a regular schedule.
 
-### Architecture improvements
+**Architecture improvements**
 
-1. **High availability** - Deploy multiple instances across different Availability Zones for [high availability](https://docs.aws.amazon.com/documentdb/latest/developerguide/replication.html).
-2. **Read scaling** - Add read replicas to distribute read operations and improve performance.
-3. **Monitoring** - Set up [CloudWatch monitoring](https://docs.aws.amazon.com/documentdb/latest/developerguide/cloud-watch.html) for your cluster.
-4. **Backup strategy** - Implement a comprehensive [backup and restore strategy](https://docs.aws.amazon.com/documentdb/latest/developerguide/backup_restore.html).
-
-For more information on building production-ready applications, refer to the [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/) and [Amazon DocumentDB Best Practices](https://docs.aws.amazon.com/documentdb/latest/developerguide/best-practices.html).
+- Deploy multiple instances across different Availability Zones for high availability.
+- Add read replicas to distribute read operations and improve performance.
+- Set up CloudWatch monitoring for your cluster.
+- Implement a comprehensive backup and restore strategy.
 
 ## Next steps
 
 Now that you've learned the basics of Amazon DocumentDB, you can explore more advanced features:
 
-1. [Managing Amazon DocumentDB](https://docs.aws.amazon.com/documentdb/latest/developerguide/managing-documentdb.html) - Learn how to manage your DocumentDB clusters and instances.
-2. [Scaling Amazon DocumentDB](https://docs.aws.amazon.com/documentdb/latest/developerguide/operational_tasks.html) - Discover how to scale your clusters to handle more traffic.
-3. [Backing up and restoring](https://docs.aws.amazon.com/documentdb/latest/developerguide/backup_restore.html) - Learn about backup and restore options for your data.
-4. [Security best practices](https://docs.aws.amazon.com/documentdb/latest/developerguide/security.html) - Implement security best practices for your DocumentDB deployments.
-5. [Performance optimization](https://docs.aws.amazon.com/documentdb/latest/developerguide/performance-tips.html) - Optimize your cluster for better performance.
+- [Managing Amazon DocumentDB clusters](https://docs.aws.amazon.com/documentdb/latest/developerguide/db-cluster-manage.html) - Learn how to manage your DocumentDB clusters and instances.
+- [Scaling Amazon DocumentDB](https://docs.aws.amazon.com/documentdb/latest/developerguide/operational_tasks.html) - Discover how to scale your clusters to handle more traffic.
+- [Backing up and restoring](https://docs.aws.amazon.com/documentdb/latest/developerguide/backup_restore.html) - Learn about backup and restore options for your data.
+- [Security best practices](https://docs.aws.amazon.com/documentdb/latest/developerguide/security.html) - Implement security best practices for your DocumentDB deployments.
+- [Performance optimization](https://docs.aws.amazon.com/documentdb/latest/developerguide/performance-tips.html) - Optimize your cluster for better performance.

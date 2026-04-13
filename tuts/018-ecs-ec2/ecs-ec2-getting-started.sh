@@ -5,10 +5,6 @@
 # registering a task definition, and creating a service using the EC2 launch type.
 # Updated to match the tutorial draft with nginx web server and service creation.
 #
-# FIXES APPLIED:
-# - HIGH SEVERITY: Improved cleanup error handling with proper logging and retry logic
-# - MEDIUM SEVERITY: Dynamic region detection for CloudWatch logs
-# - LOW SEVERITY: Enhanced IAM role creation timing
 # - UPDATED: Changed from sleep task to nginx web server with service
 
 set -e  # Exit on any error

@@ -3,10 +3,6 @@
 # Amazon Lightsail Getting Started CLI Script
 # This script demonstrates how to create and manage Lightsail resources using the AWS CLI
 
-# FIXES APPLIED:
-# 1. Added polling mechanism to check disk state before attaching
-# 2. Added polling mechanism to check snapshot state before proceeding with cleanup
-# 3. Set AWS_REGION variable to us-west-2 for consistent region usage
 
 # Set AWS region
 export AWS_REGION="us-west-2"

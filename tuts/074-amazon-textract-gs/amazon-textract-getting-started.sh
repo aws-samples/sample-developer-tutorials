@@ -3,10 +3,6 @@
 # Amazon Textract Getting Started Tutorial Script
 # This script demonstrates how to use Amazon Textract to analyze document text
 
-# FIXES APPLIED:
-# 1. Added proper exit code checking for AWS CLI commands
-# 2. Included temporary JSON files in cleanup_on_error function
-# 3. Added validation for AWS region configuration and Textract service availability
 
 # Set up logging
 LOG_FILE="textract-tutorial.log"

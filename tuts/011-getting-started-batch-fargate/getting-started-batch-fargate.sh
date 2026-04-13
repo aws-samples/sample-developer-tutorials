@@ -3,9 +3,6 @@
 # AWS Batch Fargate Getting Started Script - Fixed Version
 # This script demonstrates creating AWS Batch resources with Fargate orchestration
 #
-# HIGH SEVERITY FIXES APPLIED:
-# 1. Added IAM role propagation delay after role creation
-# 2. Added resource state validation before deletion attempts
 
 set -e  # Exit on any error
 

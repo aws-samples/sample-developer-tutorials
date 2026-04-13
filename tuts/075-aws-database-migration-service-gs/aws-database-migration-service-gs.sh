@@ -4,18 +4,6 @@
 # This script automates the steps in the AWS DMS Getting Started tutorial
 # https://docs.aws.amazon.com/dms/latest/userguide/CHAP_GettingStarted.html
 
-# FIXES FOR HIGH SEVERITY ISSUES:
-# 1. Added creation of a custom DB subnet group for RDS instances instead of using the default one
-# 2. Modified the EC2 connection instructions to avoid displaying the password in plain text
-# 3. Updated MariaDB version from 10.6.14 to 10.6.22 (latest available in 10.6 series)
-# 4. Made data population and migration steps optional to allow infrastructure-only setup
-# 5. Added VPC limit checking with option to use existing VPC when limit is reached
-# 6. Moved optional step prompts to be contextual (just before each optional step)
-# 7. Fixed password generation to exclude RDS-invalid characters (/, @, ", space)
-# 8. Fixed PostgreSQL version from 16.1 to 16.9 (available version)
-# 9. Improved VPC and subnet selection with numbered menus
-# 10. Added EC2 instance type validation and automatic selection based on AZ availability
-# 11. Changed default instance type from t2.xlarge to smaller, more available types
 
 # Set up logging
 LOG_FILE="dms_tutorial_$(date +%Y%m%d_%H%M%S).log"
