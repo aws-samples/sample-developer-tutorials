@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Shared S3 bucket for tutorial artifacts. Deploy once, reference from other
+  tutorial stacks via cross-stack export. Empty the bucket before deleting.
+
+Resources:
+  TutorialBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionRule:
+              ServerSideEncryptionByDefault:
+                SSEAlgorithm: AES256
+      Tags:
+        - Key: tutorial
+          Value: shared-bucket
+
+Outputs:
+  BucketName:
+    Description: Name of the shared tutorial bucket
+    Value: !Ref TutorialBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-BucketName'
+  BucketArn:
+    Description: ARN of the shared tutorial bucket
+    Value: !GetAtt TutorialBucket.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-BucketArn'
