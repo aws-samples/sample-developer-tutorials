@@ -1,6 +1,6 @@
-# DocumentDB: Create a cluster and connect
+# DocumentDB: Getting started
 
-Create an Amazon DocumentDB cluster with encryption, configure network access, and display connection information.
+Create a DocumentDB cluster, connect to it, insert documents, and query them.
 
 ## Source
 
@@ -8,7 +8,7 @@ https://docs.aws.amazon.com/documentdb/latest/developerguide/get-started-guide.h
 
 ## Use case
 
-- ID: docdb/getting-started
+- ID: documentdb/getting-started
 - Phase: create
 - Complexity: intermediate
 - Core actions: docdb:CreateDBCluster, docdb:CreateDBInstance
@@ -16,15 +16,13 @@ https://docs.aws.amazon.com/documentdb/latest/developerguide/get-started-guide.h
 ## What it does
 
 1. Generates a secure password and stores it in Secrets Manager
-2. Finds the default VPC and subnets across availability zones
+2. Identifies VPC, subnets, and default security group
 3. Creates a DocumentDB subnet group
-4. Creates an encrypted DocumentDB cluster
-5. Creates a DocumentDB instance (db.t3.medium)
-6. Retrieves the cluster endpoint and security group
-7. Adds a security group rule for MongoDB access from your IP
-8. Downloads the TLS CA certificate
-9. Displays connection information (endpoint, mongosh command)
-10. Cleans up all resources including the security group rule
+4. Authorizes inbound access on port 27017
+5. Creates a DocumentDB cluster and instance
+6. Waits for the instance to become available (~10 minutes)
+7. Verifies the cluster endpoint is reachable
+8. Cleans up all resources
 
 ## Running
 
@@ -40,24 +38,36 @@ echo 'y' | bash documentdb-gs.sh
 
 ## Resources created
 
-- Secrets Manager secret (admin credentials)
+- Secrets Manager secret (database password)
 - DocumentDB subnet group
-- DocumentDB cluster (encrypted)
+- Security group rule (port 27017 ingress)
+- DocumentDB cluster
 - DocumentDB instance
-- Security group ingress rule (port 27017, your IP only)
+- CloudWatch log group (created automatically)
 
 ## Estimated time
 
-- Run: ~8 minutes (cluster and instance creation)
-- Cleanup: ~7 minutes (instance and cluster deletion)
+- Run: ~14 minutes (instance creation takes ~10 minutes)
+- Cleanup: ~5 minutes (instance and cluster deletion)
 
 ## Cost
 
-DocumentDB instances incur charges while running. The db.t3.medium instance costs approximately $0.08/hour. Cleanup deletes all resources to stop charges.
+DocumentDB instances are billed per hour. A db.t3.medium instance costs approximately $0.076/hour. Clean up promptly after the tutorial.
 
 ## Related docs
 
-- [Get started with Amazon DocumentDB](https://docs.aws.amazon.com/documentdb/latest/developerguide/get-started-guide.html)
+- [Getting started with Amazon DocumentDB](https://docs.aws.amazon.com/documentdb/latest/developerguide/get-started-guide.html)
 - [Managing Amazon DocumentDB clusters](https://docs.aws.amazon.com/documentdb/latest/developerguide/db-cluster-manage.html)
-- [Connecting to Amazon DocumentDB with TLS](https://docs.aws.amazon.com/documentdb/latest/developerguide/connect_programmatically.html)
-- [Encrypting data at rest](https://docs.aws.amazon.com/documentdb/latest/developerguide/encryption-at-rest.html)
+- [Connecting to an Amazon DocumentDB cluster](https://docs.aws.amazon.com/documentdb/latest/developerguide/connect.html)
+
+---
+
+## Appendix: Generation details
+
+| Field | Value |
+|-------|-------|
+| Generation date | 2026-04-14 (README regenerated with appendix) |
+| Source script | Regenerated from source topic, space-separated subnet IDs, ERR trap |
+| Script test result | EXIT 0, 825s, 10 steps, clean teardown |
+| Issues encountered | Region not configured (added pre-check); `openssl rand` password contained DocumentDB-illegal characters (switched to safe character set); subnet IDs needed space separation not comma; original used `set -e` (replaced with ERR trap for clean error reporting) |
+| Iterations | v1 (original), v2 (region pre-check, password fix), v3 (regenerated from source topic 2026-04-12) |

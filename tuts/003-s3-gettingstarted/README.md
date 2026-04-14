@@ -1,6 +1,6 @@
-# S3: Store and retrieve objects
+# S3: Getting started
 
-Create an S3 bucket, upload and download objects, enable versioning, configure encryption, and clean up.
+Create an S3 bucket, upload objects, copy between buckets, list contents, and clean up.
 
 ## Source
 
@@ -15,15 +15,12 @@ https://docs.aws.amazon.com/AmazonS3/latest/userguide/GetStartedWithS3.html
 
 ## What it does
 
-1. Creates an S3 bucket with a random name
-2. Uploads a sample text file
-3. Downloads and displays the file
-4. Copies the object to a folder prefix
-5. Enables versioning and uploads a second version
-6. Configures SSE-S3 encryption and blocks all public access
-7. Tags the bucket
-8. Lists objects and object versions
-9. Cleans up all objects and the bucket
+1. Creates two S3 buckets (source and destination)
+2. Uploads a text file to the source bucket
+3. Downloads the file and verifies contents
+4. Copies the file to the destination bucket
+5. Lists objects in both buckets
+6. Deletes all objects and both buckets
 
 ## Running
 
@@ -39,8 +36,8 @@ echo 'y' | bash s3-gettingstarted.sh
 
 ## Resources created
 
-- S3 bucket (with versioning, encryption, public access block, tags)
-- Objects (sample file, copy, second version)
+- 2 S3 buckets
+- 1 text file (uploaded as S3 object)
 
 ## Estimated time
 
@@ -49,11 +46,23 @@ echo 'y' | bash s3-gettingstarted.sh
 
 ## Cost
 
-Free tier eligible. Minimal charges for a few small objects.
+Free tier eligible. No charges expected for a few objects.
 
 ## Related docs
 
 - [Getting started with Amazon S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide/GetStartedWithS3.html)
-- [Using versioning in S3 buckets](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Versioning.html)
-- [Setting default server-side encryption](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucket-encryption.html)
-- [Blocking public access to your S3 storage](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html)
+- [Creating a bucket](https://docs.aws.amazon.com/AmazonS3/latest/userguide/creating-bucket.html)
+- [Uploading objects](https://docs.aws.amazon.com/AmazonS3/latest/userguide/upload-objects.html)
+- [Copying objects](https://docs.aws.amazon.com/AmazonS3/latest/userguide/copy-object.html)
+
+---
+
+## Appendix: Generation details
+
+| Field | Value |
+|-------|-------|
+| Generation date | 2026-04-14 (README regenerated with appendix) |
+| Source script | Regenerated from source topic, 332 lines |
+| Script test result | EXIT 0, 16s, 9 steps, clean teardown |
+| Issues encountered | None — straightforward S3 operations |
+| Iterations | v1 (original), v2 (regenerated from source topic 2026-04-12) |

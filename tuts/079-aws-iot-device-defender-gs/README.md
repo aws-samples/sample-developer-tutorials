@@ -1,20 +1,68 @@
-# AWS IoT Device Defender getting started tutorial
+# IoT Device Defender: Getting started
 
-This tutorial provides a comprehensive introduction to AWS IoT Device Defender using the AWS CLI. You'll learn how to set up device security monitoring, create security profiles, configure anomaly detection, and implement security best practices for your IoT device fleet.
+Set up AWS IoT Device Defender audit, run an on-demand audit, and review the findings.
 
-You can either run the provided shell script to automatically set up your IoT Device Defender configuration and basic security monitoring, or follow the step-by-step instructions in the tutorial markdown file to understand each component and customize the security setup for your specific IoT device management requirements.
+## Source
 
-## Resources Created
+https://docs.aws.amazon.com/iot/latest/developerguide/device-defender-tutorial.html
 
-The script creates the following AWS resources in order:
+## Use case
 
-- IAM role
-- IAM role policy
-- IAM role policy (b)
-- IAM role policy (c)
-- IoT Core on demand audit task
-- IoT Core mitigation action
-- IoT Core audit mitigation actions task
-- SNS topic
+- ID: iot-device-defender/getting-started
+- Phase: create
+- Complexity: intermediate
+- Core actions: iot:CreateScheduledAudit, iot:StartOnDemandAuditTask, iot:DescribeAuditTask
 
-The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.
+## What it does
+
+1. Creates an IAM role for IoT Device Defender
+2. Configures audit settings with the role
+3. Starts an on-demand audit
+4. Waits for the audit to complete
+5. Retrieves and displays audit findings
+6. Cleans up audit configuration, role, and policies
+
+## Running
+
+```bash
+bash aws-iot-device-defender-gs.sh
+```
+
+To auto-run with cleanup:
+
+```bash
+echo 'y' | bash aws-iot-device-defender-gs.sh
+```
+
+## Resources created
+
+- IAM role (with IoT Device Defender audit permissions)
+- IoT audit configuration
+- On-demand audit task
+
+## Estimated time
+
+- Run: ~2 minutes (audit takes ~60 seconds)
+- Cleanup: ~10 seconds
+
+## Cost
+
+No additional charges for IoT Device Defender audit. Standard IoT pricing applies.
+
+## Related docs
+
+- [Getting started with AWS IoT Device Defender](https://docs.aws.amazon.com/iot/latest/developerguide/device-defender-tutorial.html)
+- [Audit checks](https://docs.aws.amazon.com/iot/latest/developerguide/device-defender-audit-checks.html)
+- [AWS IoT Device Defender detect](https://docs.aws.amazon.com/iot/latest/developerguide/device-defender-detect.html)
+
+---
+
+## Appendix: Generation details
+
+| Field | Value |
+|-------|-------|
+| Generation date | 2026-04-14 (README regenerated with appendix) |
+| Source script | Fixed from original, audit config cleanup added |
+| Script test result | EXIT 0, ~120s, all steps, clean teardown |
+| Issues encountered | PassRole with `*` in Resource (split into two IAM statements); end-time bug used 'tomorrow' instead of 'now'; audit config not cleaned up on exit (added reset to cleanup); SNS topic ARN referenced but not created |
+| Iterations | v1 (original), v2 (PassRole fix, end-time fix, audit cleanup, SNS fix) |

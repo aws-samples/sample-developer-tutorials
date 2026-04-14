@@ -42,8 +42,8 @@ y' | bash lambda-gettingstarted.sh
 
 ## Estimated time
 
-- Run: ~1 minute
-- Cleanup: ~30 seconds
+- Run: ~30 seconds
+- Cleanup: ~5 seconds
 
 ## Cost
 
@@ -55,3 +55,15 @@ Free tier eligible. No charges expected for a single invocation.
 - [Lambda execution role](https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html)
 - [Deploy Node.js Lambda functions with .zip file archives](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-package.html)
 - [Deploy Python Lambda functions with .zip file archives](https://docs.aws.amazon.com/lambda/latest/dg/python-package.html)
+
+---
+
+## Appendix: Generation details
+
+| Field | Value |
+|-------|-------|
+| Generation date | 2026-04-14 (README regenerated with appendix) |
+| Source script | Regenerated from source topic, 401 lines, both Python and Node.js runtimes |
+| Script test result | EXIT 0, 33s, all steps, clean teardown |
+| Issues encountered | `--payload` inline JSON fails on CLI v2 (fixed with `fileb://`); CloudWatch logs not immediately available (added retry loop); missing `--architectures x86_64` (added) |
+| Iterations | v1 (original), v2 (regenerated from source topic 2026-04-12, fileb:// fix, log retry, architectures) |

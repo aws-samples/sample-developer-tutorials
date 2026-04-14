@@ -1,19 +1,74 @@
-# Amazon ECS Service Connect
+# ECS: Service Connect
 
-This tutorial guides you through setting up Amazon Elastic Container Service (Amazon ECS) Service Connect using the AWS Command Line Interface (AWS CLI). You'll learn how to create an ECS cluster with Service Connect enabled, deploy a containerized application, and configure service discovery for inter-service communication.
+Deploy two ECS Fargate services that communicate using Amazon ECS Service Connect.
 
-You can either run the automated shell script (`amazon-ecs-service-connect.sh`) to quickly set up the entire environment, or follow the step-by-step instructions in the tutorial (`amazon-ecs-service-connect.md`) to understand each component in detail. Both approaches will help you understand how to implement service-to-service communication in Amazon ECS using Service Connect.
+## Source
 
-## Resources Created
+https://docs.aws.amazon.com/AmazonECS/latest/developerguide/create-service-connect.html
 
-The script creates the following AWS resources in order:
+## Use case
 
-- EC2 security group
-- Logs log group
-- Logs log group (b)
+- ID: ecs/service-connect
+- Phase: create
+- Complexity: advanced
+- Core actions: ecs:CreateCluster, ecs:CreateService, ecs:RegisterTaskDefinition, servicediscovery:CreateHttpNamespace
+
+## What it does
+
+1. Creates an ECS cluster with Service Connect defaults
+2. Creates a Cloud Map namespace for service discovery
+3. Creates the ecsTaskExecutionRole (if it doesn't exist)
+4. Registers task definitions for client and server services
+5. Creates a security group and authorizes traffic
+6. Deploys server and client services with Service Connect
+7. Verifies services are running and connected
+8. Cleans up all resources including security group rules
+
+## Running
+
+```bash
+bash amazon-ecs-service-connect.sh
+```
+
+To auto-run with cleanup:
+
+```bash
+echo 'y' | bash amazon-ecs-service-connect.sh
+```
+
+## Resources created
+
 - ECS cluster
-- IAM role
-- ECS task definition
-- ECS service
+- Cloud Map HTTP namespace
+- IAM role (ecsTaskExecutionRole, if not pre-existing)
+- 2 ECS task definitions
+- Security group with ingress rules
+- 2 ECS Fargate services
+- CloudWatch log groups
 
-The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.
+## Estimated time
+
+- Run: ~5 minutes (Fargate task provisioning)
+- Cleanup: ~3 minutes (service drain + security group detach)
+
+## Cost
+
+Fargate pricing: ~$0.04/hour for two minimal tasks. Clean up promptly after the tutorial.
+
+## Related docs
+
+- [Service Connect](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-connect.html)
+- [Creating a service with Service Connect](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/create-service-connect.html)
+- [Amazon ECS task execution IAM role](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html)
+
+---
+
+## Appendix: Generation details
+
+| Field | Value |
+|-------|-------|
+| Generation date | 2026-04-14 (README regenerated with appendix) |
+| Source script | Fixed from original, multiple issues resolved |
+| Script test result | EXIT 0, ~300s, all steps, clean teardown |
+| Issues encountered | ecsTaskExecutionRole assumed to exist (added create-if-missing); security group deletion race with Fargate ENI detach (added retry loop); region handling inconsistent (standardized to AWS_DEFAULT_REGION fallback); container images referenced Docker Hub (switched to ECR Public); cleanup swallowed errors silently (added logging) |
+| Iterations | v1 (original), v2 (role creation, SG retry, region fix, ECR images, cleanup logging) |
