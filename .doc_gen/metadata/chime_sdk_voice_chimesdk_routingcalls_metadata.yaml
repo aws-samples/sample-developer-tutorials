@@ -1,0 +1,26 @@
+chime_sdk_voice_GettingStarted_007:
+  title: Routing calls to Lambda functions for Amazon Chime SDK PSTN audio
+  title_abbrev: Routing calls to Lambda functions for Amazon Chime SDK PSTN audio
+  synopsis_list:
+    - Create a Lambda function for call handling
+    - Create a SIP media application
+    - Set up call routing with SIP rules
+    - Set up redundancy with multiple SIP media applications
+    - Create outbound calls
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/007-chimesdk-routingcalls
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/007-chimesdk-routingcalls/chimesdk-routingcalls.sh
+  services:
+    chime-sdk-voice: {CreatePhoneNumberOrder, CreateSipMediaApplication, CreateSipMediaApplicationCall, CreateSipRule, DeleteSipMediaApplication, DeleteSipRule, ListPhoneNumbers, ListSipMediaApplications, ListSipRules, SearchAvailablePhoneNumbers, UpdateSipMediaApplicationCall}
+    iam: {AttachRolePolicy, CreateRole, DeleteRole, DetachRolePolicy, GetRole}
+    lambda: {AddPermission, CreateFunction, DeleteFunction, GetFunction}
+    sts: {GetCallerIdentity}
