@@ -1,6 +1,6 @@
 pinpoint_GettingStarted_049:
-  title: Getting started with AWS End User Messaging Push using the AWS CLI
-  title_abbrev: Getting started with AWS End User Messaging Push
+  title: Getting started with End User Messaging Push
+  title_abbrev: Getting started with End User Messaging Push
   synopsis_list:
     - Create an application
     - Enable push notification channels

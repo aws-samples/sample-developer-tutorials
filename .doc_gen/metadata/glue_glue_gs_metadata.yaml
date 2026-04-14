@@ -1,5 +1,5 @@
 glue_GettingStarted_024:
-  title: Getting started with the AWS Glue Data Catalog using the AWS CLI
+  title: Getting started with the AWS Glue Data Catalog
   title_abbrev: Getting started with the AWS Glue Data Catalog
   synopsis_list:
     - Create a database

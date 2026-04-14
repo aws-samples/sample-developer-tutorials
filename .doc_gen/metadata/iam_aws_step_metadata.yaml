@@ -1,6 +1,6 @@
 iam_GettingStarted_080:
-  title: Getting started with AWS Step Functions using the AWS CLI
-  title_abbrev: Getting started with AWS Step Functions
+  title: Getting started with Step Functions
+  title_abbrev: Getting started with Step Functions
   synopsis_list:
     - Create an IAM role for Step Functions
     - Create your first state machine

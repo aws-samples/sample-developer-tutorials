@@ -1,5 +1,5 @@
 ecs_GettingStarted_086:
-  title: Create an Amazon ECS Linux task for the Fargate launch type using the AWS CLI
+  title: Create an Amazon ECS Linux task for the Fargate launch type
   title_abbrev: Create an Amazon ECS Linux task for the Fargate launch type
   synopsis_list:
     - Create the cluster

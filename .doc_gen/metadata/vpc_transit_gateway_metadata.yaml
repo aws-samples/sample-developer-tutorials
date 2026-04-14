@@ -1,5 +1,5 @@
 vpc_TransitGatewayGettingStarted:
-  title: Getting started with Amazon VPC Transit Gateway using the AWS CLI
+  title: Getting started with Amazon VPC Transit Gateway
   title_abbrev: Getting started with Amazon VPC Transit Gateway
   synopsis_list:
     - Create a transit gateway

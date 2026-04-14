@@ -1,5 +1,5 @@
 kinesisvideo_GettingStarted_054:
-  title: Getting started with Amazon Kinesis Video Streams using the AWS CLI
+  title: Getting started with Amazon Kinesis Video Streams
   title_abbrev: Getting started with Amazon Kinesis Video Streams
   synopsis_list:
     - Create a Kinesis video stream

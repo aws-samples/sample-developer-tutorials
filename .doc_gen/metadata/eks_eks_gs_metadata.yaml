@@ -1,5 +1,5 @@
 eks_GettingStarted_034:
-  title: Getting started with Amazon EKS using the AWS CLI
+  title: Getting started with Amazon EKS
   title_abbrev: Getting started with Amazon EKS
   synopsis_list:
     - Create a VPC for your EKS cluster

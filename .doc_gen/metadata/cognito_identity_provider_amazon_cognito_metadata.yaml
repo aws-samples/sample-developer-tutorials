@@ -1,5 +1,5 @@
 cognito_identity_provider_GettingStarted_066:
-  title: Getting started with Amazon Cognito user pools using the AWS CLI
+  title: Getting started with Amazon Cognito user pools
   title_abbrev: Getting started with Amazon Cognito user pools
   synopsis_list:
     - Create a user pool

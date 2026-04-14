@@ -1,5 +1,5 @@
 s3_GettingStarted:
-  title: Getting started with Amazon S3 using the AWS CLI
+  title: Getting started with Amazon S3
   title_abbrev: Getting started with Amazon S3
   synopsis_list:
     - Create your first S3 bucket

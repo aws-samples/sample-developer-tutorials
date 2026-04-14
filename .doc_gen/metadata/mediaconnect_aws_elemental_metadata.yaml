@@ -1,6 +1,6 @@
 mediaconnect_GettingStarted_081:
-  title: Getting started with AWS Elemental MediaConnect using the AWS CLI
-  title_abbrev: Getting started with AWS Elemental MediaConnect
+  title: Getting started with Elemental MediaConnect
+  title_abbrev: Getting started with Elemental MediaConnect
   synopsis_list:
     - Verify access to AWS Elemental MediaConnect
     - Create a flow

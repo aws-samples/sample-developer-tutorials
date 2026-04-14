@@ -1,6 +1,6 @@
 fargate_GettingStarted:
-  title: Getting started with AWS Batch and Fargate using the AWS CLI
-  title_abbrev: Getting started with AWS Batch and Fargate
+  title: Getting started with Batch and Fargate
+  title_abbrev: Getting started with Batch and Fargate
   synopsis_list:
     - Create an IAM execution role
     - Create a compute environment

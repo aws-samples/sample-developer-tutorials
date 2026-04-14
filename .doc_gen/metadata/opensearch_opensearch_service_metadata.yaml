@@ -1,5 +1,5 @@
 opensearch_GettingStarted_016:
-  title: Getting started with Amazon OpenSearch Service using the AWS CLI
+  title: Getting started with Amazon OpenSearch Service
   title_abbrev: Getting started with Amazon OpenSearch Service
   synopsis_list:
     - Create an OpenSearch Service domain

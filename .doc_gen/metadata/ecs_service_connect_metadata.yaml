@@ -1,5 +1,5 @@
 ecs_ServiceConnect_085:
-  title: Configure Amazon ECS Service Connect with the AWS CLI
+  title: Configure Amazon ECS Service Connect
   title_abbrev: Configure Amazon ECS Service Connect
   synopsis_list:
     - Create the VPC infrastructure

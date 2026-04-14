@@ -1,6 +1,6 @@
 payment_cryptography_GettingStarted_067:
-  title: Getting started with AWS Payment Cryptography
-  title_abbrev: Getting started with AWS Payment Cryptography
+  title: Getting started with Payment Cryptography
+  title_abbrev: Getting started with Payment Cryptography
   synopsis_list:
     - Create a key
     - Verify the CVV2 value

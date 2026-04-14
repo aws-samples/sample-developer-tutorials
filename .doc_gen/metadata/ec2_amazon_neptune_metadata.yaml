@@ -1,5 +1,5 @@
 ec2_GettingStarted_064:
-  title: Getting started with Amazon Neptune using the AWS CLI
+  title: Getting started with Amazon Neptune
   title_abbrev: Getting started with Amazon Neptune
   synopsis_list:
     - Create a VPC for your Neptune database

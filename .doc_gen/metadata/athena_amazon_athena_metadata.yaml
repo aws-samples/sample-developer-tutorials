@@ -1,5 +1,5 @@
 athena_GettingStarted_061:
-  title: Getting started with Amazon Athena using the AWS CLI
+  title: Getting started with Amazon Athena
   title_abbrev: Getting started with Amazon Athena
   synopsis_list:
     - Create an S3 bucket for query results

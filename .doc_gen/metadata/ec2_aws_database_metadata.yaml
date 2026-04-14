@@ -1,6 +1,6 @@
 ec2_GettingStarted_075:
-  title: Getting started with AWS Database Migration Service using the AWS CLI
-  title_abbrev: Getting started with AWS Database Migration Service
+  title: Getting started with Database Migration Service
+  title_abbrev: Getting started with Database Migration Service
   synopsis_list:
     - Create a VPC for your migration resources
     - Create database parameter groups

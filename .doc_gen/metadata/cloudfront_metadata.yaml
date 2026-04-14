@@ -1,5 +1,5 @@
 cloudfront_GettingStarted:
-  title: Get started with a basic CloudFront distribution using the AWS CLI
+  title: Get started with a basic CloudFront distribution
   title_abbrev: Get started with a basic CloudFront distribution
   synopsis_list:
     - Create an Amazon S3 bucket

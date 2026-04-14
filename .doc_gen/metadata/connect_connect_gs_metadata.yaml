@@ -1,5 +1,5 @@
 connect_GettingStarted_027:
-  title: Creating an Amazon Connect instance using the AWS CLI
+  title: Creating an Amazon Connect instance
   title_abbrev: Creating an Amazon Connect instance
   synopsis_list:
     - Create an Amazon Connect instance

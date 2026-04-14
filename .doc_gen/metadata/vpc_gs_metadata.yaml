@@ -1,5 +1,5 @@
 vpc_GettingStartedCLI:
-  title: Getting started with Amazon VPC using the AWS CLI
+  title: Getting started with Amazon VPC
   title_abbrev: Getting started with Amazon VPC
   synopsis_list:
     - Create a VPC

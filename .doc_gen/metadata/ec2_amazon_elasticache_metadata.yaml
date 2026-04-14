@@ -1,5 +1,5 @@
 ec2_GettingStarted_065:
-  title: Getting started with Amazon ElastiCache using the AWS CLI
+  title: Getting started with Amazon ElastiCache
   title_abbrev: Getting started with Amazon ElastiCache
   synopsis_list:
     - Set up security group for ElastiCache access

@@ -1,6 +1,6 @@
 config_service_GettingStarted_053:
-  title: Getting started with AWS Config using the AWS CLI
-  title_abbrev: Getting started with AWS Config
+  title: Getting started with Config
+  title_abbrev: Getting started with Config
   synopsis_list:
     - Create an Amazon S3 bucket
     - Create an Amazon SNS topic

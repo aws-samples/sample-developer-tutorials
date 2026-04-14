@@ -1,5 +1,5 @@
 redshift_GettingStarted_039:
-  title: Getting started with Amazon Redshift provisioned clusters using the AWS CLI
+  title: Getting started with Amazon Redshift provisioned clusters
   title_abbrev: Getting started with Amazon Redshift provisioned clusters
   synopsis_list:
     - Create a Redshift cluster

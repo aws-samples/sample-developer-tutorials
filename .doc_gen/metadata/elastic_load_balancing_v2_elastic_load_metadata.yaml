@@ -1,5 +1,5 @@
 elastic_load_balancing_v2_GettingStarted_058:
-  title: Getting started with Elastic Load Balancing using the AWS CLI
+  title: Getting started with Elastic Load Balancing
   title_abbrev: Getting started with Elastic Load Balancing
   synopsis_list:
     - Create an Application Load Balancer

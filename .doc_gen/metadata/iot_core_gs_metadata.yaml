@@ -1,6 +1,6 @@
 iot_GettingStarted_063:
-  title: Getting started with AWS IoT Core using the AWS CLI
-  title_abbrev: Getting started with AWS IoT Core
+  title: Getting started with IoT Core
+  title_abbrev: Getting started with IoT Core
   synopsis_list:
     - Create AWS IoT resources
     - Configure your device

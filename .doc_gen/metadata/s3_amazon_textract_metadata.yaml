@@ -1,5 +1,5 @@
 s3_GettingStarted_074:
-  title: Getting started with Amazon Textract using the AWS CLI
+  title: Getting started with Amazon Textract
   title_abbrev: Getting started with Amazon Textract
   synopsis_list:
     - Create an S3 bucket

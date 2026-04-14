@@ -1,5 +1,5 @@
 lambda_GettingStarted_019:
-  title: Creating your first Lambda function with the AWS CLI
+  title: Creating your first Lambda function
   title_abbrev: Creating your first Lambda function
   synopsis_list:
     - Create an IAM role for Lambda

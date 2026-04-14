@@ -1,5 +1,5 @@
 lightsail_GettingStarted:
-  title: Getting started with Amazon Lightsail using the AWS CLI
+  title: Getting started with Amazon Lightsail
   title_abbrev: Getting started with Amazon Lightsail
   synopsis_list:
     - Create an instance

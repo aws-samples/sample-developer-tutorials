@@ -1,5 +1,5 @@
 iam_GettingStarted_044:
-  title: Creating an Amazon Managed Grafana workspace using the AWS CLI
+  title: Creating an Amazon Managed Grafana workspace
   title_abbrev: Creating an Amazon Managed Grafana workspace
   synopsis_list:
     - Create an IAM role for your workspace

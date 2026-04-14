@@ -1,5 +1,5 @@
 ec2_GettingStarted_020:
-  title: Creating and managing Amazon EBS volumes using the AWS CLI
+  title: Creating and managing Amazon EBS volumes
   title_abbrev: Creating and managing Amazon EBS volumes
   synopsis_list:
     - Create an EBS volume

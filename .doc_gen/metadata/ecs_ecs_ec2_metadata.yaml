@@ -1,5 +1,5 @@
 ecs_GettingStarted_018:
-  title: Creating an Amazon ECS service for the EC2 launch type with the AWS CLI
+  title: Creating an Amazon ECS service for the EC2 launch type
   title_abbrev: Creating an Amazon ECS service for the EC2 launch type
   synopsis_list:
     - Create an ECS cluster

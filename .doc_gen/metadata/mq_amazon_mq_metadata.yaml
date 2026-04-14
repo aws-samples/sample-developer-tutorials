@@ -1,5 +1,5 @@
 mq_GettingStarted_043:
-  title: Getting started with Amazon MQ for ActiveMQ using the AWS CLI and Secrets Manager
+  title: Getting started with Amazon MQ for ActiveMQ and Secrets Manager
   title_abbrev: Getting started with Amazon MQ for ActiveMQ and Secrets Manager
   synopsis_list:
     - Store broker credentials in AWS Secrets Manager

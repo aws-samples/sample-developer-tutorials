@@ -1,5 +1,5 @@
 dynamodb_GettingStarted_070:
-  title: Getting started with DynamoDB using the AWS CLI
+  title: Getting started with DynamoDB
   title_abbrev: Getting started with DynamoDB
   synopsis_list:
     - Create a table in DynamoDB

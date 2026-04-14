@@ -1,6 +1,6 @@
 support_GettingStarted_062:
-  title: Getting started with AWS Support using the AWS CLI
-  title_abbrev: Getting started with AWS Support
+  title: Getting started with Support
+  title_abbrev: Getting started with Support
   synopsis_list:
     - Check available services and severity levels
     - Create a support case

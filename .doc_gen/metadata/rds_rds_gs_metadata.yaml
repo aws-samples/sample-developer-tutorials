@@ -1,5 +1,5 @@
 rds_GettingStarted_036:
-  title: Creating an Amazon RDS DB instance using the AWS CLI
+  title: Creating an Amazon RDS DB instance
   title_abbrev: Creating an Amazon RDS DB instance
   synopsis_list:
     - Set up networking components

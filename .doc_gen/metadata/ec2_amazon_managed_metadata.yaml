@@ -1,5 +1,5 @@
 ec2_GettingStarted_057:
-  title: Getting started with Amazon MSK using the AWS CLI
+  title: Getting started with Amazon MSK
   title_abbrev: Getting started with Amazon MSK
   synopsis_list:
     - Create an MSK cluster

@@ -1,5 +1,5 @@
 emr_GettingStarted_037:
-  title: Getting started with Amazon EMR using the AWS CLI
+  title: Getting started with Amazon EMR
   title_abbrev: Getting started with Amazon EMR
   synopsis_list:
     - Create an EC2 key pair

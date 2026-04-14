@@ -1,6 +1,6 @@
 iam_GettingStarted_046:
-  title: Setting up AWS Systems Manager using the AWS CLI
-  title_abbrev: Setting up AWS Systems Manager
+  title: Setting up Systems Manager
+  title_abbrev: Setting up Systems Manager
   synopsis_list:
     - Create IAM permissions for Systems Manager
     - Create an IAM role for Systems Manager

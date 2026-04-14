@@ -1,5 +1,5 @@
 vpc_lattice_GettingStarted_055:
-  title: Creating and managing a VPC Lattice service network using the AWS CLI
+  title: Creating and managing a VPC Lattice service network
   title_abbrev: Creating and managing a VPC Lattice service network
   synopsis_list:
     - Create a service network

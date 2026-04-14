@@ -1,5 +1,5 @@
 ses_GettingStarted_033:
-  title: Setting up Amazon Simple Email Service (SES) using the AWS CLI
+  title: Setting up Amazon Simple Email Service (SES)
   title_abbrev: Setting up Amazon Simple Email Service (SES)
   synopsis_list:
     - Verify an email address

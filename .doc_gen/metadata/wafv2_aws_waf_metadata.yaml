@@ -1,6 +1,6 @@
 wafv2_GettingStarted_052:
-  title: Getting started with AWS WAF using the AWS CLI
-  title_abbrev: Getting started with AWS WAF
+  title: Getting started with WAF
+  title_abbrev: Getting started with WAF
   synopsis_list:
     - Create a web ACL
     - Add a string match rule

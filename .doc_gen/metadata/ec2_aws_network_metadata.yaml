@@ -1,6 +1,6 @@
 ec2_GettingStarted_047:
-  title: Getting started with AWS Network Firewall using the AWS CLI
-  title_abbrev: Getting started with AWS Network Firewall
+  title: Getting started with Network Firewall
+  title_abbrev: Getting started with Network Firewall
   synopsis_list:
     - Create rule groups
     - Create a firewall policy

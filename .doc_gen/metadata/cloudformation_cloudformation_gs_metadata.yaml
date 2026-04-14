@@ -1,5 +1,5 @@
 cloudformation_GettingStarted_021:
-  title: Creating your first CloudFormation stack using the AWS CLI
+  title: Creating your first CloudFormation stack
   title_abbrev: Creating your first CloudFormation stack
   synopsis_list:
     - Create a CloudFormation template

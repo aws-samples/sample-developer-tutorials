@@ -1,5 +1,5 @@
 iam_GettingStarted_028:
-  title: Getting started with Amazon SageMaker Feature Store using the AWS CLI
+  title: Getting started with Amazon SageMaker Feature Store
   title_abbrev: Getting started with Amazon SageMaker Feature Store
   synopsis_list:
     - Set up IAM permissions

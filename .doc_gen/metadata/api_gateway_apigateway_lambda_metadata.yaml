@@ -1,5 +1,5 @@
 api_gateway_GettingStarted_087:
-  title: Create a REST API with Lambda proxy integration using the AWS CLI
+  title: Create a REST API with Lambda proxy integration
   title_abbrev: Create a REST API with Lambda proxy integration
   synopsis_list:
     - Create an IAM role for Lambda execution

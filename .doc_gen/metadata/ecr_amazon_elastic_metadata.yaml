@@ -1,5 +1,5 @@
 ecr_GettingStarted_078:
-  title: Getting started with Amazon ECR using the AWS CLI
+  title: Getting started with Amazon ECR
   title_abbrev: Getting started with Amazon ECR
   synopsis_list:
     - Create a Docker image

@@ -1,5 +1,5 @@
 workspaces_GettingStarted_035:
-  title: Creating and managing Amazon WorkSpaces Personal using the AWS CLI
+  title: Creating and managing Amazon WorkSpaces Personal
   title_abbrev: Creating and managing Amazon WorkSpaces Personal
   synopsis_list:
     - Verify WorkSpaces availability in your region
