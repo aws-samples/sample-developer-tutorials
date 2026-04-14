@@ -1,6 +1,6 @@
 iam_GettingStarted_069:
-  title: Run CPU stress tests on EC2 instances using AWS FIS
-  title_abbrev: Run CPU stress tests on EC2 instances using AWS FIS
+  title: Run CPU stress tests on EC2 instances using FIS
+  title_abbrev: Run CPU stress tests on EC2 instances using FIS
   synopsis_list:
     - Create IAM roles
     - Create a CloudWatch alarm

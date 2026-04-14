@@ -1,6 +1,6 @@
 chime_sdk_voice_GettingStarted_007:
-  title: Routing calls to AWS Lambda functions for Amazon Chime SDK PSTN audio
-  title_abbrev: Routing calls to AWS Lambda functions for Amazon Chime SDK PSTN audio
+  title: Routing calls to Lambda functions for Amazon Chime SDK PSTN audio
+  title_abbrev: Routing calls to Lambda functions for Amazon Chime SDK PSTN audio
   synopsis_list:
     - Create a Lambda function for call handling
     - Create a SIP media application

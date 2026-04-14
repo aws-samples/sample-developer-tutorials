@@ -1,6 +1,6 @@
 cloudmap_CustomAttributes:
-  title: Using AWS Cloud Map service discovery with custom attributes
-  title_abbrev: Using AWS Cloud Map service discovery with custom attributes
+  title: Using Cloud Map service discovery with custom attributes
+  title_abbrev: Using Cloud Map service discovery with custom attributes
   synopsis_list:
     - Create an AWS Cloud Map namespace
     - Create a DynamoDB table
@@ -26,7 +26,7 @@ cloudmap_CustomAttributes:
 
 cloudmap_ServiceDiscovery:
   title: Get started with Cloud Map service discovery
-  title_abbrev: Using AWS Cloud Map service discovery with custom attributes
+  title_abbrev: Using Cloud Map service discovery with custom attributes
   synopsis_list:
     - Create a public DNS namespace with Route 53 hosted zone integration
     - Create services discoverable via DNS queries and API calls

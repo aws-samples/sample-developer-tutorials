@@ -1,9 +1,9 @@
 iot_GettingStarted_079:
-  title: Getting Started with AWS IoT Device Defender Using the AWS CLI
-  title_abbrev: Getting Started with AWS IoT Device Defender Using the AWS CLI
+  title: Getting Started with IoT Device Defender 
+  title_abbrev: Getting Started with IoT Device Defender 
   synopsis_list:
     - Create Required IAM Roles
-    - Enable AWS IoT Device Defender Audit Checks
+    - Enable IoT Device Defender Audit Checks
     - Run an On-Demand Audit
     - Create a Mitigation Action
     - Apply Mitigation Actions to Findings
