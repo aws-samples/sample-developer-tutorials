@@ -2,7 +2,7 @@ iot_GettingStarted_063:
   title: Getting started with IoT Core
   title_abbrev: Getting started with IoT Core
   synopsis_list:
-    - Create AWS IoT resources
+    - Create IoT resources
     - Configure your device
     - Run the sample application
     - Clean up resources

@@ -2,7 +2,7 @@ mq_GettingStarted_043:
   title: Getting started with Amazon MQ for ActiveMQ and Secrets Manager
   title_abbrev: Getting started with Amazon MQ for ActiveMQ and Secrets Manager
   synopsis_list:
-    - Store broker credentials in AWS Secrets Manager
+    - Store broker credentials in Secrets Manager
     - Create an Amazon MQ broker
     - Wait for the broker to be in RUNNING state
     - Get broker connection details

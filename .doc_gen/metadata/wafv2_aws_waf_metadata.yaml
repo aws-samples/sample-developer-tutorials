@@ -4,7 +4,7 @@ wafv2_GettingStarted_052:
   synopsis_list:
     - Create a web ACL
     - Add a string match rule
-    - Add AWS managed rules
+    - Add managed rules
     - Configure logging
     - Clean up resources
   category: Scenarios

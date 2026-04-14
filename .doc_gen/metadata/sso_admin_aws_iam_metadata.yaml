@@ -4,7 +4,7 @@ sso_admin_GettingStarted_045:
   synopsis_list:
     - Enable IAM Identity Center
     - Create users and groups
-    - Set up user access to AWS accounts (organization instance only)
+    - Set up user access to accounts (organization instance only)
     - Set up user access to applications
     - Clean up resources
   category: Scenarios

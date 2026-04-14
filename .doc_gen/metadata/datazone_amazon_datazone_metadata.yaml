@@ -5,7 +5,7 @@ datazone_GettingStarted_059:
     - Create an Amazon DataZone domain
     - Create projects
     - Create an environment profile and environment
-    - Create a data source for AWS Glue
+    - Create a data source for Glue
     - Create and publish custom assets
     - Clean up resources
   category: Scenarios

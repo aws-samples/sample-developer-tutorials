@@ -8,7 +8,7 @@ iot_GettingStarted_079:
     - Create a Mitigation Action
     - Apply Mitigation Actions to Findings
     - Set Up SNS Notifications (Optional)
-    - Enable AWS IoT Logging
+    - Enable IoT Logging
   category: Scenarios
   languages:
     Bash:

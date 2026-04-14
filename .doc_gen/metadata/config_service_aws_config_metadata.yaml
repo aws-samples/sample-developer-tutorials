@@ -4,11 +4,11 @@ config_service_GettingStarted_053:
   synopsis_list:
     - Create an Amazon S3 bucket
     - Create an Amazon SNS topic
-    - Create an IAM role for AWS Config
-    - Set up the AWS Config configuration recorder
-    - Set up the AWS Config delivery channel
+    - Create an IAM role for Config
+    - Set up the Config configuration recorder
+    - Set up the Config delivery channel
     - Start the configuration recorder
-    - Verify the AWS Config setup
+    - Verify the Config setup
   category: Scenarios
   languages:
     Bash:

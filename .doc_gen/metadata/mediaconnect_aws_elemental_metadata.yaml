@@ -2,7 +2,7 @@ mediaconnect_GettingStarted_081:
   title: Getting started with Elemental MediaConnect
   title_abbrev: Getting started with Elemental MediaConnect
   synopsis_list:
-    - Verify access to AWS Elemental MediaConnect
+    - Verify access to Elemental MediaConnect
     - Create a flow
     - Add an output
     - Clean up resources
