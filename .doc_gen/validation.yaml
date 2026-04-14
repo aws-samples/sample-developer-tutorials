@@ -1,2 +1,6 @@
 allow_list:
   - "bPxRfiCYEXAMPLEKEY/wJalrXUtnFEMI/K7MDENG"
+  - "role/AmazonEC2ContainerServiceforEC2Role"
+  - "gross"
+sample_files:
+  - "README.md"
