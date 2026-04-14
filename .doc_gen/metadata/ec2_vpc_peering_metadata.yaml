@@ -1,0 +1,22 @@
+ec2_GettingStarted_015:
+  title: Working with VPC peering connections using the AWS CLI
+  title_abbrev: Working with VPC peering connections
+  synopsis_list:
+    - Create VPCs for peering
+    - Create a VPC peering connection
+    - Update route tables
+    - Verify the VPC peering connection
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/015-vpc-peering
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/015-vpc-peering/vpc-peering.sh
+  services:
+    ec2: {AcceptVpcPeeringConnection, AssociateRouteTable, CreateRoute, CreateRouteTable, CreateSubnet, CreateVpc, CreateVpcPeeringConnection, DeleteRouteTable, DeleteSubnet, DeleteVpc, DeleteVpcPeeringConnection, DescribeVpcPeeringConnections, DescribeVpcs, DisassociateRouteTable, Wait}

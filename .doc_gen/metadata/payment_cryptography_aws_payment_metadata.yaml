@@ -1,0 +1,20 @@
+payment_cryptography_GettingStarted_067:
+  title: Getting started with AWS Payment Cryptography
+  title_abbrev: Getting started with AWS Payment Cryptography
+  synopsis_list:
+    - Create a key
+    - Verify the CVV2 value
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/067-aws-payment-cryptography-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/067-aws-payment-cryptography-gs/aws-payment-cryptography-gs.sh
+  services:
+    payment-cryptography: {CreateKey, DeleteKey, RestoreKey}

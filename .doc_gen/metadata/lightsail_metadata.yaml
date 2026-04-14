@@ -1,14 +1,11 @@
 lightsail_GettingStarted:
-  title: Get started with Amazon Lightsail using the CLI
-  title_abbrev: Get started with Lightsail
+  title: Getting started with Amazon Lightsail using the AWS CLI
+  title_abbrev: Getting started with Amazon Lightsail
   synopsis_list:
-    - Explore available blueprints and bundles for instance creation
-    - Create a Lightsail instance with Amazon Linux 2023
-    - Monitor instance status until running
-    - Download default key pair for SSH access
-    - Create and attach additional block storage disk
-    - Create an instance snapshot for backup
-    - Clean up resources to avoid ongoing charges
+    - Create an instance
+    - Add storage to your instance
+    - Create a snapshot
+    - Clean up resources
   category: Scenarios
   languages:
     Bash:

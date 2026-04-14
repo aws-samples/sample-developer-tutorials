@@ -1,0 +1,24 @@
+lambda_GettingStarted_019:
+  title: Creating your first Lambda function with the AWS CLI
+  title_abbrev: Creating your first Lambda function
+  synopsis_list:
+    - Create an IAM role for Lambda
+    - Create function code
+    - Create a Lambda function
+    - Test your Lambda function
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/019-lambda-gettingstarted
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/019-lambda-gettingstarted/lambda-gettingstarted.sh
+  services:
+    cloudwatch-logs: {DeleteLogGroup, DescribeLogStreams, GetLogEvents}
+    iam: {AttachRolePolicy, CreateRole, DeleteRole, DetachRolePolicy}
+    lambda: {CreateFunction, DeleteFunction, GetFunction, GetFunctionConfiguration, Invoke}

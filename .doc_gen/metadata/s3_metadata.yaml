@@ -1,16 +1,14 @@
 s3_GettingStarted:
-  title: Get started with Amazon S3 using the CLI
-  title_abbrev: Get started with S3
+  title: Getting started with Amazon S3 using the AWS CLI
+  title_abbrev: Getting started with Amazon S3
   synopsis_list:
-    - Create an S3 bucket with unique naming and regional configuration
-    - Configure bucket security settings including public access blocking
-    - Enable versioning and default encryption for data protection
-    - Upload objects with and without custom metadata
-    - Download objects from the bucket to local storage
-    - Copy objects within the bucket to organize data in folders
-    - List bucket contents and objects with specific prefixes
-    - Add tags to buckets for resource management
-    - Clean up all resources including versioned objects
+    - Create your first S3 bucket
+    - Upload an object
+    - Enable versioning
+    - Configure default encryption
+    - Add tags to your bucket
+    - List objects and versions
+    - Clean up resources
   category: Scenarios
   languages:
     Bash:

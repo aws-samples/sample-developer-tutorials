@@ -1,0 +1,23 @@
+ec2_GettingStarted_013:
+  title: Getting started with Amazon EC2 using the AWS CLI
+  title_abbrev: Getting started with Amazon EC2
+  synopsis_list:
+    - Create a key pair
+    - Create a security group
+    - Stop and start your instance
+    - Test Elastic IP persistence
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/013-ec2-basics
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/013-ec2-basics/ec2-basics.sh
+  services:
+    ec2: {AllocateAddress, AssociateAddress, AuthorizeSecurityGroupIngress, CreateKeyPair, CreateSecurityGroup, DeleteKeyPair, DeleteSecurityGroup, DescribeImages, DescribeInstances, DisassociateAddress, ReleaseAddress, RunInstances, StartInstances, StopInstances, TerminateInstances, Wait}
+    ssm: {GetParametersByPath}

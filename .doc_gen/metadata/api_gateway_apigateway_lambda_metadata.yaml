@@ -1,0 +1,26 @@
+api_gateway_GettingStarted_087:
+  title: Create a REST API with Lambda proxy integration using the AWS CLI
+  title_abbrev: Create a REST API with Lambda proxy integration
+  synopsis_list:
+    - Create an IAM role for Lambda execution
+    - Create and deploy a Lambda function
+    - Create a REST API
+    - Configure Lambda proxy integration
+    - Deploy and test the API
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/087-apigateway-lambda-integration
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/087-apigateway-lambda-integration/apigateway-lambda-integration.sh
+  services:
+    api-gateway: {CreateDeployment, CreateResource, CreateRestApi, DeleteRestApi, GetResources, GetRestApis, PutIntegration, PutMethod}
+    iam: {AttachRolePolicy, CreateRole, DeleteRole, DetachRolePolicy}
+    lambda: {AddPermission, CreateFunction, DeleteFunction}
+    sts: {GetCallerIdentity}

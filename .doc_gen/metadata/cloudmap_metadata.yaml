@@ -1,13 +1,14 @@
 cloudmap_CustomAttributes:
-  title: Use custom attributes with Cloud Map
-  title_abbrev: Cloud Map custom attributes
+  title: Using AWS Cloud Map service discovery with custom attributes
+  title_abbrev: Using AWS Cloud Map service discovery with custom attributes
   synopsis_list:
-    - Create an HTTP namespace for API-based service discovery
-    - Create a DynamoDB table and register it as a data service with custom attributes
-    - Create Lambda functions for reading and writing data
-    - Register Lambda functions as service instances with custom attributes for action-based discovery
-    - Build client applications that discover services using custom attributes
-    - Clean up all resources including Lambda functions, DynamoDB table, and Cloud Map services
+    - Create an AWS Cloud Map namespace
+    - Create a DynamoDB table
+    - Create an AWS Cloud Map data service and register the DynamoDB table
+    - Create an IAM role for Lambda functions
+    - Create the Lambda function to write data
+    - Create an AWS Cloud Map app service and register the Lambda write function
+    - Create the Lambda function to read data
   category: Scenarios
   languages:
     Bash:
@@ -25,7 +26,7 @@ cloudmap_CustomAttributes:
 
 cloudmap_ServiceDiscovery:
   title: Get started with Cloud Map service discovery
-  title_abbrev: Cloud Map service discovery
+  title_abbrev: Using AWS Cloud Map service discovery with custom attributes
   synopsis_list:
     - Create a public DNS namespace with Route 53 hosted zone integration
     - Create services discoverable via DNS queries and API calls

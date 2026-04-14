@@ -1,0 +1,25 @@
+elastic_load_balancing_v2_GettingStarted_058:
+  title: Getting started with Elastic Load Balancing using the AWS CLI
+  title_abbrev: Getting started with Elastic Load Balancing
+  synopsis_list:
+    - Create an Application Load Balancer
+    - Create a target group
+    - Create a listener
+    - Verify your configuration
+    - Add an HTTPS listener (optional)
+    - Add path-based routing (optional)
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/058-elastic-load-balancing-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/058-elastic-load-balancing-gs/elastic-load-balancing-gs.sh
+  services:
+    ec2: {AuthorizeSecurityGroupIngress, CreateSecurityGroup, DeleteSecurityGroup, DescribeInstances, DescribeSubnets, DescribeVpcs}
+    elastic-load-balancing-v2: {CreateListener, CreateLoadBalancer, CreateTargetGroup, DeleteListener, DeleteLoadBalancer, DeleteTargetGroup, DescribeLoadBalancers, DescribeTargetHealth, Help, RegisterTargets, Wait}

@@ -1,0 +1,22 @@
+sns_GettingStarted_048:
+  title: Create an Amazon SNS topic and publish messages using the AWS CLI
+  title_abbrev: Create an Amazon SNS topic and publish messages
+  synopsis_list:
+    - Create an Amazon SNS topic
+    - Subscribe an email endpoint to the topic
+    - Verify your subscription
+    - Publish a message to the topic
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/048-amazon-simple-notification-service-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/048-amazon-simple-notification-service-gs/amazon-simple-notification-service-gs.sh
+  services:
+    sns: {CreateTopic, DeleteTopic, ListSubscriptionsByTopic, Publish, Subscribe, Unsubscribe}

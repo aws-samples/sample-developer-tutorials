@@ -1,0 +1,28 @@
+ec2_GettingStarted_075:
+  title: Getting started with AWS Database Migration Service using the AWS CLI
+  title_abbrev: Getting started with AWS Database Migration Service
+  synopsis_list:
+    - Create a VPC for your migration resources
+    - Create database parameter groups
+    - Create source and target databases
+    - Create an EC2 client instance
+    - Create a replication instance
+    - Create source and target endpoints
+    - Create and start a migration task
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/075-aws-database-migration-service-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/075-aws-database-migration-service-gs/aws-database-migration-service-gs.sh
+  services:
+    dms: {CreateEndpoint, CreateReplicationInstance, CreateReplicationSubnetGroup, CreateReplicationTask, DeleteEndpoint, DeleteReplicationInstance, DeleteReplicationSubnetGroup, DeleteReplicationTask, DescribeReplicationInstances, DescribeReplicationTasks, DescribeTableStatistics, StartReplicationTask, TestConnection}
+    ec2: {AssociateRouteTable, AttachInternetGateway, AuthorizeSecurityGroupIngress, CreateInternetGateway, CreateKeyPair, CreateRoute, CreateRouteTable, CreateSubnet, CreateVpc, DeleteInternetGateway, DeleteKeyPair, DeleteRouteTable, DeleteSubnet, DeleteVpc, DescribeAvailabilityZones, DescribeImages, DescribeInstanceTypeOfferings, DescribeInstances, DescribeSecurityGroups, DescribeSubnets, DescribeVpcs, DetachInternetGateway, ModifyVpcAttribute, RunInstances, TerminateInstances, Wait}
+    rds: {CreateDbInstance, CreateDbParameterGroup, CreateDbSubnetGroup, DeleteDbInstance, DeleteDbParameterGroup, DeleteDbSubnetGroup, DescribeDbInstances, ModifyDbParameterGroup, Wait}
+    secrets-manager: {CreateSecret, DeleteSecret, GetSecretValue}
+    sts: {GetCallerIdentity}

@@ -1,0 +1,22 @@
+connect_GettingStarted_027:
+  title: Creating an Amazon Connect instance using the AWS CLI
+  title_abbrev: Creating an Amazon Connect instance
+  synopsis_list:
+    - Create an Amazon Connect instance
+    - Configure an administrator user
+    - Configure telephony options
+    - Set up a phone number
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/027-connect-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/027-connect-gs/connect-gs.sh
+  services:
+    connect: {ClaimPhoneNumber, CreateInstance, CreateUser, DeleteInstance, DescribeInstance, ListInstanceStorageConfigs, ListInstances, ListRoutingProfiles, ListSecurityProfiles, ReleasePhoneNumber, SearchAvailablePhoneNumbers, UpdateInstanceAttribute}

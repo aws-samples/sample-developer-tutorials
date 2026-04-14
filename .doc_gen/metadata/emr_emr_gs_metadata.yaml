@@ -1,0 +1,22 @@
+emr_GettingStarted_037:
+  title: Getting started with Amazon EMR using the AWS CLI
+  title_abbrev: Getting started with Amazon EMR
+  synopsis_list:
+    - Create an EC2 key pair
+    - Set up storage and prepare your application
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/037-emr-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/037-emr-gs/emr-gs.sh
+  services:
+    ec2: {CreateKeyPair, DescribeKeyPairs}
+    emr: {AddSteps, CreateCluster, CreateDefaultRoles, DescribeCluster, DescribeStep, Ssh, TerminateClusters, Wait}
+    s3: {Cp, Ls, Mb, Rb, Rm}

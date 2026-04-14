@@ -1,0 +1,21 @@
+opensearch_GettingStarted_016:
+  title: Getting started with Amazon OpenSearch Service using the AWS CLI
+  title_abbrev: Getting started with Amazon OpenSearch Service
+  synopsis_list:
+    - Create an OpenSearch Service domain
+    - Upload data to your domain
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/016-opensearch-service-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/016-opensearch-service-gs/opensearch-service-gs.sh
+  services:
+    opensearch: {CreateDomain, DeleteDomain, DescribeDomain}
+    sts: {GetCallerIdentity}

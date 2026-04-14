@@ -1,0 +1,24 @@
+ecs_GettingStarted_086:
+  title: Create an Amazon ECS Linux task for the Fargate launch type using the AWS CLI
+  title_abbrev: Create an Amazon ECS Linux task for the Fargate launch type
+  synopsis_list:
+    - Create the cluster
+    - Create a task definition
+    - Create the service
+    - Clean up
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/086-amazon-ecs-fargate-linux
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/086-amazon-ecs-fargate-linux/amazon-ecs-fargate-linux.sh
+  services:
+    ec2: {AuthorizeSecurityGroupIngress, CreateSecurityGroup, DeleteSecurityGroup, DescribeNetworkInterfaces, DescribeSecurityGroups, DescribeSubnets, DescribeVpcs}
+    ecs: {CreateCluster, CreateService, DeleteCluster, DeleteService, DeregisterTaskDefinition, DescribeServices, DescribeTasks, ListTaskDefinitions, ListTasks, RegisterTaskDefinition, UpdateService, Wait}
+    iam: {AttachRolePolicy, CreateRole, GetRole}
+    sts: {GetCallerIdentity}

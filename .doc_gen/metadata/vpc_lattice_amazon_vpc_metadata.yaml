@@ -1,0 +1,25 @@
+vpc_lattice_GettingStarted_055:
+  title: Creating and managing a VPC Lattice service network using the AWS CLI
+  title_abbrev: Creating and managing a VPC Lattice service network
+  synopsis_list:
+    - Create a service network
+    - Create a service
+    - List available VPCs
+    - List security groups for the selected VPC
+    - List service associations
+    - List VPC associations
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/055-amazon-vpc-lattice-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/055-amazon-vpc-lattice-gs/amazon-vpc-lattice-getting-started.sh
+  services:
+    ec2: {DescribeSecurityGroups, DescribeVpcs}
+    vpc-lattice: {CreateService, CreateServiceNetwork, CreateServiceNetworkServiceAssociation, CreateServiceNetworkVpcAssociation, DeleteService, DeleteServiceNetwork, DeleteServiceNetworkServiceAssociation, DeleteServiceNetworkVpcAssociation, GetService, GetServiceNetwork, GetServiceNetworkServiceAssociation, GetServiceNetworkVpcAssociation, ListServiceNetworkServiceAssociations, ListServiceNetworkVpcAssociations}

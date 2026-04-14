@@ -1,0 +1,24 @@
+iam_GettingStarted_028:
+  title: Getting started with Amazon SageMaker Feature Store using the AWS CLI
+  title_abbrev: Getting started with Amazon SageMaker Feature Store
+  synopsis_list:
+    - Set up IAM permissions
+    - Create a SageMaker execution role
+    - Create feature groups
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/028-sagemaker-featurestore
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/028-sagemaker-featurestore/sagemaker-featurestore.sh
+  services:
+    iam: {AttachRolePolicy, CreateRole, DeleteRole, DetachRolePolicy, GetRole}
+    s3: {CreateBucket, DeleteBucket, PutPublicAccessBlock, Rm}
+    sagemaker: {CreateFeatureGroup, DeleteFeatureGroup, DescribeFeatureGroup, ListFeatureGroups}
+    sts: {GetCallerIdentity}

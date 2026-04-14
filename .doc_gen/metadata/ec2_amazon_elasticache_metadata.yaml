@@ -1,0 +1,21 @@
+ec2_GettingStarted_065:
+  title: Getting started with Amazon ElastiCache using the AWS CLI
+  title_abbrev: Getting started with Amazon ElastiCache
+  synopsis_list:
+    - Set up security group for ElastiCache access
+    - Create a Valkey serverless cache
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/065-amazon-elasticache-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/065-amazon-elasticache-gs/amazon-elasticache-gs.sh
+  services:
+    ec2: {AuthorizeSecurityGroupIngress, DescribeSecurityGroups, RevokeSecurityGroupIngress}
+    elasticache: {CreateServerlessCache, DeleteServerlessCache, DescribeServerlessCaches}

@@ -1,0 +1,20 @@
+cloudformation_GettingStarted_021:
+  title: Creating your first CloudFormation stack using the AWS CLI
+  title_abbrev: Creating your first CloudFormation stack
+  synopsis_list:
+    - Create a CloudFormation template
+    - Test the web server
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/021-cloudformation-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/021-cloudformation-gs/cloudformation-gs.sh
+  services:
+    cloudformation: {CreateStack, DeleteStack, DescribeStacks, ListStackResources, ValidateTemplate, Wait}

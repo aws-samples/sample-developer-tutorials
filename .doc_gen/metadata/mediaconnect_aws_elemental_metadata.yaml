@@ -1,0 +1,22 @@
+mediaconnect_GettingStarted_081:
+  title: Getting started with AWS Elemental MediaConnect using the AWS CLI
+  title_abbrev: Getting started with AWS Elemental MediaConnect
+  synopsis_list:
+    - Verify access to AWS Elemental MediaConnect
+    - Create a flow
+    - Add an output
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/081-aws-elemental-mediaconnect-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/081-aws-elemental-mediaconnect-gs/aws-elemental-mediaconnect-gs.sh
+  services:
+    ec2: {DescribeAvailabilityZones}
+    mediaconnect: {AddFlowOutputs, CreateFlow, DeleteFlow, DescribeFlow, GrantFlowEntitlements, ListFlows, StopFlow}

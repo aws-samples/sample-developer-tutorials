@@ -1,0 +1,25 @@
+ec2_GettingStarted_064:
+  title: Getting started with Amazon Neptune using the AWS CLI
+  title_abbrev: Getting started with Amazon Neptune
+  synopsis_list:
+    - Create a VPC for your Neptune database
+    - Create subnets in multiple availability zones
+    - Configure security for your Neptune database
+    - Create a Neptune DB subnet group
+    - Create a Neptune DB cluster and instance
+    - Add data to your graph database
+    - Query your graph database
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/064-amazon-neptune-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/064-amazon-neptune-gs/amazon-neptune-gs.sh
+  services:
+    ec2: {AssociateRouteTable, AttachInternetGateway, AuthorizeSecurityGroupIngress, CreateInternetGateway, CreateRoute, CreateRouteTable, CreateSecurityGroup, CreateSubnet, CreateVpc, DeleteInternetGateway, DeleteRouteTable, DeleteSecurityGroup, DeleteSubnet, DeleteVpc, DescribeAvailabilityZones, DetachInternetGateway, ModifyVpcAttribute}
+    neptune: {CreateDbCluster, CreateDbInstance, CreateDbSubnetGroup, DeleteDbCluster, DeleteDbInstance, DeleteDbSubnetGroup, DescribeDbClusters, Wait}
