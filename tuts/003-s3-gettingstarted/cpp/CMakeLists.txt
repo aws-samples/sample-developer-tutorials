@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.13)
+project(tutorial-s3)
+find_package(AWSSDK REQUIRED COMPONENTS s3)
+add_executable(scenario getting_started_scenario.cpp s3_wrapper.cpp)
+target_link_libraries(scenario ${AWSSDK_LINK_LIBRARIES})
