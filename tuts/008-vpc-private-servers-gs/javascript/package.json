@@ -1,0 +1,14 @@
+{
+  "name": "tutorial-ec2",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@aws-sdk/client-ec2": "latest"
+  },
+  "devDependencies": {
+    "vitest": "latest",
+    "aws-sdk-client-mock": "latest"
+  }
+}

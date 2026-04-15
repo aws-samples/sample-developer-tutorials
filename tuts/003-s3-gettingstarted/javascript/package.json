@@ -1,0 +1,14 @@
+{
+  "name": "tutorial-s3",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "latest"
+  },
+  "devDependencies": {
+    "vitest": "latest",
+    "aws-sdk-client-mock": "latest"
+  }
+}
