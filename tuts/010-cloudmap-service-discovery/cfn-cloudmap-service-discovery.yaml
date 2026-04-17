@@ -1,17 +1,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Cloud Map service discovery - public DNS namespace with service.
-
-Parameters:
-  DomainName:
-    Type: String
-    Default: tutorial.example.com
-    Description: Domain name for the namespace
+Description: Cloud Map service discovery - HTTP namespace with service.
 
 Resources:
   Namespace:
-    Type: AWS::ServiceDiscovery::PublicDnsNamespace
+    Type: AWS::ServiceDiscovery::HttpNamespace
     Properties:
-      Name: !Ref DomainName
+      Name: !Sub '${AWS::StackName}'
       Tags:
         - Key: tutorial
           Value: !Ref AWS::StackName
@@ -21,10 +15,6 @@ Resources:
     Properties:
       Name: web
       NamespaceId: !GetAtt Namespace.Id
-      DnsConfig:
-        DnsRecords:
-          - Type: A
-            TTL: 60
 
 Outputs:
   NamespaceId:

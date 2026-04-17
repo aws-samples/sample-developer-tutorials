@@ -7,7 +7,7 @@ Resources:
     Properties:
       InstanceName: !Sub '${AWS::StackName}-instance'
       BlueprintId: amazon_linux_2023
-      BundleId: nano_3_2
+      BundleId: nano_3_0
       AvailabilityZone: !Select [0, !GetAZs '']
       Tags:
         - Key: tutorial
