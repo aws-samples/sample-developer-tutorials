@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Test all CloudFormation templates: validate, deploy, verify, delete.
 
 Usage: python3 test-cfn.py [--parallel N] [--skip-deploy] [--region REGION]
@@ -138,7 +138,8 @@ def ensure_prereqs(cfn, repo_root, needed_stacks):
             waiter.wait(StackName=stack_name, WaiterConfig={"Delay": 15, "MaxAttempts": 40})
             print(f"  Prereq {stack_name}: ready")
         except Exception as e:
-            print(f"  Prereq {stack_name}: FAILED ({e})")
+            print(f"  Prereq {stack_name}: CFN deploy failed ({e})")
+            print(f"  Prereq {stack_name}: Run ./cfn/setup-bucket.sh first, then retry.")
             failed.add(stack_name)
             try:
                 cfn.delete_stack(StackName=stack_name)
