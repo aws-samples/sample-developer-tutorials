@@ -1,7 +1,7 @@
 #!/bin/bash
 WORK_DIR=$(mktemp -d); exec > >(tee -a "$WORK_DIR/s3v.log") 2>&1
-REGION=${AWS_DEFAULT_REGION:-$(aws configure get region 2>/dev/null)}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; ACCOUNT=$(aws sts get-caller-identity --query 'Account' --output text); echo "Region: $REGION"
-RANDOM_ID=$(openssl rand -hex 4); BUCKET="s3ver-tut-${RANDOM_ID}-${ACCOUNT}"
+REGION=${AWS_DEFAULT_REGION:-${AWS_REGION:-$(aws configure get region 2>/dev/null))}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; ACCOUNT=$(aws sts get-caller-identity --query 'Account' --output text); echo "Region: $REGION"
+RANDOM_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1); BUCKET="s3ver-tut-${RANDOM_ID}-${ACCOUNT}"
 handle_error() { echo "ERROR on line $1"; trap - ERR; cleanup; exit 1; }; trap 'handle_error $LINENO' ERR
 cleanup() { echo ""; echo "Cleaning up..."; aws s3api list-object-versions --bucket "$BUCKET" --query '{Objects: Versions[].{Key:Key,VersionId:VersionId}, Quiet: `true`}' > "$WORK_DIR/del.json" 2>/dev/null && aws s3api delete-objects --bucket "$BUCKET" --delete "file://$WORK_DIR/del.json" > /dev/null 2>&1; aws s3api list-object-versions --bucket "$BUCKET" --query '{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}, Quiet: `true`}' > "$WORK_DIR/del2.json" 2>/dev/null && aws s3api delete-objects --bucket "$BUCKET" --delete "file://$WORK_DIR/del2.json" > /dev/null 2>&1; aws s3 rb "s3://$BUCKET" 2>/dev/null && echo "  Deleted bucket"; rm -rf "$WORK_DIR"; echo "Done."; }
 echo "Step 1: Creating versioned bucket"
