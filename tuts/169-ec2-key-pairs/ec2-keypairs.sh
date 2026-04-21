@@ -1,7 +1,7 @@
 #!/bin/bash
 WORK_DIR=$(mktemp -d); exec > >(tee -a "$WORK_DIR/kp.log") 2>&1
-REGION=${AWS_DEFAULT_REGION:-$(aws configure get region 2>/dev/null)}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; echo "Region: $REGION"
-RANDOM_ID=$(openssl rand -hex 4); KEY1="tut-key-${RANDOM_ID}-rsa"; KEY2="tut-key-${RANDOM_ID}-ed25519"
+REGION=${AWS_DEFAULT_REGION:-${AWS_REGION:-$(aws configure get region 2>/dev/null))}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; echo "Region: $REGION"
+RANDOM_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1); KEY1="tut-key-${RANDOM_ID}-rsa"; KEY2="tut-key-${RANDOM_ID}-ed25519"
 handle_error() { echo "ERROR on line $1"; trap - ERR; cleanup; exit 1; }; trap 'handle_error $LINENO' ERR
 cleanup() { echo ""; echo "Cleaning up..."; aws ec2 delete-key-pair --key-name "$KEY1" 2>/dev/null && echo "  Deleted $KEY1"; aws ec2 delete-key-pair --key-name "$KEY2" 2>/dev/null && echo "  Deleted $KEY2"; rm -rf "$WORK_DIR"; echo "Done."; }
 echo "Step 1: Creating RSA key pair"
