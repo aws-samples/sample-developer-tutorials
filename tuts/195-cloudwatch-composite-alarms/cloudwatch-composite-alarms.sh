@@ -1,7 +1,7 @@
 #!/bin/bash
 WORK_DIR=$(mktemp -d); exec > >(tee -a "$WORK_DIR/tut.log") 2>&1
-REGION=${AWS_DEFAULT_REGION:-$(aws configure get region 2>/dev/null)}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; echo "Region: $REGION"
-RANDOM_ID=$(openssl rand -hex 4); NS="Tutorial/Comp-${RANDOM_ID}"; A1="tut-cpu-${RANDOM_ID}"; A2="tut-mem-${RANDOM_ID}"; COMP="tut-composite-${RANDOM_ID}"
+REGION=${AWS_DEFAULT_REGION:-${AWS_REGION:-$(aws configure get region 2>/dev/null))}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; echo "Region: $REGION"
+RANDOM_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1); NS="Tutorial/Comp-${RANDOM_ID}"; A1="tut-cpu-${RANDOM_ID}"; A2="tut-mem-${RANDOM_ID}"; COMP="tut-composite-${RANDOM_ID}"
 cleanup() { echo "Cleaning up..."; aws cloudwatch delete-alarms --alarm-names "$COMP" "$A1" "$A2" 2>/dev/null && echo "  Deleted alarms"; rm -rf "$WORK_DIR"; echo "Done."; }
 echo "Step 1: Publishing metrics"
 for i in $(seq 1 5); do aws cloudwatch put-metric-data --namespace "$NS" --metric-data "[{\"MetricName\":\"CPU\",\"Value\":$((RANDOM%100)),\"Unit\":\"Percent\"},{\"MetricName\":\"Memory\",\"Value\":$((RANDOM%100)),\"Unit\":\"Percent\"}]"; done
