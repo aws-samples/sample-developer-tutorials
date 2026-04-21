@@ -14,15 +14,22 @@ if [ -z "$BUCKET_NAME" ] || [ "$BUCKET_NAME" = "None" ]; then
 fi
 
 echo "Bucket: $BUCKET_NAME"
+echo ""
+echo "Contents:"
+aws s3 ls "s3://$BUCKET_NAME/" 2>/dev/null || echo "  (empty)"
+echo ""
+echo "This will permanently delete all objects and the bucket itself."
+read -rp "Type the bucket name to confirm: " CONFIRM
 
-# Empty the bucket (including versions)
-OBJ_COUNT=$(aws s3api list-objects-v2 --bucket "$BUCKET_NAME" --query 'KeyCount' --output text 2>/dev/null || echo "0")
-if [ "$OBJ_COUNT" -gt 0 ] 2>/dev/null; then
-    echo "Emptying $OBJ_COUNT objects..."
-    aws s3 rm "s3://$BUCKET_NAME" --recursive --quiet
+if [ "$CONFIRM" != "$BUCKET_NAME" ]; then
+    echo "Bucket name does not match. Aborting."
+    exit 1
 fi
 
-# Delete versions and delete markers
+echo ""
+echo "Emptying bucket..."
+aws s3 rm "s3://$BUCKET_NAME" --recursive --quiet
+
 aws s3api list-object-versions --bucket "$BUCKET_NAME" \
     --query '{Objects: Versions[].{Key:Key,VersionId:VersionId}, Quiet: true}' \
     --output json 2>/dev/null | \
