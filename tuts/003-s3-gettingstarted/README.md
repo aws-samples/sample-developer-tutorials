@@ -84,12 +84,3 @@ bash tuts/003-s3-gettingstarted/s3-gettingstarted-cfn.sh
 ```bash
 ./cleanup.sh 003-s3-gettingstarted
 ```
-## Appendix: Generation details
-
-| Field | Value |
-|-------|-------|
-| Generation date | 2026-04-14 (README regenerated with appendix) |
-| Source script | Regenerated from source topic, 332 lines |
-| Script test result | EXIT 0, 16s, 9 steps, clean teardown |
-| Issues encountered | None — straightforward S3 operations |
-| Iterations | v1 (original), v2 (regenerated from source topic 2026-04-12) |
