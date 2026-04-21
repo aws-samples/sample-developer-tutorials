@@ -21,3 +21,30 @@ The script creates the following AWS resources in order:
 - EC2 route (b)
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.
+
+
+## CloudFormation
+
+This tutorial includes a CloudFormation template that creates the same resources as the CLI script.
+
+**Resources created:** Transit gateway with two VPCs
+
+### Deploy with CloudFormation
+
+```bash
+./deploy.sh 012-transitgateway-gettingstarted
+```
+
+### Run the interactive steps
+
+Once deployed, run the interactive tutorial steps against the CloudFormation-created resources. Each command is displayed with resolved values so you can run them individually.
+
+```bash
+bash tuts/012-transitgateway-gettingstarted/transitgateway-gettingstarted-cfn.sh
+```
+
+### Clean up
+
+```bash
+./cleanup.sh 012-transitgateway-gettingstarted
+```

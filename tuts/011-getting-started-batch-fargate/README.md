@@ -15,3 +15,30 @@ The script creates the following AWS resources in order:
 - Batch job definition
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.
+
+
+## CloudFormation
+
+This tutorial includes a CloudFormation template that creates the same resources as the CLI script.
+
+**Resources created:** Batch compute environment and job queue on Fargate
+
+### Deploy with CloudFormation
+
+```bash
+./deploy.sh 011-getting-started-batch-fargate
+```
+
+### Run the interactive steps
+
+Once deployed, run the interactive tutorial steps against the CloudFormation-created resources. Each command is displayed with resolved values so you can run them individually.
+
+```bash
+bash tuts/011-getting-started-batch-fargate/batch-fargate-cfn.sh
+```
+
+### Clean up
+
+```bash
+./cleanup.sh 011-getting-started-batch-fargate
+```
