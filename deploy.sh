@@ -126,12 +126,18 @@ aws cloudformation deploy \
     --template-file "$TEMPLATE" \
     --stack-name "$STACK_NAME" \
     $CAPA_ARG \
-    $OVERRIDES_ARG
+    $OVERRIDES_ARG \
+    --no-fail-on-empty-changeset
 
 echo ""
-echo "Stack outputs:"
+echo "=== Stack Resources ==="
+aws cloudformation list-stack-resources --stack-name "$STACK_NAME" \
+    --query 'StackResourceSummaries[].{Type:ResourceType,LogicalId:LogicalResourceId,PhysicalId:PhysicalResourceId,Status:ResourceStatus}' --output table 2>/dev/null || echo "  (none)"
+
+echo ""
+echo "=== Stack Outputs ==="
 aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
     --query 'Stacks[0].Outputs[].{Key:OutputKey,Value:OutputValue}' --output table 2>/dev/null || echo "  (none)"
 
 echo ""
-echo "To delete: $0 --delete $TUT_DIR"
+echo "To delete: ./cleanup.sh $TUT_DIR"

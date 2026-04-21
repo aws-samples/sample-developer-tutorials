@@ -73,13 +73,31 @@ STATUS=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
 
 if [ "$STATUS" = "NONE" ] || [ "$STATUS" = "DELETE_COMPLETE" ]; then
     echo "Stack $STACK_NAME does not exist."
+    echo ""
+    echo "Searching for orphaned resources tagged with this stack name..."
+    echo "(Resources that may have been left behind from a failed deletion)"
+    echo ""
+    # Search by tag
+    aws resourcegroupstaggingapi get-resources \
+        --tag-filters "Key=tutorial,Values=$STACK_NAME" \
+        --query 'ResourceTagMappingList[].{ARN:ResourceARN}' --output table 2>/dev/null || true
+    # Also search by name prefix
+    aws resourcegroupstaggingapi get-resources \
+        --tag-filters "Key=aws:cloudformation:stack-name,Values=$STACK_NAME" \
+        --query 'ResourceTagMappingList[].{ARN:ResourceARN}' --output table 2>/dev/null || true
     exit 0
 fi
 
 echo "Stack: $STACK_NAME (status: $STATUS)"
-echo "Resources:"
+echo ""
+echo "=== Stack Resources ==="
 aws cloudformation list-stack-resources --stack-name "$STACK_NAME" \
-    --query 'StackResourceSummaries[].{Type:ResourceType,LogicalId:LogicalResourceId,Status:ResourceStatus}' --output table
+    --query 'StackResourceSummaries[].{Type:ResourceType,LogicalId:LogicalResourceId,PhysicalId:PhysicalResourceId,Status:ResourceStatus}' --output table
+
+echo ""
+echo "=== Stack Outputs ==="
+aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
+    --query 'Stacks[0].Outputs[].{Key:OutputKey,Value:OutputValue}' --output table 2>/dev/null || echo "  (none)"
 
 echo ""
 read -rp "Delete stack $STACK_NAME? (y/n): " CHOICE
