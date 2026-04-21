@@ -57,6 +57,33 @@ Free tier eligible. No charges expected for a few objects.
 
 ---
 
+
+
+## CloudFormation
+
+This tutorial includes a CloudFormation template that creates the same resources as the CLI script.
+
+**Resources created:** S3 bucket (uses shared prereq bucket)
+
+### Deploy with CloudFormation
+
+```bash
+./deploy.sh 003-s3-gettingstarted
+```
+
+### Run the interactive steps
+
+Once deployed, run the interactive tutorial steps against the CloudFormation-created resources. Each command is displayed with resolved values so you can run them individually.
+
+```bash
+bash tuts/003-s3-gettingstarted/s3-gettingstarted-cfn.sh
+```
+
+### Clean up
+
+```bash
+./cleanup.sh 003-s3-gettingstarted
+```
 ## Appendix: Generation details
 
 | Field | Value |

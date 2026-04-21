@@ -13,3 +13,30 @@ The script creates the following AWS resources in order:
 - S3 bucket policy
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.
+
+
+## CloudFormation
+
+This tutorial includes a CloudFormation template that creates the same resources as the CLI script.
+
+**Resources created:** CloudFront distribution with S3 origin
+
+### Deploy with CloudFormation
+
+```bash
+./deploy.sh 005-cloudfront-gettingstarted
+```
+
+### Run the interactive steps
+
+Once deployed, run the interactive tutorial steps against the CloudFormation-created resources. Each command is displayed with resolved values so you can run them individually.
+
+```bash
+bash tuts/005-cloudfront-gettingstarted/cloudfront-gettingstarted-cfn.sh
+```
+
+### Clean up
+
+```bash
+./cleanup.sh 005-cloudfront-gettingstarted
+```
