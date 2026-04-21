@@ -1,7 +1,7 @@
 #!/bin/bash
 WORK_DIR=$(mktemp -d); exec > >(tee -a "$WORK_DIR/ec2-snap.log") 2>&1
-REGION=${AWS_DEFAULT_REGION:-$(aws configure get region 2>/dev/null)}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; echo "Region: $REGION"
-RANDOM_ID=$(openssl rand -hex 4)
+REGION=${AWS_DEFAULT_REGION:-${AWS_REGION:-$(aws configure get region 2>/dev/null))}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; echo "Region: $REGION"
+RANDOM_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
 handle_error() { echo "ERROR on line $1"; trap - ERR; cleanup; exit 1; }; trap 'handle_error $LINENO' ERR
 cleanup() { echo ""; echo "Cleaning up..."; [ -n "$SNAP_ID" ] && aws ec2 delete-snapshot --snapshot-id "$SNAP_ID" 2>/dev/null && echo "  Deleted snapshot"; [ -n "$VOL_ID" ] && aws ec2 delete-volume --volume-id "$VOL_ID" 2>/dev/null && echo "  Deleted volume"; rm -rf "$WORK_DIR"; echo "Done."; }
 AZ=$(aws ec2 describe-availability-zones --query 'AvailabilityZones[0].ZoneName' --output text)

@@ -14,7 +14,7 @@ fi
 export AWS_DEFAULT_REGION="$REGION"
 echo "Region: $REGION"
 
-RANDOM_ID=$(openssl rand -hex 4)
+RANDOM_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
 TOPIC_NAME="sns-lambda-tut-${RANDOM_ID}"
 ROLE_NAME="lambda-sns-role-${RANDOM_ID}"
 FUNCTION_NAME="sns-processor-${RANDOM_ID}"
