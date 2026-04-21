@@ -1,7 +1,7 @@
 #!/bin/bash
 WORK_DIR=$(mktemp -d); exec > >(tee -a "$WORK_DIR/tut.log") 2>&1
-REGION=${AWS_DEFAULT_REGION:-$(aws configure get region 2>/dev/null)}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; echo "Region: $REGION"
-RANDOM_ID=$(openssl rand -hex 4); F="dlq-func-${RANDOM_ID}"; R="dlq-func-role-${RANDOM_ID}"; Q="dlq-func-q-${RANDOM_ID}"
+REGION=${AWS_DEFAULT_REGION:-${AWS_REGION:-$(aws configure get region 2>/dev/null))}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; echo "Region: $REGION"
+RANDOM_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1); F="dlq-func-${RANDOM_ID}"; R="dlq-func-role-${RANDOM_ID}"; Q="dlq-func-q-${RANDOM_ID}"
 handle_error() { echo "ERROR on line $1"; trap - ERR; cleanup; exit 1; }; trap 'handle_error $LINENO' ERR
 cleanup() { echo "Cleaning up..."; aws lambda delete-function --function-name "$F" 2>/dev/null; [ -n "$QU" ] && aws sqs delete-queue --queue-url "$QU" 2>/dev/null; aws iam detach-role-policy --role-name "$R" --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole 2>/dev/null; aws iam detach-role-policy --role-name "$R" --policy-arn arn:aws:iam::aws:policy/AmazonSQSFullAccess 2>/dev/null; aws iam delete-role --role-name "$R" 2>/dev/null; rm -rf "$WORK_DIR"; echo "Done."; }
 RA=$(aws iam create-role --role-name "$R" --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}' --query Role.Arn --output text)

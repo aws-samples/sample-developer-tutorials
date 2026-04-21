@@ -1,6 +1,6 @@
 #!/bin/bash
 WORK_DIR=$(mktemp -d); exec > >(tee -a "$WORK_DIR/tut.log") 2>&1
-REGION=${AWS_DEFAULT_REGION:-$(aws configure get region 2>/dev/null)}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; echo "Region: $REGION"
+REGION=${AWS_DEFAULT_REGION:-${AWS_REGION:-$(aws configure get region 2>/dev/null))}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; echo "Region: $REGION"
 echo "Step 1: Listing Lambda runtimes"
 aws lambda list-layers --compatible-runtime python3.12 --query 'Layers[:5].{Name:LayerName,Version:LatestMatchingVersion.Version}' --output table 2>/dev/null || echo "  No compatible layers"
 echo "Step 2: Getting Lambda service quotas"
