@@ -8,7 +8,7 @@ echo "Region: $REGION"
 echo "Step 1: Describing organization"
 aws organizations describe-organization --query 'Organization.{Id:Id,MasterAccount:MasterAccountId,FeatureSet:FeatureSet}' --output table 2>/dev/null || echo "  No organization found (this account may not be part of an organization)"
 echo "Step 2: Listing accounts"
-aws organizations list-accounts --query 'Accounts[:5].{Id:Id,Name:Name,Status:Status,Email:Email}' --output table 2>/dev/null || echo "  Cannot list accounts (requires organization master)"
+aws organizations list-accounts --query 'Accounts[:5].{Id:Id,Name:Name,Status:Status,Email:Email}' --output table 2>/dev/null || echo "  Cannot list accounts (requires management account access)"
 echo "Step 3: Listing organizational units"
 ROOT_ID=$(aws organizations list-roots --query 'Roots[0].Id' --output text 2>/dev/null)
 [ -n "$ROOT_ID" ] && [ "$ROOT_ID" != "None" ] && aws organizations list-organizational-units-for-parent --parent-id "$ROOT_ID" --query 'OrganizationalUnits[].{Id:Id,Name:Name}' --output table 2>/dev/null || echo "  No OUs found"
