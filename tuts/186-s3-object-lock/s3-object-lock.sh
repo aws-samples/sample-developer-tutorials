@@ -1,7 +1,7 @@
 #!/bin/bash
 WORK_DIR=$(mktemp -d); exec > >(tee -a "$WORK_DIR/tut.log") 2>&1
-REGION=${AWS_DEFAULT_REGION:-$(aws configure get region 2>/dev/null)}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; echo "Region: $REGION"
-RANDOM_ID=$(openssl rand -hex 4); ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+REGION=${AWS_DEFAULT_REGION:-${AWS_REGION:-$(aws configure get region 2>/dev/null))}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; echo "Region: $REGION"
+RANDOM_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1); ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
 B="lock-tut-${RANDOM_ID}-${ACCOUNT}"
 handle_error() { echo "ERROR on line $1"; trap - ERR; cleanup; exit 1; }; trap 'handle_error $LINENO' ERR
 cleanup() { echo "Cleaning up..."; echo "  Object Lock buckets require all versions to expire before deletion."; echo "  Manual: aws s3api delete-bucket --bucket $B (after retention expires)"; rm -rf "$WORK_DIR"; echo "Done."; }
