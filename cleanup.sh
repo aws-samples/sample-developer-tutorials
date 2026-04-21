@@ -74,7 +74,7 @@ STATUS=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
 if [ "$STATUS" = "NONE" ] || [ "$STATUS" = "DELETE_COMPLETE" ]; then
     echo "Stack $STACK_NAME does not exist."
     echo ""
-    echo "Searching for orphaned resources tagged with this stack name..."
+    echo "Searching for leftover resources tagged with this stack name..."
     echo "(Resources that may have been left behind from a failed deletion)"
     echo ""
     # Search by tag
