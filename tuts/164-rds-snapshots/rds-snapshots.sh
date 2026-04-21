@@ -1,6 +1,6 @@
 #!/bin/bash
 WORK_DIR=$(mktemp -d); exec > >(tee -a "$WORK_DIR/rds-snap.log") 2>&1
-REGION=${AWS_DEFAULT_REGION:-$(aws configure get region 2>/dev/null)}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; echo "Region: $REGION"
+REGION=${AWS_DEFAULT_REGION:-${AWS_REGION:-$(aws configure get region 2>/dev/null))}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; echo "Region: $REGION"
 echo "Step 1: Listing RDS instances"
 aws rds describe-db-instances --query 'DBInstances[:5].{Id:DBInstanceIdentifier,Engine:Engine,Status:DBInstanceStatus,Class:DBInstanceClass}' --output table 2>/dev/null || echo "  No RDS instances"
 echo "Step 2: Listing automated snapshots"
