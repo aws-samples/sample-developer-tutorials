@@ -1,7 +1,7 @@
 #!/bin/bash
 WORK_DIR=$(mktemp -d); exec > >(tee -a "$WORK_DIR/codepipeline.log") 2>&1
-REGION=${AWS_DEFAULT_REGION:-$(aws configure get region 2>/dev/null)}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; ACCOUNT=$(aws sts get-caller-identity --query 'Account' --output text); echo "Region: $REGION"
-RANDOM_ID=$(openssl rand -hex 4); PIPE_NAME="tut-pipe-${RANDOM_ID}"; BUCKET="codepipeline-tut-${RANDOM_ID}-${ACCOUNT}"; ROLE_NAME="codepipeline-tut-role-${RANDOM_ID}"
+REGION=${AWS_DEFAULT_REGION:-${AWS_REGION:-$(aws configure get region 2>/dev/null))}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; ACCOUNT=$(aws sts get-caller-identity --query 'Account' --output text); echo "Region: $REGION"
+RANDOM_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1); PIPE_NAME="tut-pipe-${RANDOM_ID}"; BUCKET="codepipeline-tut-${RANDOM_ID}-${ACCOUNT}"; ROLE_NAME="codepipeline-tut-role-${RANDOM_ID}"
 handle_error() { echo "ERROR on line $1"; trap - ERR; cleanup; exit 1; }; trap 'handle_error $LINENO' ERR
 cleanup() { echo ""; echo "Cleaning up..."; aws codepipeline delete-pipeline --name "$PIPE_NAME" 2>/dev/null && echo "  Deleted pipeline"; aws iam delete-role-policy --role-name "$ROLE_NAME" --policy-name pipe-policy 2>/dev/null; aws iam delete-role --role-name "$ROLE_NAME" 2>/dev/null && echo "  Deleted role"; if aws s3 ls "s3://$BUCKET" > /dev/null 2>&1; then aws s3 rm "s3://$BUCKET" --recursive --quiet; aws s3 rb "s3://$BUCKET" && echo "  Deleted bucket"; fi; rm -rf "$WORK_DIR"; echo "Done."; }
 echo "Step 1: Creating S3 bucket for artifacts"

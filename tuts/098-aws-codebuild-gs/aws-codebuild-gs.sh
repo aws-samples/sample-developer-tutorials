@@ -15,7 +15,7 @@ export AWS_DEFAULT_REGION="$REGION"
 ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
 echo "Region: $REGION"
 
-RANDOM_ID=$(openssl rand -hex 4)
+RANDOM_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
 BUCKET_NAME="codebuild-tut-${RANDOM_ID}-${ACCOUNT_ID}"
 PROJECT_NAME="tut-build-${RANDOM_ID}"
 ROLE_NAME="codebuild-tut-role-${RANDOM_ID}"
