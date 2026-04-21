@@ -14,7 +14,7 @@ fi
 export AWS_DEFAULT_REGION="$REGION"
 echo "Region: $REGION"
 
-RANDOM_ID=$(openssl rand -hex 4)
+RANDOM_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
 GROUP_NAME="tut-group-${RANDOM_ID}"
 
 handle_error() { echo "ERROR on line $1"; trap - ERR; cleanup; exit 1; }
@@ -34,7 +34,7 @@ TRACE_ID=$(python3 -c "import time,random;print(f'1-{int(time.time()):08x}-{rand
 NOW=$(python3 -c "import time;print(time.time())")
 END=$(python3 -c "import time;print(time.time()+0.5)")
 
-SEGMENT="{\"trace_id\":\"$TRACE_ID\",\"id\":\"$(openssl rand -hex 8)\",\"name\":\"tutorial-service\",\"start_time\":$NOW,\"end_time\":$END,\"http\":{\"request\":{\"method\":\"GET\",\"url\":\"https://example.com/api/items\"},\"response\":{\"status\":200}}}"
+SEGMENT="{\"trace_id\":\"$TRACE_ID\",\"id\":\"$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)\",\"name\":\"tutorial-service\",\"start_time\":$NOW,\"end_time\":$END,\"http\":{\"request\":{\"method\":\"GET\",\"url\":\"https://example.com/api/items\"},\"response\":{\"status\":200}}}"
 
 aws xray put-trace-segments --trace-segment-documents "$SEGMENT" \
     --query 'UnprocessedTraceSegments' --output text
@@ -42,7 +42,7 @@ echo "  Trace ID: $TRACE_ID"
 
 # Send a subsegment
 PARENT_ID=$(echo "$SEGMENT" | python3 -c "import sys,json;print(json.load(sys.stdin)['id'])")
-SUBSEG="{\"trace_id\":\"$TRACE_ID\",\"id\":\"$(openssl rand -hex 8)\",\"name\":\"database-query\",\"start_time\":$NOW,\"end_time\":$END,\"parent_id\":\"$PARENT_ID\"}"
+SUBSEG="{\"trace_id\":\"$TRACE_ID\",\"id\":\"$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)\",\"name\":\"database-query\",\"start_time\":$NOW,\"end_time\":$END,\"parent_id\":\"$PARENT_ID\"}"
 aws xray put-trace-segments --trace-segment-documents "$SUBSEG" > /dev/null 2>&1
 echo "  Sent parent segment + subsegment"
 
