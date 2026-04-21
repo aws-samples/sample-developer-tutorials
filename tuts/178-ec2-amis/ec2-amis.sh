@@ -1,6 +1,6 @@
 #!/bin/bash
 exec > >(tee -a "$(mktemp -d)/amis.log") 2>&1
-REGION=${AWS_DEFAULT_REGION:-$(aws configure get region 2>/dev/null)}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; echo "Region: $REGION"
+REGION=${AWS_DEFAULT_REGION:-${AWS_REGION:-$(aws configure get region 2>/dev/null))}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; echo "Region: $REGION"
 echo "Step 1: Listing Amazon Linux 2023 AMIs"
 aws ec2 describe-images --owners amazon --filters "Name=name,Values=al2023-ami-2023*-x86_64" "Name=state,Values=available" --query 'sort_by(Images, &CreationDate)[-3:].{Id:ImageId,Name:Name,Created:CreationDate}' --output table
 echo "Step 2: Listing Ubuntu AMIs"
