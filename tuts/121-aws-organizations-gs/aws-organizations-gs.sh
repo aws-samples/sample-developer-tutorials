@@ -1,7 +1,7 @@
 #!/bin/bash
 WORK_DIR=$(mktemp -d)
 exec > >(tee -a "$WORK_DIR/orgs-$(date +%Y%m%d-%H%M%S).log") 2>&1
-REGION=${AWS_DEFAULT_REGION:-$(aws configure get region 2>/dev/null)}
+REGION=${AWS_DEFAULT_REGION:-${AWS_REGION:-$(aws configure get region 2>/dev/null))}
 [ -z "$REGION" ] && echo "ERROR: No region" && exit 1
 export AWS_DEFAULT_REGION="$REGION"
 echo "Region: $REGION"

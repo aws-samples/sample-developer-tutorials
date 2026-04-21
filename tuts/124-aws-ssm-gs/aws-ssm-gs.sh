@@ -1,11 +1,11 @@
 #!/bin/bash
 WORK_DIR=$(mktemp -d)
 exec > >(tee -a "$WORK_DIR/ssm-$(date +%Y%m%d-%H%M%S).log") 2>&1
-REGION=${AWS_DEFAULT_REGION:-$(aws configure get region 2>/dev/null)}
+REGION=${AWS_DEFAULT_REGION:-${AWS_REGION:-$(aws configure get region 2>/dev/null))}
 [ -z "$REGION" ] && echo "ERROR: No region" && exit 1
 export AWS_DEFAULT_REGION="$REGION"
 echo "Region: $REGION"
-RANDOM_ID=$(openssl rand -hex 4)
+RANDOM_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
 handle_error() { echo "ERROR on line $1"; trap - ERR; cleanup; exit 1; }
 trap 'handle_error $LINENO' ERR
 cleanup() { echo ""; echo "Cleaning up..."; aws ssm delete-parameter --name "/tutorial/$RANDOM_ID/db-host" 2>/dev/null; aws ssm delete-parameter --name "/tutorial/$RANDOM_ID/db-password" 2>/dev/null; aws ssm delete-parameter --name "/tutorial/$RANDOM_ID/app-config" 2>/dev/null; echo "  Deleted parameters"; rm -rf "$WORK_DIR"; echo "Done."; }
