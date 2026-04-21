@@ -1,7 +1,7 @@
 #!/bin/bash
 WORK_DIR=$(mktemp -d); exec > >(tee -a "$WORK_DIR/ga.log") 2>&1
 export AWS_DEFAULT_REGION=us-west-2; echo "Region: us-west-2 (Global Accelerator)"
-RANDOM_ID=$(openssl rand -hex 4); GA_NAME="tut-ga-${RANDOM_ID}"
+RANDOM_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1); GA_NAME="tut-ga-${RANDOM_ID}"
 handle_error() { echo "ERROR on line $1"; trap - ERR; cleanup; exit 1; }; trap 'handle_error $LINENO' ERR
 cleanup() { echo ""; echo "Cleaning up..."; [ -n "$GA_ARN" ] && { aws globalaccelerator update-accelerator --accelerator-arn "$GA_ARN" --no-enabled 2>/dev/null; sleep 5; aws globalaccelerator delete-accelerator --accelerator-arn "$GA_ARN" 2>/dev/null && echo "  Deleted accelerator"; }; rm -rf "$WORK_DIR"; echo "Done."; }
 echo "Step 1: Creating accelerator: $GA_NAME"
