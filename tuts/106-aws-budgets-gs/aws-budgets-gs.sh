@@ -16,7 +16,7 @@ ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
 echo "Region: $REGION"
 echo "Account: $ACCOUNT_ID"
 
-RANDOM_ID=$(openssl rand -hex 4)
+RANDOM_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
 BUDGET_NAME="tutorial-budget-${RANDOM_ID}"
 
 handle_error() { echo "ERROR on line $1"; trap - ERR; cleanup; exit 1; }
