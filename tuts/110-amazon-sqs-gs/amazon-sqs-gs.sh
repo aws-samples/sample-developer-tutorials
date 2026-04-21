@@ -14,7 +14,7 @@ fi
 export AWS_DEFAULT_REGION="$REGION"
 echo "Region: $REGION"
 
-RANDOM_ID=$(openssl rand -hex 4)
+RANDOM_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
 QUEUE_NAME="tut-queue-${RANDOM_ID}"
 DLQ_NAME="tut-dlq-${RANDOM_ID}"
 FIFO_NAME="tut-fifo-${RANDOM_ID}.fifo"

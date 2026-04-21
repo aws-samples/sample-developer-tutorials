@@ -1,7 +1,7 @@
 #!/bin/bash
 WORK_DIR=$(mktemp -d); exec > >(tee -a "$WORK_DIR/sns-filter.log") 2>&1
-REGION=${AWS_DEFAULT_REGION:-$(aws configure get region 2>/dev/null)}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; echo "Region: $REGION"
-RANDOM_ID=$(openssl rand -hex 4); TOPIC="tut-filter-${RANDOM_ID}"; Q1="tut-orders-${RANDOM_ID}"; Q2="tut-alerts-${RANDOM_ID}"
+REGION=${AWS_DEFAULT_REGION:-${AWS_REGION:-$(aws configure get region 2>/dev/null))}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; echo "Region: $REGION"
+RANDOM_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1); TOPIC="tut-filter-${RANDOM_ID}"; Q1="tut-orders-${RANDOM_ID}"; Q2="tut-alerts-${RANDOM_ID}"
 handle_error() { echo "ERROR on line $1"; trap - ERR; cleanup; exit 1; }; trap 'handle_error $LINENO' ERR
 cleanup() { echo ""; echo "Cleaning up..."; [ -n "$SUB1_ARN" ] && aws sns unsubscribe --subscription-arn "$SUB1_ARN" 2>/dev/null; [ -n "$SUB2_ARN" ] && aws sns unsubscribe --subscription-arn "$SUB2_ARN" 2>/dev/null; aws sns delete-topic --topic-arn "$TOPIC_ARN" 2>/dev/null && echo "  Deleted topic"; [ -n "$Q1_URL" ] && aws sqs delete-queue --queue-url "$Q1_URL" 2>/dev/null; [ -n "$Q2_URL" ] && aws sqs delete-queue --queue-url "$Q2_URL" 2>/dev/null; echo "  Deleted queues"; rm -rf "$WORK_DIR"; echo "Done."; }
 echo "Step 1: Creating topic and queues"
