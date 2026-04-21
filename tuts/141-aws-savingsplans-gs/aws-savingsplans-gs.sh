@@ -1,6 +1,7 @@
 #!/bin/bash
 WORK_DIR=$(mktemp -d); exec > >(tee -a "$WORK_DIR/sp.log") 2>&1
-export AWS_DEFAULT_REGION=us-east-1; echo "Region: us-east-1"
+REGION=us-east-1  # Savings Plans requires us-east-1
+export AWS_DEFAULT_REGION="$REGION"; export AWS_REGION="$REGION"; echo "Region: $REGION"
 echo "Step 1: Describing savings plans"
 aws savingsplans describe-savings-plans --query 'savingsPlans[:5].{Id:savingsPlanId,Type:savingsPlanType,State:state,Commitment:commitment}' --output table 2>/dev/null || echo "  No savings plans found"
 echo "Step 2: Describing savings plan rates"
