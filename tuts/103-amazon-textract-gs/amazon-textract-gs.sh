@@ -16,7 +16,16 @@ ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
 echo "Region: $REGION"
 
 RANDOM_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
-BUCKET_NAME="textract-tut-${RANDOM_ID}-${ACCOUNT_ID}"
+# Check for prereq bucket stack first
+PREREQ_BUCKET=$(aws cloudformation describe-stacks --stack-name tutorial-prereqs-bucket     --query 'Stacks[0].Outputs[?OutputKey==`BucketName`].OutputValue' --output text 2>/dev/null)
+if [ -n "$PREREQ_BUCKET" ] && [ "$PREREQ_BUCKET" != "None" ]; then
+    BUCKET_NAME="$PREREQ_BUCKET"
+    BUCKET_IS_PREREQ=true
+    echo "Using prereq bucket: $BUCKET_NAME"
+else
+    BUCKET_NAME="textract-tut-${RANDOM_ID}-${ACCOUNT_ID}"
+    BUCKET_IS_PREREQ=false
+fi
 
 handle_error() { echo "ERROR on line $1"; trap - ERR; cleanup; exit 1; }
 trap 'handle_error $LINENO' ERR

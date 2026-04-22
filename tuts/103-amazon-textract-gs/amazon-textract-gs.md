@@ -8,34 +8,30 @@ This tutorial shows you how to upload a document image to Amazon S3, use Amazon 
 - Python 3 installed (used to generate a sample PNG image)
 - Permissions for `s3:CreateBucket`, `s3:PutObject`, `s3:DeleteObject`, `s3:DeleteBucket`, `textract:DetectDocumentText`, and `textract:AnalyzeDocument`
 
-## Step 1: Create a sample document image
+## Step 1: Use the sample document image
 
-Generate a minimal PNG image to use as a test document. In practice, you would use a scanned document or photograph containing text.
+This tutorial includes a sample document image at `../../sample-images/sample-document.png`. Copy it to your working directory:
 
-```bash
-WORK_DIR=$(mktemp -d)
-
-python3 -c "
-import struct, zlib
-w,h=200,50
-row=b'\x00'+b'\xff\xff\xff'*w
-raw=row*h
-comp=zlib.compress(raw)
-def ch(t,d):
-    c=t+d
-    return struct.pack('>I',len(d))+c+struct.pack('>I',zlib.crc32(c)&0xffffffff)
-with open('$WORK_DIR/sample.png','wb') as f:
-    f.write(b'\x89PNG\r\n\x1a\n')
-    f.write(ch(b'IHDR',struct.pack('>IIBBBBB',w,h,8,2,0,0,0)))
-    f.write(ch(b'IDAT',comp))
-    f.write(ch(b'IEND',b''))
-"
-echo "Created sample.png (200x50 white image)"
+```
+cp ../../sample-images/sample-document.png sample.png
 ```
 
-This creates a blank white PNG. Textract won't find text in it, but it demonstrates the API calls. Replace it with a real document to see text extraction in action.
+## Step 2: Detect text from local file bytes
 
-## Step 2: Upload the document to S3
+Send the document directly as base64-encoded bytes instead of referencing S3.
+
+```bash
+aws textract detect-document-text \
+    --document '{"Bytes":"'"$(base64 -w0 "$WORK_DIR/sample.png")"'"}' \
+    --query '{Pages:DocumentMetadata.Pages,BlockCount:Blocks|length(@)}' --output table
+```
+
+The `Bytes` option is useful for quick tests or when you don't want to upload to S3 first. The document size limit for synchronous operations is 10 MB.
+
+## Step 3: Upload to S3 (alternative method)
+
+If you want to use S3 instead of local file bytes, upload the image to a bucket. If the tutorial prereq bucket stack is deployed, use that bucket. Otherwise create one.
+
 
 Create an S3 bucket and upload the sample image.
 
@@ -52,7 +48,7 @@ echo "Uploaded to s3://$BUCKET_NAME/sample.png"
 
 Textract reads documents directly from S3. For `us-east-1`, omit the `--create-bucket-configuration` parameter.
 
-## Step 3: Detect text in the document
+## Step 4: Detect text from S3 in the document
 
 ```bash
 aws textract detect-document-text \
@@ -62,7 +58,7 @@ aws textract detect-document-text \
 
 `detect-document-text` returns `LINE` and `WORD` blocks. Each block includes the detected text and a confidence score. With the blank sample image, no text lines are returned.
 
-## Step 4: Analyze document for forms and tables
+## Step 5: Analyze document for forms and tables
 
 ```bash
 aws textract analyze-document \
@@ -72,18 +68,6 @@ aws textract analyze-document \
 ```
 
 `analyze-document` goes beyond text detection. With `FORMS`, it identifies key-value pairs (like form fields). With `TABLES`, it identifies rows and columns. You can request both features in a single call.
-
-## Step 5: Detect text from local file bytes
-
-Send the document directly as base64-encoded bytes instead of referencing S3.
-
-```bash
-aws textract detect-document-text \
-    --document '{"Bytes":"'"$(base64 -w0 "$WORK_DIR/sample.png")"'"}' \
-    --query '{Pages:DocumentMetadata.Pages,BlockCount:Blocks|length(@)}' --output table
-```
-
-The `Bytes` option is useful for quick tests or when you don't want to upload to S3 first. The document size limit for synchronous operations is 10 MB.
 
 ## Cleanup
 

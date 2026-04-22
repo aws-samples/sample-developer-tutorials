@@ -7,35 +7,15 @@ In this tutorial, you use the AWS CLI to analyze images with Amazon Rekognition.
 ## Prerequisites
 
 - AWS CLI installed and configured with appropriate permissions.
-- Python 3 (to generate the sample image).
 - An IAM principal with permissions for `rekognition:DetectLabels`, `rekognition:DetectText`, `s3:CreateBucket`, `s3:PutObject`, `s3:DeleteObject`, and `s3:DeleteBucket`.
 
-## Step 1: Create a sample image
+## Step 1: Use the sample image
 
-Generate a 100×100 gradient PNG using Python. The gradient gives Rekognition color data to analyze.
+This tutorial includes a sample photo at `../../sample-images/sample-photo.png`. Copy it to your working directory:
 
-```bash
-python3 -c "
-import struct, zlib
-w,h=100,100
-rows=b''
-for y in range(h):
-    rows+=b'\x00'
-    for x in range(w):
-        rows+=bytes([int(x*2.55), int(y*2.55), 128])
-comp=zlib.compress(rows)
-def ch(t,d):
-    c=t+d
-    return struct.pack('>I',len(d))+c+struct.pack('>I',zlib.crc32(c)&0xffffffff)
-with open('sample.png','wb') as f:
-    f.write(b'\x89PNG\r\n\x1a\n')
-    f.write(ch(b'IHDR',struct.pack('>IIBBBBB',w,h,8,2,0,0,0)))
-    f.write(ch(b'IDAT',comp))
-    f.write(ch(b'IEND',b''))
-"
 ```
-
-This creates a minimal valid PNG without any external dependencies.
+cp ../../sample-images/sample-photo.png sample.png
+```
 
 ## Step 2: Upload to S3
 

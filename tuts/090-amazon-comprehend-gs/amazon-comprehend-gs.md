@@ -10,14 +10,14 @@ This tutorial shows you how to use the Amazon Comprehend real-time analysis APIs
 ## Step 1: Detect the dominant language
 
 ```bash
-aws comprehend detect-dominant-language --text "Your text here" \
+aws comprehend detect-dominant-language --text "Amazon Web Services provides cloud computing services that help businesses scale and innovate faster. Customers love the reliability and breadth of services available." \
     --query 'Languages[0].{Language:LanguageCode,Confidence:Score}' --output table
 ```
 
 ## Step 2: Detect sentiment
 
 ```bash
-aws comprehend detect-sentiment --text "Your text here" --language-code en \
+aws comprehend detect-sentiment --text "Amazon Web Services provides cloud computing services that help businesses scale and innovate faster. Customers love the reliability and breadth of services available." --language-code en \
     --query '{Sentiment:Sentiment,Positive:SentimentScore.Positive,Negative:SentimentScore.Negative}' --output table
 ```
 
@@ -26,14 +26,14 @@ aws comprehend detect-sentiment --text "Your text here" --language-code en \
 Identifies people, places, organizations, dates, and other entity types.
 
 ```bash
-aws comprehend detect-entities --text "Your text here" --language-code en \
+aws comprehend detect-entities --text "Amazon Web Services provides cloud computing services that help businesses scale and innovate faster. Customers love the reliability and breadth of services available." --language-code en \
     --query 'Entities[].{Text:Text,Type:Type,Score:Score}' --output table
 ```
 
 ## Step 4: Detect key phrases
 
 ```bash
-aws comprehend detect-key-phrases --text "Your text here" --language-code en \
+aws comprehend detect-key-phrases --text "Amazon Web Services provides cloud computing services that help businesses scale and innovate faster. Customers love the reliability and breadth of services available." --language-code en \
     --query 'KeyPhrases[].{Text:Text,Score:Score}' --output table
 ```
 
