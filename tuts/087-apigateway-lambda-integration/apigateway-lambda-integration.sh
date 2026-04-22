@@ -89,6 +89,11 @@ aws iam create-role \
     --role-name "$ROLE_NAME" \
     --assume-role-policy-document file://trust-policy.json
 
+# Tag IAM role
+aws iam tag-role \
+    --role-name "$ROLE_NAME" \
+    --tags Key=tutorial,Value=apigateway-lambda-integration
+
 # Attach execution policy
 aws iam attach-role-policy \
     --role-name "$ROLE_NAME" \
@@ -105,14 +110,16 @@ aws lambda create-function \
     --runtime python3.9 \
     --role "arn:aws:iam::$ACCOUNT_ID:role/$ROLE_NAME" \
     --handler lambda_function.lambda_handler \
-    --zip-file fileb://function.zip
+    --zip-file fileb://function.zip \
+    --tags Key=tutorial,Value=apigateway-lambda-integration
 
 echo "Creating API Gateway..."
 
 # Create REST API
 aws apigateway create-rest-api \
     --name "$API_NAME" \
-    --endpoint-configuration types=REGIONAL
+    --endpoint-configuration types=REGIONAL \
+    --tags Key=tutorial,Value=apigateway-lambda-integration
 
 # Get API ID
 API_ID=$(aws apigateway get-rest-apis --query "items[?name=='$API_NAME'].id" --output text)

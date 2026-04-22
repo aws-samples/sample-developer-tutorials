@@ -53,7 +53,11 @@ cleanup_resources() {
     echo "CLEANUP CONFIRMATION"
     echo "==========================================="
     echo "Do you want to clean up all created resources? (y/n): "
-    read -r CLEANUP_CHOICE
+    if [ -t 0 ]; then
+        read -r CLEANUP_CHOICE
+    else
+        CLEANUP_CHOICE=y
+    fi
     
     if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
         echo "Cleaning up resources..."
@@ -122,6 +126,10 @@ ADMIN_ROLE_OUTPUT=$(aws iam create-role \
 check_error "$ADMIN_ROLE_OUTPUT" "create-role for admin"
 echo "$ADMIN_ROLE_OUTPUT"
 
+# Tag the admin role
+ADMIN_ROLE_ARN=$(echo "$ADMIN_ROLE_OUTPUT" | grep -oP '"Arn": "\K[^"]+')
+aws iam tag-role --role-name "$ADMIN_ROLE_NAME" --tags Key=tutorial,Value=aws-secrets-manager-gs
+
 # Attach the SecretsManagerReadWrite policy to the admin role
 echo "Attaching SecretsManagerReadWrite policy to admin role"
 ATTACH_POLICY_OUTPUT=$(aws iam attach-role-policy \
@@ -151,6 +159,9 @@ RUNTIME_ROLE_OUTPUT=$(aws iam create-role \
 check_error "$RUNTIME_ROLE_OUTPUT" "create-role for runtime"
 echo "$RUNTIME_ROLE_OUTPUT"
 
+# Tag the runtime role
+aws iam tag-role --role-name "$RUNTIME_ROLE_NAME" --tags Key=tutorial,Value=aws-secrets-manager-gs
+
 # Wait for roles to be fully created
 echo "Waiting for IAM roles to be fully created..."
 sleep 10
@@ -161,7 +172,8 @@ echo "Creating secret in AWS Secrets Manager..."
 CREATE_SECRET_OUTPUT=$(aws secretsmanager create-secret \
     --name "$SECRET_NAME" \
     --description "API key for my application" \
-    --secret-string '{"ClientID":"my_client_id","ClientSecret":"wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"}')
+    --secret-string '{"ClientID":"my_client_id","ClientSecret":"wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"}' \
+    --tags Key=tutorial,Value=aws-secrets-manager-gs)
 
 check_error "$CREATE_SECRET_OUTPUT" "create-secret"
 echo "$CREATE_SECRET_OUTPUT"

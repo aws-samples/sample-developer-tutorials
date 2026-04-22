@@ -137,6 +137,10 @@ check_error "$ROLE_OUTPUT" $? "Failed to create IAM role"
 ROLE_ARN=$(echo "$ROLE_OUTPUT" | grep -o '"Arn": "[^"]*' | cut -d'"' -f4)
 echo "Role ARN: $ROLE_ARN" | tee -a "$LOG_FILE"
 
+# Tag IAM role
+echo "Tagging IAM role..." | tee -a "$LOG_FILE"
+log_cmd "aws iam tag-role --role-name \"$ROLE_NAME\" --tags Key=tutorial,Value=cloudwatch-streams"
+
 # Attach Lambda basic execution policy to the role
 echo "Attaching Lambda execution policy to role..." | tee -a "$LOG_FILE"
 POLICY_OUTPUT=$(log_cmd "aws iam attach-role-policy --role-name \"$ROLE_NAME\" --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole")
@@ -162,12 +166,12 @@ log_cmd "zip -j lambda_function.zip lambda_function.py"
 
 # Create first Lambda function
 echo "Creating first Lambda function: $LAMBDA_FUNCTION1..." | tee -a "$LOG_FILE"
-LAMBDA1_OUTPUT=$(log_cmd "aws lambda create-function --function-name \"$LAMBDA_FUNCTION1\" --runtime python3.9 --role \"$ROLE_ARN\" --handler lambda_function.handler --zip-file fileb://lambda_function.zip")
+LAMBDA1_OUTPUT=$(log_cmd "aws lambda create-function --function-name \"$LAMBDA_FUNCTION1\" --runtime python3.9 --role \"$ROLE_ARN\" --handler lambda_function.handler --zip-file fileb://lambda_function.zip --tags Key=tutorial,Value=cloudwatch-streams")
 check_error "$LAMBDA1_OUTPUT" $? "Failed to create first Lambda function"
 
 # Create second Lambda function
 echo "Creating second Lambda function: $LAMBDA_FUNCTION2..." | tee -a "$LOG_FILE"
-LAMBDA2_OUTPUT=$(log_cmd "aws lambda create-function --function-name \"$LAMBDA_FUNCTION2\" --runtime python3.9 --role \"$ROLE_ARN\" --handler lambda_function.handler --zip-file fileb://lambda_function.zip")
+LAMBDA2_OUTPUT=$(log_cmd "aws lambda create-function --function-name \"$LAMBDA_FUNCTION2\" --runtime python3.9 --role \"$ROLE_ARN\" --handler lambda_function.handler --zip-file fileb://lambda_function.zip --tags Key=tutorial,Value=cloudwatch-streams")
 check_error "$LAMBDA2_OUTPUT" $? "Failed to create second Lambda function"
 
 # Invoke Lambda functions to generate some metrics
@@ -210,6 +214,10 @@ EOF
 echo "Creating initial dashboard without variables..." | tee -a "$LOG_FILE"
 DASHBOARD_OUTPUT=$(log_cmd "aws cloudwatch put-dashboard --dashboard-name \"$DASHBOARD_NAME\" --dashboard-body '$DASHBOARD_BODY'")
 check_error "$DASHBOARD_OUTPUT" $? "Failed to create initial CloudWatch dashboard"
+
+# Tag CloudWatch dashboard
+echo "Tagging CloudWatch dashboard..." | tee -a "$LOG_FILE"
+log_cmd "aws cloudwatch tag-resource --resource-arn arn:aws:cloudwatch::$(aws sts get-caller-identity --query Account --output text):dashboard/$DASHBOARD_NAME --tags Key=tutorial,Value=cloudwatch-streams"
 
 # Now let's try to add a property variable using the console instructions
 echo "To complete the tutorial, please follow these steps in the CloudWatch console:" | tee -a "$LOG_FILE"

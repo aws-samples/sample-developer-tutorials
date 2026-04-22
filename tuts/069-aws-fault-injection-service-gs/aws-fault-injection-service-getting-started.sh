@@ -119,6 +119,9 @@ FIS_ROLE_OUTPUT=$(aws iam create-role \
 check_error "$FIS_ROLE_OUTPUT" "aws iam create-role"
 CREATED_RESOURCES+=("IAM Role: $FIS_ROLE_NAME")
 
+# Tag FIS role
+aws iam tag-role --role-name "$FIS_ROLE_NAME" --tags Key=tutorial,Value=aws-fault-injection-service-gs
+
 # Create policy document for SSM actions
 cat > fis-ssm-policy.json << 'EOF'
 {
@@ -171,6 +174,9 @@ EC2_ROLE_OUTPUT=$(aws iam create-role \
 check_error "$EC2_ROLE_OUTPUT" "aws iam create-role"
 CREATED_RESOURCES+=("IAM Role: $EC2_ROLE_NAME")
 
+# Tag EC2 role
+aws iam tag-role --role-name "$EC2_ROLE_NAME" --tags Key=tutorial,Value=aws-fault-injection-service-gs
+
 # Attach SSM policy to the EC2 role
 echo "Attaching AmazonSSMManagedInstanceCore policy to role $EC2_ROLE_NAME..."
 EC2_POLICY_OUTPUT=$(aws iam attach-role-policy \
@@ -214,7 +220,7 @@ INSTANCE_OUTPUT=$(aws ec2 run-instances \
   --image-id "$AMI_ID" \
   --instance-type t2.micro \
   --iam-instance-profile Name="$INSTANCE_PROFILE_NAME" \
-  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=FIS-Test-Instance}]')
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=FIS-Test-Instance},{Key=tutorial,Value=aws-fault-injection-service-gs}]')
 check_error "$INSTANCE_OUTPUT" "aws ec2 run-instances"
 
 # Get instance ID
@@ -251,7 +257,8 @@ ALARM_OUTPUT=$(aws cloudwatch put-metric-alarm \
   --threshold 50 \
   --comparison-operator GreaterThanOrEqualToThreshold \
   --dimensions "Name=InstanceId,Value=$INSTANCE_ID" \
-  --evaluation-periods 1)
+  --evaluation-periods 1 \
+  --tags Key=tutorial,Value=aws-fault-injection-service-gs)
 check_error "$ALARM_OUTPUT" "aws cloudwatch put-metric-alarm"
 CREATED_RESOURCES+=("CloudWatch Alarm: $ALARM_NAME")
 
@@ -350,7 +357,8 @@ cat > experiment-template.json << EOF
   ],
   "roleArn": "$ROLE_ARN",
   "tags": {
-    "Name": "FIS-CPU-Stress-Experiment"
+    "Name": "FIS-CPU-Stress-Experiment",
+    "tutorial": "aws-fault-injection-service-gs"
   }
 }
 EOF
@@ -373,7 +381,7 @@ echo "Step 6: Starting the experiment"
 echo "Starting AWS FIS experiment using template $TEMPLATE_ID..."
 EXPERIMENT_OUTPUT=$(aws fis start-experiment \
   --experiment-template-id "$TEMPLATE_ID" \
-  --tags '{"Name": "FIS-CPU-Stress-Run"}')
+  --tags 'Name=FIS-CPU-Stress-Run,tutorial=aws-fault-injection-service-gs')
 check_error "$EXPERIMENT_OUTPUT" "aws fis start-experiment"
 EXPERIMENT_ID=$(echo "$EXPERIMENT_OUTPUT" | grep -i "id" | head -1 | awk -F'"' '{print $4}')
 if [ -z "$EXPERIMENT_ID" ]; then

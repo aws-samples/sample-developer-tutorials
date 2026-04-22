@@ -262,6 +262,10 @@ ROLE_RESULT=$(aws iam create-role \
 check_api_error "$ROLE_RESULT" "Create IAM role"
 echo "Role created successfully"
 
+# Tag the IAM role
+echo "Tagging IAM role: $ROLE_NAME"
+aws iam tag-role --role-name "$ROLE_NAME" --tags Key=tutorial,Value=aws-step-functions-gs
+
 # Get the role ARN
 if [[ "$USE_JQ" == "true" ]]; then
     ROLE_ARN=$(echo "$ROLE_RESULT" | jq -r '.Role.Arn')
@@ -312,6 +316,10 @@ if [ -z "$STEPFUNCTIONS_POLICY_ARN" ]; then
 fi
 echo "Step Functions policy ARN: $STEPFUNCTIONS_POLICY_ARN"
 
+# Tag the Step Functions policy
+echo "Tagging Step Functions policy"
+aws iam tag-role --role-name "$ROLE_NAME" --tags Key=tutorial,Value=aws-step-functions-gs
+
 # Attach policy to the role
 echo "Attaching Step Functions policy to role..."
 ATTACH_RESULT=$(aws iam attach-role-policy \
@@ -331,7 +339,8 @@ SM_RESULT=$(aws stepfunctions create-state-machine \
   --name "$STATE_MACHINE_NAME" \
   --definition file://hello-world.json \
   --role-arn "$ROLE_ARN" \
-  --type STANDARD)
+  --type STANDARD \
+  --tags key=tutorial,value=aws-step-functions-gs)
 
 check_api_error "$SM_RESULT" "Create state machine"
 echo "State machine created successfully"

@@ -120,7 +120,7 @@ echo "Default KMS key: $KMS_KEY"
 
 # Step 2: Create a test volume for snapshot
 echo "Step 2: Creating a test volume..."
-VOLUME_ID=$(aws ec2 create-volume --availability-zone "$AVAILABILITY_ZONE" --size 1 --volume-type gp3 --query 'VolumeId' --output text)
+VOLUME_ID=$(aws ec2 create-volume --availability-zone "$AVAILABILITY_ZONE" --size 1 --volume-type gp3 --tag-specifications 'ResourceType=volume,Tags=[{Key=tutorial,Value=ebs-intermediate}]' --query 'VolumeId' --output text)
 check_status "Creating test volume"
 echo "Created test volume: $VOLUME_ID"
 
@@ -131,7 +131,7 @@ check_status "Waiting for volume"
 
 # Step 3: Create a snapshot of the volume
 echo "Step 3: Creating snapshot of the volume..."
-SNAPSHOT_ID=$(aws ec2 create-snapshot --volume-id "$VOLUME_ID" --description "Snapshot for EBS tutorial" --query 'SnapshotId' --output text)
+SNAPSHOT_ID=$(aws ec2 create-snapshot --volume-id "$VOLUME_ID" --description "Snapshot for EBS tutorial" --tag-specifications 'ResourceType=snapshot,Tags=[{Key=tutorial,Value=ebs-intermediate}]' --query 'SnapshotId' --output text)
 check_status "Creating snapshot"
 echo "Created snapshot: $SNAPSHOT_ID"
 
@@ -143,7 +143,7 @@ echo "Snapshot completed."
 
 # Step 4: Create a new volume from the snapshot
 echo "Step 4: Creating a new volume from the snapshot..."
-NEW_VOLUME_ID=$(aws ec2 create-volume --snapshot-id "$SNAPSHOT_ID" --availability-zone "$AVAILABILITY_ZONE" --volume-type gp3 --query 'VolumeId' --output text)
+NEW_VOLUME_ID=$(aws ec2 create-volume --snapshot-id "$SNAPSHOT_ID" --availability-zone "$AVAILABILITY_ZONE" --volume-type gp3 --tag-specifications 'ResourceType=volume,Tags=[{Key=tutorial,Value=ebs-intermediate}]' --query 'VolumeId' --output text)
 check_status "Creating new volume from snapshot"
 echo "Created new volume from snapshot: $NEW_VOLUME_ID"
 
@@ -167,8 +167,11 @@ echo ""
 echo "==========================================="
 echo "CLEANUP CONFIRMATION"
 echo "==========================================="
-echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+if [ -t 0 ]; then
+    read -rp "Do you want to clean up all created resources? (y/n): " CLEANUP_CHOICE
+else
+    CLEANUP_CHOICE="y"
+fi
 
 if [[ "$CLEANUP_CHOICE" =~ ^[Yy] ]]; then
     echo "Starting cleanup process..."

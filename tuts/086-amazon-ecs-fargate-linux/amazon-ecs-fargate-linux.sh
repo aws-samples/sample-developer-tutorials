@@ -140,8 +140,12 @@ cleanup_resources() {
         echo "  - $resource"
     done
     echo ""
-    echo "Do you want to clean up all created resources? (y/n): "
-    read -r CLEANUP_CHOICE
+    if [ -t 0 ]; then
+        echo "Do you want to clean up all created resources? (y/n): "
+        read -rp '(y/n):' CLEANUP_CHOICE
+    else
+        CLEANUP_CHOICE=y
+    fi
     
     if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
         echo "Starting cleanup process..."
@@ -266,7 +270,7 @@ else
 }
 EOF
     
-    execute_command "aws iam create-role --role-name ecsTaskExecutionRole --assume-role-policy-document file://trust-policy.json" "Create ECS task execution role"
+    execute_command "aws iam create-role --role-name ecsTaskExecutionRole --assume-role-policy-document file://trust-policy.json --tags Key=tutorial,Value=amazon-ecs-fargate-linux" "Create ECS task execution role"
     
     execute_command "aws iam attach-role-policy --role-name ecsTaskExecutionRole --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy" "Attach ECS task execution policy"
     
@@ -282,7 +286,7 @@ echo "==========================================="
 echo "STEP 2: CREATE ECS CLUSTER"
 echo "==========================================="
 
-CLUSTER_OUTPUT=$(execute_command "aws ecs create-cluster --cluster-name $CLUSTER_NAME" "Create ECS cluster")
+CLUSTER_OUTPUT=$(execute_command "aws ecs create-cluster --cluster-name $CLUSTER_NAME --tags key=tutorial,value=amazon-ecs-fargate-linux" "Create ECS cluster")
 check_for_aws_errors "$CLUSTER_OUTPUT" "Create ECS cluster"
 
 CREATED_RESOURCES+=("ECS Cluster: $CLUSTER_NAME")
@@ -302,6 +306,12 @@ cat > task-definition.json << EOF
     "cpu": "256",
     "memory": "512",
     "executionRoleArn": "$EXECUTION_ROLE_ARN",
+    "tags": [
+        {
+            "key": "tutorial",
+            "value": "amazon-ecs-fargate-linux"
+        }
+    ],
     "containerDefinitions": [
         {
             "name": "fargate-app",
@@ -348,7 +358,7 @@ echo "Using default VPC: $VPC_ID"
 # Create security group with restricted access
 # Note: This allows HTTP access from anywhere for demo purposes
 # In production, restrict source to specific IP ranges or security groups
-SECURITY_GROUP_OUTPUT=$(execute_command "aws ec2 create-security-group --group-name $SECURITY_GROUP_NAME --description 'Security group for ECS Fargate tutorial - HTTP access' --vpc-id $VPC_ID" "Create security group")
+SECURITY_GROUP_OUTPUT=$(execute_command "aws ec2 create-security-group --group-name $SECURITY_GROUP_NAME --description 'Security group for ECS Fargate tutorial - HTTP access' --vpc-id $VPC_ID --tag-specifications 'ResourceType=security-group,Tags=[{Key=tutorial,Value=amazon-ecs-fargate-linux}]'" "Create security group")
 check_for_aws_errors "$SECURITY_GROUP_OUTPUT" "Create security group"
 
 SECURITY_GROUP_ID=$(echo "$SECURITY_GROUP_OUTPUT" | grep -o '"GroupId": "[^"]*"' | cut -d'"' -f4)
@@ -377,7 +387,7 @@ SUBNET_IDS_COMMA=$(echo "$SUBNET_IDS_RAW" | tr -s '[:space:]' ',' | sed 's/,$//'
 echo "Raw subnet IDs: $SUBNET_IDS_RAW"
 echo "Formatted subnet IDs: $SUBNET_IDS_COMMA"
 
-# Validate subnet IDs format
+# Validate subnet ID format
 if [[ ! "$SUBNET_IDS_COMMA" =~ ^subnet-[a-z0-9]+(,subnet-[a-z0-9]+)*$ ]]; then
     echo "ERROR: Invalid subnet ID format: $SUBNET_IDS_COMMA"
     exit 1
@@ -390,7 +400,7 @@ echo "STEP 5: CREATE ECS SERVICE"
 echo "==========================================="
 
 # Create the service with proper JSON formatting for network configuration
-SERVICE_CMD="aws ecs create-service --cluster $CLUSTER_NAME --service-name $SERVICE_NAME --task-definition $TASK_FAMILY --desired-count 1 --launch-type FARGATE --network-configuration '{\"awsvpcConfiguration\":{\"subnets\":[\"$(echo $SUBNET_IDS_COMMA | sed 's/,/","/g')\"],\"securityGroups\":[\"$SECURITY_GROUP_ID\"],\"assignPublicIp\":\"ENABLED\"}}'"
+SERVICE_CMD="aws ecs create-service --cluster $CLUSTER_NAME --service-name $SERVICE_NAME --task-definition $TASK_FAMILY --desired-count 1 --launch-type FARGATE --network-configuration '{\"awsvpcConfiguration\":{\"subnets\":[\"$(echo $SUBNET_IDS_COMMA | sed 's/,/","/g')\"],\"securityGroups\":[\"$SECURITY_GROUP_ID\"],\"assignPublicIp\":\"ENABLED\"}}' --tags key=tutorial,value=amazon-ecs-fargate-linux"
 
 echo "Service creation command: $SERVICE_CMD"
 

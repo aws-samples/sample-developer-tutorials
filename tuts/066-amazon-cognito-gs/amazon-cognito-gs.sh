@@ -77,6 +77,11 @@ fi
 
 echo "User Pool created with ID: $USER_POOL_ID"
 
+# Tag the user pool
+aws cognito-idp tag-resource \
+  --resource-arn "arn:aws:cognito-idp:$AWS_REGION:$(aws sts get-caller-identity --query Account --output text):userpool/$USER_POOL_ID" \
+  --tags tutorial=amazon-cognito-gs
+
 # Wait for user pool to be ready
 echo "Waiting for user pool to be ready..."
 sleep 5
@@ -209,7 +214,11 @@ echo "==========================================="
 echo "CLEANUP CONFIRMATION"
 echo "==========================================="
 echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+if [ -t 0 ]; then
+  read -r CLEANUP_CHOICE
+else
+  CLEANUP_CHOICE=y
+fi
 
 if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
   echo "Starting cleanup process..."

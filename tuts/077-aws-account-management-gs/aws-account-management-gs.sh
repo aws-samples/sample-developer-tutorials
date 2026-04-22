@@ -48,7 +48,11 @@ echo "Some operations may require specific permissions or may not be applicable"
 echo "to your account setup (standalone vs. organization member)."
 echo ""
 echo "Press Enter to continue or Ctrl+C to exit..."
-read -r
+if [ -t 0 ]; then
+    read -r
+else
+    :
+fi
 
 # Part 1: View Account Identifiers
 echo ""
@@ -117,11 +121,19 @@ if ! echo "$REGIONS" | grep -i "error" > /dev/null; then
     # Check status of a specific region
     echo ""
     echo "Would you like to check the status of a specific region? (y/n): "
-    read -r CHECK_REGION
+    if [ -t 0 ]; then
+        read -r CHECK_REGION
+    else
+        CHECK_REGION=n
+    fi
     
     if [[ "$CHECK_REGION" =~ ^[Yy] ]]; then
         echo "Enter the region code to check (e.g., af-south-1): "
-        read -r REGION_CODE
+        if [ -t 0 ]; then
+            read -r REGION_CODE
+        else
+            REGION_CODE=us-east-1
+        fi
         
         echo "Checking status of region $REGION_CODE..."
         log_command "aws account get-region-opt-status --region-name $REGION_CODE" || echo "Unable to check region status."

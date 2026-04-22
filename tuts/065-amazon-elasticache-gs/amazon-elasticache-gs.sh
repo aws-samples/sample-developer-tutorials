@@ -100,7 +100,8 @@ echo ""
 echo "Step 2: Creating Valkey serverless cache..."
 CREATE_RESULT=$(aws elasticache create-serverless-cache \
   --serverless-cache-name "$CACHE_NAME" \
-  --engine valkey 2>&1)
+  --engine valkey \
+  --tags Key=tutorial,Value=amazon-elasticache-gs 2>&1)
 
 # Check for errors in the output
 if echo "$CREATE_RESULT" | grep -i "error" > /dev/null; then
@@ -202,8 +203,11 @@ if [ "$SG_RULE_6379" != "existing" ] || [ "$SG_RULE_6380" != "existing" ]; then
     echo "- Security group rules for ports 6379 and 6380"
 fi
 echo ""
-echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+if [ -t 0 ]; then
+    read -rp "Do you want to clean up all created resources? (y/n): " CLEANUP_CHOICE
+else
+    CLEANUP_CHOICE=n
+fi
 
 if [[ "${CLEANUP_CHOICE,,}" == "y" ]]; then
     echo "Starting cleanup process..."

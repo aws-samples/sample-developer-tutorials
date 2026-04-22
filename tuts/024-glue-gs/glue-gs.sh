@@ -60,6 +60,7 @@ echo "Step 1: Creating a database named $DB_NAME"
 aws glue create-database --database-input "{\"Name\":\"$DB_NAME\",\"Description\":\"Database for AWS Glue tutorial\"}"
 check_status "Creating database"
 CREATED_RESOURCES+=("database:$DB_NAME")
+aws glue tag-resource --resource-arn "arn:aws:glue:$(aws configure get region):$(aws sts get-caller-identity --query Account --output text):database/$DB_NAME" --tags-to-add "tutorial=glue-gs"
 echo "Database $DB_NAME created successfully."
 
 # Verify the database was created
@@ -128,6 +129,7 @@ EOF
 aws glue create-table --database-name "$DB_NAME" --table-input file://"$TABLE_INPUT_FILE"
 check_status "Creating table"
 CREATED_RESOURCES+=("table:$TABLE_NAME")
+aws glue tag-resource --resource-arn "arn:aws:glue:$(aws configure get region):$(aws sts get-caller-identity --query Account --output text):table/$DB_NAME/$TABLE_NAME" --tags-to-add "tutorial=glue-gs"
 echo "Table $TABLE_NAME created successfully."
 
 # Clean up the temporary file
@@ -165,7 +167,11 @@ echo "==========================================="
 echo "CLEANUP CONFIRMATION"
 echo "==========================================="
 echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+if [ -t 0 ]; then
+    read -r CLEANUP_CHOICE
+else
+    CLEANUP_CHOICE=y
+fi
 
 if [[ "$CLEANUP_CHOICE" =~ ^[Yy] ]]; then
     echo "Starting cleanup process..."

@@ -55,8 +55,11 @@ handle_error() {
     fi
     echo ""
     
-    echo "Would you like to clean up these resources? (y/n): "
-    read -r CLEANUP_CHOICE
+    if [ -t 0 ]; then
+        read -rp "Would you like to clean up these resources? (y/n): " CLEANUP_CHOICE
+    else
+        CLEANUP_CHOICE=y
+    fi
     
     if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
         cleanup
@@ -172,6 +175,7 @@ CREATE_RESULT=$(aws cloudformation create-stack \
   --parameters \
     ParameterKey=InstanceType,ParameterValue=t2.micro \
     ParameterKey=MyIP,ParameterValue="$MY_IP" \
+  --tags Key=tutorial,Value=cloudformation-gs \
   --output text 2>&1)
 
 if [ $? -ne 0 ]; then
@@ -243,8 +247,12 @@ echo "- CloudFormation stack: $STACK_NAME"
 echo "  - EC2 instance"
 echo "  - Security group"
 echo ""
-echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+
+if [ -t 0 ]; then
+    read -rp "Do you want to clean up all created resources? (y/n): " CLEANUP_CHOICE
+else
+    CLEANUP_CHOICE=y
+fi
 
 if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
     cleanup

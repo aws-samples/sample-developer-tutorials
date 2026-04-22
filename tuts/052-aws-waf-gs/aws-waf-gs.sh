@@ -110,6 +110,7 @@ CREATE_RESULT=$(aws wafv2 create-web-acl \
     --scope "CLOUDFRONT" \
     --default-action Allow={} \
     --visibility-config "SampledRequestsEnabled=true,CloudWatchMetricsEnabled=true,MetricName=$METRIC_NAME" \
+    --tags Key=tutorial,Value=aws-waf-gs \
     --region us-east-1 2>&1)
 
 check_command "$CREATE_RESULT" "Failed to create Web ACL"
@@ -355,7 +356,11 @@ else
     echo "==================================================="
     echo "Enter the ID of the CloudFront distribution to associate with the Web ACL:"
     echo "(If you don't have a CloudFront distribution, press Enter to skip this step)"
-    read -r DISTRIBUTION_ID
+    if [ -t 0 ]; then
+        read -r DISTRIBUTION_ID
+    else
+        DISTRIBUTION_ID=""
+    fi
 
     if [ -n "$DISTRIBUTION_ID" ]; then
         ASSOCIATE_RESULT=$(aws wafv2 associate-web-acl \
@@ -393,7 +398,11 @@ echo "==================================================="
 echo "CLEANUP CONFIRMATION"
 echo "==================================================="
 echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+if [ -t 0 ]; then
+    read -rp "" CLEANUP_CHOICE
+else
+    CLEANUP_CHOICE=y
+fi
 
 if [[ "$CLEANUP_CHOICE" =~ ^[Yy] ]]; then
     cleanup_resources

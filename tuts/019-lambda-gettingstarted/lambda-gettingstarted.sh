@@ -156,7 +156,11 @@ echo "  1) Python 3.13"
 echo "  2) Node.js 22.x"
 echo ""
 echo "Enter your choice (1 or 2): "
-read -r RUNTIME_CHOICE
+if [ -t 0 ]; then
+    read -r RUNTIME_CHOICE
+else
+    RUNTIME_CHOICE=1
+fi
 
 case "$RUNTIME_CHOICE" in
     1)
@@ -235,6 +239,13 @@ CREATED_RESOURCES+=("iam-role:${ROLE_NAME}")
 echo "Role ARN: ${ROLE_ARN}"
 
 echo ""
+echo "Tagging IAM role..."
+aws iam tag-role \
+    --role-name "$ROLE_NAME" \
+    --tags Key=tutorial,Value=lambda-gettingstarted 2>&1
+echo "Role tagged."
+
+echo ""
 echo "Attaching AWSLambdaBasicExecutionRole policy..."
 aws iam attach-role-policy \
     --role-name "$ROLE_NAME" \
@@ -274,6 +285,7 @@ CREATE_OUTPUT=$(aws lambda create-function \
     --handler "$HANDLER" \
     --architectures x86_64 \
     --zip-file "fileb://${TEMP_DIR}/function.zip" \
+    --tags Key=tutorial,Value=lambda-gettingstarted \
     --query '[FunctionName, FunctionArn, Runtime, State]' \
     --output text 2>&1)
 echo "$CREATE_OUTPUT"
@@ -364,6 +376,13 @@ fi
 
 CREATED_RESOURCES+=("log-group:${LOG_GROUP_NAME}")
 
+echo ""
+echo "Tagging CloudWatch log group..."
+aws logs tag-log-group \
+    --log-group-name "$LOG_GROUP_NAME" \
+    --tags Key=tutorial,Value=lambda-gettingstarted 2>&1
+echo "Log group tagged."
+
 ###############################################################################
 # Summary and cleanup
 ###############################################################################
@@ -383,7 +402,11 @@ echo "CLEANUP CONFIRMATION"
 echo "==========================================="
 echo ""
 echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+if [ -t 0 ]; then
+    read -rp "" CLEANUP_CHOICE
+else
+    CLEANUP_CHOICE=y
+fi
 
 if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
     cleanup_resources

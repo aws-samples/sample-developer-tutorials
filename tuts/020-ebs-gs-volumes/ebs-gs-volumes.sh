@@ -30,7 +30,11 @@ handle_error() {
     echo "CLEANUP CONFIRMATION"
     echo "==========================================="
     echo "An error occurred. Do you want to clean up created resources? (y/n): "
-    read -r CLEANUP_CHOICE
+    if [ -t 0 ]; then
+        read -r CLEANUP_CHOICE
+    else
+        CLEANUP_CHOICE=y
+    fi
     
     if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
         cleanup_resources
@@ -133,7 +137,7 @@ VOLUME_ID=$(aws ec2 create-volume \
     --volume-type gp3 \
     --size 10 \
     --availability-zone "$AZ" \
-    --tag-specifications 'ResourceType=volume,Tags=[{Key=Name,Value=EBSTutorialVolume},{Key=Purpose,Value=Tutorial}]' \
+    --tag-specifications 'ResourceType=volume,Tags=[{Key=tutorial,Value=ebs-gs-volumes},{Key=Name,Value=EBSTutorialVolume},{Key=Purpose,Value=Tutorial}]' \
     --query 'VolumeId' \
     --output text)
 
@@ -160,7 +164,11 @@ echo "==========================================="
 echo "VOLUME ATTACHMENT"
 echo "==========================================="
 echo "Do you want to attach this volume to an EC2 instance? (y/n): "
-read -r ATTACH_CHOICE
+if [ -t 0 ]; then
+    read -r ATTACH_CHOICE
+else
+    ATTACH_CHOICE=n
+fi
 
 ATTACHED=false
 CREATED_INSTANCE=false
@@ -180,7 +188,11 @@ if [[ "$ATTACH_CHOICE" =~ ^[Yy]$ ]]; then
         echo "No running instances found in $AZ."
         echo ""
         echo "Would you like to create a test EC2 instance? (y/n): "
-        read -r CREATE_INSTANCE_CHOICE
+        if [ -t 0 ]; then
+            read -r CREATE_INSTANCE_CHOICE
+        else
+            CREATE_INSTANCE_CHOICE=n
+        fi
         
         if [[ "$CREATE_INSTANCE_CHOICE" =~ ^[Yy]$ ]]; then
             # Get available instance type
@@ -233,6 +245,7 @@ if [[ "$ATTACH_CHOICE" =~ ^[Yy]$ ]]; then
                 --group-name "$SG_NAME" \
                 --description "Security group for EBS tutorial" \
                 --vpc-id "$DEFAULT_VPC_ID" \
+                --tag-specifications 'ResourceType=security-group,Tags=[{Key=tutorial,Value=ebs-gs-volumes}]' \
                 --query "GroupId" \
                 --output text)
             
@@ -258,7 +271,7 @@ if [[ "$ATTACH_CHOICE" =~ ^[Yy]$ ]]; then
                 --instance-type "$INSTANCE_TYPE" \
                 --subnet-id "$SUBNET_ID" \
                 --security-group-ids "$SG_ID" \
-                --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=EBSTutorialInstance},{Key=Purpose,Value=Tutorial}]' \
+                --tag-specifications 'ResourceType=instance,Tags=[{Key=tutorial,Value=ebs-gs-volumes},{Key=Name,Value=EBSTutorialInstance},{Key=Purpose,Value=Tutorial}]' \
                 --query "Instances[0].InstanceId" \
                 --output text)
             
@@ -291,7 +304,11 @@ if [[ "$ATTACH_CHOICE" =~ ^[Yy]$ ]]; then
         # Ask for instance ID
         echo ""
         echo "Enter the instance ID to attach the volume to (or press Enter to skip): "
-        read -r INSTANCE_ID
+        if [ -t 0 ]; then
+            read -r INSTANCE_ID
+        else
+            INSTANCE_ID=""
+        fi
     fi
     
     if [ -n "$INSTANCE_ID" ]; then
@@ -346,7 +363,11 @@ echo "==========================================="
 echo "CLEANUP CONFIRMATION"
 echo "==========================================="
 echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+if [ -t 0 ]; then
+    read -r CLEANUP_CHOICE
+else
+    CLEANUP_CHOICE=n
+fi
 
 if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
     cleanup_resources

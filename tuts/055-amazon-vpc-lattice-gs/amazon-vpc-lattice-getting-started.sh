@@ -87,7 +87,7 @@ echo "Random ID for this session: ${RANDOM_ID}" | tee -a $LOG_FILE
 echo -e "\n=== Step 1: Creating a VPC Lattice service network ===" | tee -a $LOG_FILE
 echo "Creating service network: $SERVICE_NETWORK_NAME" | tee -a $LOG_FILE
 
-SERVICE_NETWORK_OUTPUT=$(log_command "aws vpc-lattice create-service-network --name $SERVICE_NETWORK_NAME")
+SERVICE_NETWORK_OUTPUT=$(log_command "aws vpc-lattice create-service-network --name $SERVICE_NETWORK_NAME --tags Key=tutorial,Value=amazon-vpc-lattice-gs")
 check_error $?
 
 # Extract the service network ID
@@ -108,7 +108,7 @@ check_error $?
 echo -e "\n=== Step 2: Creating a VPC Lattice service ===" | tee -a $LOG_FILE
 echo "Creating service: $SERVICE_NAME" | tee -a $LOG_FILE
 
-SERVICE_OUTPUT=$(log_command "aws vpc-lattice create-service --name $SERVICE_NAME")
+SERVICE_OUTPUT=$(log_command "aws vpc-lattice create-service --name $SERVICE_NAME --tags Key=tutorial,Value=amazon-vpc-lattice-gs")
 check_error $?
 
 # Extract the service ID
@@ -128,7 +128,7 @@ check_error $?
 # Step 3: Associate the service with the service network
 echo -e "\n=== Step 3: Associating service with service network ===" | tee -a $LOG_FILE
 
-SERVICE_ASSOC_OUTPUT=$(log_command "aws vpc-lattice create-service-network-service-association --service-identifier $SERVICE_ID --service-network-identifier $SERVICE_NETWORK_ID")
+SERVICE_ASSOC_OUTPUT=$(log_command "aws vpc-lattice create-service-network-service-association --service-identifier $SERVICE_ID --service-network-identifier $SERVICE_NETWORK_ID --tags Key=tutorial,Value=amazon-vpc-lattice-gs")
 check_error $?
 
 # Extract the service association ID
@@ -161,7 +161,11 @@ echo "==========================================="
 echo "VPC SELECTION"
 echo "==========================================="
 echo "Please enter the VPC ID you want to associate with the service network:"
-read -r VPC_ID
+if [ -t 0 ]; then
+    read -r VPC_ID
+else
+    VPC_ID=""
+fi
 
 if [ -z "$VPC_ID" ]; then
     echo "ERROR: No VPC ID provided" | tee -a $LOG_FILE
@@ -183,7 +187,11 @@ else
     echo "SECURITY GROUP SELECTION"
     echo "==========================================="
     echo "Please enter the Security Group ID you want to use for the VPC association:"
-    read -r SG_ID
+    if [ -t 0 ]; then
+        read -r SG_ID
+    else
+        SG_ID=""
+    fi
     
     if [ -z "$SG_ID" ]; then
         echo "ERROR: No Security Group ID provided" | tee -a $LOG_FILE
@@ -192,7 +200,7 @@ else
         # Step 8: Associate the VPC with the service network
         echo -e "\n=== Step 8: Associating VPC with service network ===" | tee -a $LOG_FILE
         
-        VPC_ASSOC_OUTPUT=$(log_command "aws vpc-lattice create-service-network-vpc-association --vpc-identifier $VPC_ID --service-network-identifier $SERVICE_NETWORK_ID --security-group-ids $SG_ID")
+        VPC_ASSOC_OUTPUT=$(log_command "aws vpc-lattice create-service-network-vpc-association --vpc-identifier $VPC_ID --service-network-identifier $SERVICE_NETWORK_ID --security-group-ids $SG_ID --tags Key=tutorial,Value=amazon-vpc-lattice-gs")
         check_error $?
         
         # Extract the VPC association ID
@@ -237,7 +245,11 @@ echo "==========================================="
 echo "CLEANUP CONFIRMATION"
 echo "==========================================="
 echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+if [ -t 0 ]; then
+    read -rp '' CLEANUP_CHOICE
+else
+    CLEANUP_CHOICE=y
+fi
 
 if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
     echo "Starting cleanup process..." | tee -a $LOG_FILE

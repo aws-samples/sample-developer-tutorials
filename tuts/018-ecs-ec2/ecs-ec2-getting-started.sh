@@ -207,7 +207,7 @@ check_prerequisites() {
 create_cluster() {
     log "Creating ECS cluster: $CLUSTER_NAME"
     
-    CLUSTER_ARN=$(aws ecs create-cluster --cluster-name "$CLUSTER_NAME" --query 'cluster.clusterArn' --output text)
+    CLUSTER_ARN=$(aws ecs create-cluster --cluster-name "$CLUSTER_NAME" --tags key=tutorial,value=ecs-ec2 --query 'cluster.clusterArn' --output text)
     
     if [[ -z "$CLUSTER_ARN" ]]; then
         log "ERROR: Failed to create cluster"
@@ -230,6 +230,8 @@ create_key_pair() {
     
     log "Created key pair: $KEY_PAIR_NAME"
     CREATED_RESOURCES+=("EC2 Key Pair: $KEY_PAIR_NAME")
+    
+    aws ec2 create-tags --resources "$KEY_PAIR_NAME" --tags Key=tutorial,Value=ecs-ec2 2>/dev/null || true
 }
 
 # Function to create security group
@@ -240,6 +242,7 @@ create_security_group() {
         --group-name "$SECURITY_GROUP_NAME" \
         --description "ECS tutorial security group" \
         --vpc-id "$DEFAULT_VPC" \
+        --tag-specifications 'ResourceType=security-group,Tags=[{Key=tutorial,Value=ecs-ec2}]' \
         --query 'GroupId' --output text)
     
     if [[ -z "$SECURITY_GROUP_ID" ]]; then
@@ -303,6 +306,8 @@ EOF
             --role-name ecsInstanceRole \
             --assume-role-policy-document file://ecs-instance-trust-policy.json
         
+        aws iam tag-role --role-name ecsInstanceRole --tags Key=tutorial,Value=ecs-ec2
+        
         # Attach managed policy
         aws iam attach-role-policy \
             --role-name ecsInstanceRole \
@@ -347,7 +352,7 @@ EOF
         --subnet-id "$DEFAULT_SUBNET" \
         --iam-instance-profile Name=ecsInstanceRole \
         --user-data file://ecs-user-data.sh \
-        --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=ecs-tutorial-instance}]" \
+        --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=ecs-tutorial-instance},{Key=tutorial,Value=ecs-ec2}]" \
         --query 'Instances[0].InstanceId' --output text)
     
     if [[ -z "$INSTANCE_ID" ]]; then
@@ -412,7 +417,13 @@ register_task_definition() {
         }
     ],
     "requiresCompatibilities": ["EC2"],
-    "networkMode": "bridge"
+    "networkMode": "bridge",
+    "tags": [
+        {
+            "key": "tutorial",
+            "value": "ecs-ec2"
+        }
+    ]
 }
 EOF
     
@@ -446,6 +457,7 @@ create_service() {
         --service-name "$SERVICE_NAME" \
         --task-definition "$TASK_FAMILY" \
         --desired-count 1 \
+        --tags key=tutorial,value=ecs-ec2 \
         --query 'service.serviceArn' --output text)
     
     if [[ -z "$SERVICE_ARN" ]]; then

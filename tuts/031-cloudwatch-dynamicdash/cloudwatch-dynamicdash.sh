@@ -81,6 +81,8 @@ EOF
     if [ $? -ne 0 ]; then
         handle_error "Failed to create IAM role for Lambda function"
     fi
+
+    aws iam tag-role --role-name "$ROLE_NAME" --tags Key=tutorial,Value=cloudwatch-dynamicdash
     
     echo "Waiting for role to be available..."
     sleep 10
@@ -102,7 +104,8 @@ EOF
         --runtime nodejs18.x \
         --role "$ROLE_ARN" \
         --handler index.handler \
-        --zip-file fileb://function.zip
+        --zip-file fileb://function.zip \
+        --tags Key=tutorial,Value=cloudwatch-dynamicdash
     
     if [ $? -ne 0 ]; then
         aws iam detach-role-policy \
@@ -214,6 +217,11 @@ EOF
 # Create the dashboard using the JSON file
 DASHBOARD_RESULT=$(aws cloudwatch put-dashboard --dashboard-name LambdaMetricsDashboard --dashboard-body file://dashboard-body.json)
 DASHBOARD_EXIT_CODE=$?
+
+aws cloudwatch list-tags-for-resource --resource-arn "arn:aws:cloudwatch:$REGION:$(aws sts get-caller-identity --query Account --output text):dashboard/LambdaMetricsDashboard" > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    aws cloudwatch tag-resource --resource-arn "arn:aws:cloudwatch:$REGION:$(aws sts get-caller-identity --query Account --output text):dashboard/LambdaMetricsDashboard" --tags Key=tutorial,Value=cloudwatch-dynamicdash 2>/dev/null || true
+fi
 
 # Check if there was a fatal error
 if [ $DASHBOARD_EXIT_CODE -ne 0 ]; then

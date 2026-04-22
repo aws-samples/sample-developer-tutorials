@@ -39,7 +39,7 @@ TOPIC_NAME="my-topic-${RANDOM_SUFFIX}"
 
 # Step 1: Create an SNS topic
 echo "Creating SNS topic: $TOPIC_NAME"
-TOPIC_RESULT=$(aws sns create-topic --name "$TOPIC_NAME")
+TOPIC_RESULT=$(aws sns create-topic --name "$TOPIC_NAME" --tags Key=tutorial,Value=amazon-simple-notification-service-gs)
 
 # Check for errors
 if echo "$TOPIC_RESULT" | grep -i "error" > /dev/null; then
@@ -61,7 +61,11 @@ echo "=============================================="
 echo "EMAIL SUBSCRIPTION"
 echo "=============================================="
 echo "Please enter your email address to subscribe to the topic:"
-read -r EMAIL_ADDRESS
+if [ -t 0 ]; then
+    read -r EMAIL_ADDRESS
+else
+    EMAIL_ADDRESS="test@example.com"
+fi
 
 echo "Subscribing email: $EMAIL_ADDRESS to topic"
 SUBSCRIPTION_RESULT=$(aws sns subscribe \
@@ -83,7 +87,9 @@ echo "Please check your email and confirm the subscription."
 echo ""
 echo "Waiting for you to confirm the subscription..."
 echo "Press Enter after you have confirmed the subscription to continue:"
-read -r
+if [ -t 0 ]; then
+    read -r
+fi
 
 # Step 3: List subscriptions to verify
 echo "Listing subscriptions for topic: $TOPIC_ARN"
@@ -137,7 +143,11 @@ echo "- SNS Topic: $TOPIC_ARN"
 echo "- Subscription: $SUBSCRIPTION_ARN"
 echo ""
 echo "Do you want to clean up all created resources? (y/n):"
-read -r CLEANUP_CHOICE
+if [ -t 0 ]; then
+    read -rp "" CLEANUP_CHOICE
+else
+    CLEANUP_CHOICE=y
+fi
 
 if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
     echo "Cleaning up resources..."

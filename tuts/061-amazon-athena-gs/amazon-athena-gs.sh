@@ -55,6 +55,10 @@ if echo "$CREATE_BUCKET_RESULT" | grep -i "error"; then
 fi
 echo "$CREATE_BUCKET_RESULT"
 
+# Tag S3 bucket
+echo "Tagging S3 bucket: $S3_BUCKET"
+aws s3api put-bucket-tagging --bucket "$S3_BUCKET" --tagging 'TagSet=[{Key=tutorial,Value=amazon-athena-gs}]' 2>&1
+
 # Step 1: Create a database
 echo "Step 1: Creating Athena database: $DATABASE_NAME"
 CREATE_DB_RESULT=$(aws athena start-query-execution \
@@ -215,6 +219,10 @@ fi
 
 NAMED_QUERY_ID=$(echo "$NAMED_QUERY_RESULT" | grep -o '"NamedQueryId": "[^"]*' | cut -d'"' -f4)
 echo "Named query created with ID: $NAMED_QUERY_ID"
+
+# Tag named query
+echo "Tagging named query: $NAMED_QUERY_ID"
+aws athena tag-resource --resource-arn "arn:aws:athena:$AWS_REGION:$(aws sts get-caller-identity --query Account --output text):namedquery/$NAMED_QUERY_ID" --tags-to-add Key=tutorial,Value=amazon-athena-gs 2>&1
 
 # List named queries
 echo "Listing named queries..."

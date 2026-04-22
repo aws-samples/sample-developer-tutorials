@@ -93,7 +93,8 @@ echo "Step 3: Creating security group for RDS..."
 SG_OUTPUT=$(aws ec2 create-security-group \
     --group-name "$SECURITY_GROUP_NAME" \
     --description "Security group for RDS database access" \
-    --vpc-id "$VPC_ID")
+    --vpc-id "$VPC_ID" \
+    --tag-specifications 'ResourceType=security-group,Tags=[{Key=tutorial,Value=rds-gs}]')
 check_error "$SG_OUTPUT" "aws ec2 create-security-group"
 
 SECURITY_GROUP_ID=$(echo "$SG_OUTPUT" | grep -o '"GroupId": "[^"]*' | cut -d'"' -f4)
@@ -125,7 +126,8 @@ SUBNET2=${SUBNET_IDS[1]}
 SUBNET_GROUP_OUTPUT=$(aws rds create-db-subnet-group \
     --db-subnet-group-name "$DB_SUBNET_GROUP_NAME" \
     --db-subnet-group-description "Subnet group for RDS tutorial" \
-    --subnet-ids "$SUBNET1" "$SUBNET2")
+    --subnet-ids "$SUBNET1" "$SUBNET2" \
+    --tags Key=tutorial,Value=rds-gs)
 check_error "$SUBNET_GROUP_OUTPUT" "aws rds create-db-subnet-group"
 
 CREATED_SUBNET_GROUP="true"
@@ -138,7 +140,8 @@ SECRET_NAME="rds-db-credentials-${RANDOM_ID}"
 SECRET_OUTPUT=$(aws secretsmanager create-secret \
     --name "$SECRET_NAME" \
     --description "RDS DB credentials for $DB_INSTANCE_ID" \
-    --secret-string '{"username":"adminuser","password":"'"$(openssl rand -base64 16)"'"}')
+    --secret-string '{"username":"adminuser","password":"'"$(openssl rand -base64 16)"'"}' \
+    --tags Key=tutorial,Value=rds-gs)
 check_error "$SECRET_OUTPUT" "aws secretsmanager create-secret"
 
 SECRET_ARN=$(echo "$SECRET_OUTPUT" | grep -o '"ARN": "[^"]*' | cut -d'"' -f4)
@@ -169,7 +172,8 @@ DB_OUTPUT=$(aws rds create-db-instance \
     --db-subnet-group-name "$DB_SUBNET_GROUP_NAME" \
     --backup-retention-period 7 \
     --no-publicly-accessible \
-    --no-multi-az)
+    --no-multi-az \
+    --tags Key=tutorial,Value=rds-gs)
 check_error "$DB_OUTPUT" "aws rds create-db-instance"
 
 CREATED_RESOURCES+=("DB Instance: $DB_INSTANCE_ID")
@@ -226,7 +230,11 @@ echo "==========================================="
 echo "CLEANUP CONFIRMATION"
 echo "==========================================="
 echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+if [ -t 0 ]; then
+    read -r CLEANUP_CHOICE
+else
+    CLEANUP_CHOICE=n
+fi
 
 if [[ $CLEANUP_CHOICE =~ ^[Yy] ]]; then
     echo "Starting cleanup process..."

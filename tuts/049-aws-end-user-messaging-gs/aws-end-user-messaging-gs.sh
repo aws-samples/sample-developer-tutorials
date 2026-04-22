@@ -171,6 +171,10 @@ fi
 
 echo "Application ID: $APP_ID"
 
+# Tag the Pinpoint application
+echo "Tagging Pinpoint application..."
+aws pinpoint tag-resource --resource-arn "arn:aws:mobiletargeting:${CURRENT_REGION}:$(echo "$CALLER_IDENTITY" | grep -o '"Account": "[^"]*' | cut -d'"' -f4):app/${APP_ID}" --tags-model "TagsModel={Tags={tutorial=aws-end-user-messaging-gs}}" 2>&1
+
 # Create a resources list to track what we've created
 RESOURCES=("Application: $APP_ID")
 

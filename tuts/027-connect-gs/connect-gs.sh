@@ -95,7 +95,11 @@ check_existing_instances() {
         echo "==========================================="
         echo "Found $instance_count existing Amazon Connect instance(s)."
         echo "Do you want to delete these instances to free up quota? (y/n): "
-        read -r DELETE_CHOICE
+        if [ -t 0 ]; then
+            read -r DELETE_CHOICE
+        else
+            DELETE_CHOICE=n
+        fi
         
         if [[ "$DELETE_CHOICE" =~ ^[Yy] ]]; then
             echo "Deleting existing instances..." | tee -a "$LOG_FILE"
@@ -138,7 +142,7 @@ echo "Using instance alias: $INSTANCE_ALIAS" | tee -a "$LOG_FILE"
 
 # Step 1: Create Amazon Connect instance
 echo "Step 1: Creating Amazon Connect instance..." | tee -a "$LOG_FILE"
-INSTANCE_RESULT=$(log_cmd "aws connect create-instance --identity-management-type CONNECT_MANAGED --instance-alias $INSTANCE_ALIAS --inbound-calls-enabled --outbound-calls-enabled --region $AWS_REGION --output json")
+INSTANCE_RESULT=$(log_cmd "aws connect create-instance --identity-management-type CONNECT_MANAGED --instance-alias $INSTANCE_ALIAS --inbound-calls-enabled --outbound-calls-enabled --tags Key=tutorial,Value=connect-gs --region $AWS_REGION --output json")
 
 if ! check_error "$INSTANCE_RESULT" $? "Failed to create Amazon Connect instance"; then
     # Check if the error is due to quota limit
@@ -230,7 +234,7 @@ echo "Step 4: Creating admin user..." | tee -a "$LOG_FILE"
 # Generate a secure password
 ADMIN_PASSWORD="Connect$(openssl rand -base64 12)"
 
-USER_RESULT=$(log_cmd "aws connect create-user --instance-id $INSTANCE_ID --username admin --password \"$ADMIN_PASSWORD\" --identity-info FirstName=Admin,LastName=User,Email=admin@example.com --phone-config PhoneType=DESK_PHONE,AutoAccept=true,AfterContactWorkTimeLimit=30,DeskPhoneNumber=+12065550100 --security-profile-ids $ADMIN_PROFILE_ID --routing-profile-id $ROUTING_PROFILE_ID --region $AWS_REGION --output json")
+USER_RESULT=$(log_cmd "aws connect create-user --instance-id $INSTANCE_ID --username admin --password \"$ADMIN_PASSWORD\" --identity-info FirstName=Admin,LastName=User,Email=admin@example.com --phone-config PhoneType=DESK_PHONE,AutoAccept=true,AfterContactWorkTimeLimit=30,DeskPhoneNumber=+12065550100 --security-profile-ids $ADMIN_PROFILE_ID --routing-profile-id $ROUTING_PROFILE_ID --tags Key=tutorial,Value=connect-gs --region $AWS_REGION --output json")
 
 if ! check_error "$USER_RESULT" $? "Failed to create admin user"; then
     cleanup_on_error
@@ -323,11 +327,15 @@ if [[ -n "$PHONE_NUMBER" ]]; then
     echo "CLAIM PHONE NUMBER"
     echo "==========================================="
     echo "Do you want to claim the available phone number $PHONE_NUMBER? (y/n): "
-    read -r CLAIM_CHOICE
+    if [ -t 0 ]; then
+        read -r CLAIM_CHOICE
+    else
+        CLAIM_CHOICE=n
+    fi
     
     if [[ "$CLAIM_CHOICE" =~ ^[Yy] ]]; then
         echo "Claiming phone number..." | tee -a "$LOG_FILE"
-        CLAIM_RESULT=$(log_cmd "aws connect claim-phone-number --target-arn $INSTANCE_ARN --phone-number $PHONE_NUMBER --region $AWS_REGION --output json")
+        CLAIM_RESULT=$(log_cmd "aws connect claim-phone-number --target-arn $INSTANCE_ARN --phone-number $PHONE_NUMBER --tags Key=tutorial,Value=connect-gs --region $AWS_REGION --output json")
         
         if ! check_error "$CLAIM_RESULT" $? "Failed to claim phone number"; then
             echo "WARNING: Failed to claim phone number, but continuing with script" | tee -a "$LOG_FILE"
@@ -368,7 +376,11 @@ echo "==========================================="
 echo "CLEANUP CONFIRMATION"
 echo "==========================================="
 echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+if [ -t 0 ]; then
+    read -r CLEANUP_CHOICE
+else
+    CLEANUP_CHOICE=n
+fi
 
 if [[ "$CLEANUP_CHOICE" =~ ^[Yy] ]]; then
     echo "Starting cleanup..." | tee -a "$LOG_FILE"

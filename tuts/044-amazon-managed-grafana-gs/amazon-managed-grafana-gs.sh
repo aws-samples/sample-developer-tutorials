@@ -99,6 +99,9 @@ echo "IAM role created successfully"
 ROLE_ARN=$(echo "$ROLE_OUTPUT" | grep -o '"Arn": "[^"]*' | cut -d'"' -f4)
 echo "Role ARN: $ROLE_ARN"
 
+# Tag the IAM role
+aws iam tag-role --role-name "$ROLE_NAME" --tags Key=tutorial,Value=amazon-managed-grafana-gs
+
 # Attach policies to the role
 echo "Attaching policies to the role..."
 
@@ -132,6 +135,9 @@ check_error "$POLICY_OUTPUT" "create-policy"
 POLICY_ARN=$(echo "$POLICY_OUTPUT" | grep -o '"Arn": "[^"]*' | cut -d'"' -f4)
 echo "CloudWatch policy ARN: $POLICY_ARN"
 
+# Tag the IAM policy
+aws iam tag-role --role-name "$ROLE_NAME" --tags Key=tutorial,Value=amazon-managed-grafana-gs
+
 ATTACH_OUTPUT=$(aws iam attach-role-policy \
   --role-name "$ROLE_NAME" \
   --policy-arn "$POLICY_ARN")
@@ -149,7 +155,7 @@ WORKSPACE_OUTPUT=$(aws grafana create-workspace \
   --workspace-role-arn "$ROLE_ARN" \
   --workspace-data-sources "CLOUDWATCH" "PROMETHEUS" "XRAY" \
   --grafana-version "10.4" \
-  --tags Environment=Development)
+  --tags Key=tutorial,Value=amazon-managed-grafana-gs)
 
 check_error "$WORKSPACE_OUTPUT" "create-workspace"
 
@@ -229,8 +235,11 @@ echo "- Amazon Managed Grafana workspace: $WORKSPACE_ID"
 echo "- IAM Role: $ROLE_NAME"
 echo "- IAM Policy: GrafanaCloudWatchPolicy-${RANDOM_ID}"
 echo ""
-echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+if [ -t 0 ]; then
+    read -rp "Do you want to clean up all created resources? (y/n): " CLEANUP_CHOICE
+else
+    CLEANUP_CHOICE=n
+fi
 
 if [[ "$CLEANUP_CHOICE" =~ ^[Yy] ]]; then
     echo "Cleaning up resources..."

@@ -253,6 +253,10 @@ TAG_OUTPUT=$(aws s3api put-bucket-tagging \
     --tagging '{
         "TagSet": [
             {
+                "Key": "tutorial",
+                "Value": "s3-gettingstarted"
+            },
+            {
                 "Key": "Environment",
                 "Value": "Tutorial"
             },
@@ -307,7 +311,11 @@ echo "==========================================="
 echo "CLEANUP CONFIRMATION"
 echo "==========================================="
 echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+if [ -t 0 ]; then
+    read -r CLEANUP_CHOICE
+else
+    CLEANUP_CHOICE=y
+fi
 
 if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
     cleanup

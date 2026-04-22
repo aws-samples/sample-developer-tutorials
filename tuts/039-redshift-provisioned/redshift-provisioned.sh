@@ -127,7 +127,8 @@ CLUSTER_RESULT=$(aws redshift create-cluster \
   --master-username "$DB_USER" \
   --master-user-password "$DB_PASSWORD" \
   --db-name "$DB_NAME" \
-  --port 5439 2>&1)
+  --port 5439 \
+  --tags Key=tutorial,Value=redshift-provisioned 2>&1)
 
 # Check for errors
 if echo "$CLUSTER_RESULT" | grep -i "error"; then
@@ -179,6 +180,10 @@ if echo "$ROLE_RESULT" | grep -i "error"; then
 fi
 
 echo "$ROLE_RESULT"
+
+# Tag IAM role
+echo "Tagging IAM role: $ROLE_NAME"
+aws iam tag-role --role-name "$ROLE_NAME" --tags Key=tutorial,Value=redshift-provisioned
 
 # Get the role ARN
 ROLE_ARN=$(aws iam get-role --role-name "$ROLE_NAME" --query 'Role.Arn' --output text)
@@ -361,7 +366,11 @@ echo "==========================================="
 echo "CLEANUP CONFIRMATION"
 echo "==========================================="
 echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+if [ -t 0 ]; then
+    read -r CLEANUP_CHOICE
+else
+    CLEANUP_CHOICE=y
+fi
 
 if [[ "$CLEANUP_CHOICE" =~ ^[Yy] ]]; then
     cleanup_resources

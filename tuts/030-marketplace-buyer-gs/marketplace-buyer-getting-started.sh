@@ -103,7 +103,8 @@ echo "Key pair created and saved to ${KEY_NAME}.pem"
 echo "Creating security group: $SECURITY_GROUP_NAME"
 SG_OUTPUT=$(aws ec2 create-security-group \
   --group-name "$SECURITY_GROUP_NAME" \
-  --description "Security group for AWS Marketplace tutorial" 2>&1)
+  --description "Security group for AWS Marketplace tutorial" \
+  --tag-specifications 'ResourceType=security-group,Tags=[{Key=tutorial,Value=marketplace-buyer-gs}]' 2>&1)
 
 check_error "$SG_OUTPUT" "ec2 create-security-group"
 
@@ -156,7 +157,8 @@ INSTANCE_OUTPUT=$(aws ec2 run-instances \
   --instance-type t2.micro \
   --key-name "$KEY_NAME" \
   --security-group-ids "$SECURITY_GROUP_ID" \
-  --count 1 2>&1)
+  --count 1 \
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=tutorial,Value=marketplace-buyer-gs}]' 2>&1)
 
 check_error "$INSTANCE_OUTPUT" "ec2 run-instances"
 
@@ -199,8 +201,11 @@ echo ""
 echo "==================================================="
 echo "CLEANUP CONFIRMATION"
 echo "==================================================="
-echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+if [ -t 0 ]; then
+    read -rp "Do you want to clean up all created resources? (y/n): " CLEANUP_CHOICE
+else
+    CLEANUP_CHOICE=y
+fi
 
 if [[ $CLEANUP_CHOICE =~ ^[Yy]$ ]]; then
     cleanup_resources

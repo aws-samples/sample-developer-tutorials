@@ -57,7 +57,8 @@ CREATE_TABLE_OUTPUT=$(aws dynamodb create-table \
         AttributeName=SongTitle,AttributeType=S \
     --key-schema AttributeName=Artist,KeyType=HASH AttributeName=SongTitle,KeyType=RANGE \
     --billing-mode PAY_PER_REQUEST \
-    --table-class STANDARD)
+    --table-class STANDARD \
+    --tags Key=tutorial,Value=amazon-dynamodb-gs)
 
 check_error "$CREATE_TABLE_OUTPUT" "create-table"
 echo "$CREATE_TABLE_OUTPUT"
@@ -167,8 +168,11 @@ for resource in "${RESOURCES[@]}"; do
     echo "- $resource"
 done
 echo ""
-echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+if [ -t 0 ]; then
+    read -rp "Do you want to clean up all created resources? (y/n): " CLEANUP_CHOICE
+else
+    CLEANUP_CHOICE=y
+fi
 
 if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
     # Step 6: Delete the DynamoDB table

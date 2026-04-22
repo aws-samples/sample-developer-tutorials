@@ -267,6 +267,11 @@ EOF
         --assume-role-policy-document "file://$TRUST_POLICY_FILE"
     CREATED_RESOURCES+=("IAM_ROLE:$ROLE_NAME")
     
+    # Tag IAM role
+    aws iam tag-role \
+        --role-name "$ROLE_NAME" \
+        --tags Key=tutorial,Value=getting-started-batch-fargate
+    
     # Attach policy
     aws iam attach-role-policy \
         --role-name "$ROLE_NAME" \
@@ -290,7 +295,8 @@ EOF
             \"maxvCpus\": 256,
             \"subnets\": [$SUBNET_ARRAY],
             \"securityGroupIds\": [\"$DEFAULT_SG\"]
-        }"
+        }" \
+        --tags Key=tutorial,Value=getting-started-batch-fargate
     CREATED_RESOURCES+=("COMPUTE_ENV:$COMPUTE_ENV_NAME")
     
     # Wait for compute environment to be ready
@@ -303,7 +309,8 @@ EOF
         --job-queue-name "$JOB_QUEUE_NAME" \
         --state ENABLED \
         --priority 900 \
-        --compute-environment-order order=1,computeEnvironment="$COMPUTE_ENV_NAME"
+        --compute-environment-order order=1,computeEnvironment="$COMPUTE_ENV_NAME" \
+        --tags Key=tutorial,Value=getting-started-batch-fargate
     CREATED_RESOURCES+=("JOB_QUEUE:$JOB_QUEUE_NAME")
     
     # Wait for job queue to be ready
@@ -327,7 +334,8 @@ EOF
                 \"assignPublicIp\": \"ENABLED\"
             },
             \"executionRoleArn\": \"arn:aws:iam::${ACCOUNT_ID}:role/${ROLE_NAME}\"
-        }"
+        }" \
+        --tags Key=tutorial,Value=getting-started-batch-fargate
     
     log "Job definition created: $JOB_DEF_NAME"
     
@@ -338,6 +346,7 @@ EOF
         --job-name "$JOB_NAME" \
         --job-queue "$JOB_QUEUE_NAME" \
         --job-definition "$JOB_DEF_NAME" \
+        --tags Key=tutorial,Value=getting-started-batch-fargate \
         --query 'jobId' \
         --output text)
     
@@ -382,7 +391,11 @@ EOF
     echo "CLEANUP CONFIRMATION"
     echo "==========================================="
     echo "Do you want to clean up all created resources? (y/n): "
-    read -r CLEANUP_CHOICE
+    if [ -t 0 ]; then
+        read -r CLEANUP_CHOICE
+    else
+        CLEANUP_CHOICE=y
+    fi
     
     if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
         cleanup_resources

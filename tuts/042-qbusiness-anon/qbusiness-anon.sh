@@ -114,6 +114,9 @@ ROLE_ARN=$(echo "$ROLE_OUTPUT" | grep -o '"Arn": "[^"]*' | cut -d'"' -f4)
 echo "Created IAM role: $ROLE_ARN" | tee -a "$LOG_FILE"
 CREATED_RESOURCES="IAM Role: $ROLE_NAME\n$CREATED_RESOURCES"
 
+# Tag IAM role
+aws iam tag-role --role-name "$ROLE_NAME" --tags Key=tutorial,Value=qbusiness-anon
+
 # Attach necessary permissions to the role
 POLICY_OUTPUT=$(aws iam attach-role-policy --role-name "$ROLE_NAME" --policy-arn "arn:aws:iam::aws:policy/AmazonQFullAccess")
 check_error "$POLICY_OUTPUT" $? "Failed to attach policy to IAM role"
@@ -136,6 +139,9 @@ check_error "$APP_OUTPUT" $? "Failed to create Amazon Q Business application"
 APPLICATION_ID=$(echo "$APP_OUTPUT" | grep -o '"applicationId": "[^"]*' | cut -d'"' -f4)
 echo "Created Amazon Q Business application: $APPLICATION_ID" | tee -a "$LOG_FILE"
 CREATED_RESOURCES="Amazon Q Business Application: $APPLICATION_ID\n$CREATED_RESOURCES"
+
+# Tag Amazon Q Business application
+aws qbusiness tag-resource --resource-arn "arn:aws:qbusiness:${AWS_REGION}:$(aws sts get-caller-identity --query Account --output text):application/${APPLICATION_ID}" --tags Key=tutorial,Value=qbusiness-anon
 
 # Wait for application to be active
 echo "Waiting for application to become active..." | tee -a "$LOG_FILE"

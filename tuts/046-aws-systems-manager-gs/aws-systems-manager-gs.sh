@@ -114,7 +114,7 @@ echo ""
 CURRENT_REGION=$(aws configure get region)
 if [[ -z "$CURRENT_REGION" ]]; then
     echo "No AWS region configured. Please specify a region:"
-    read -r CURRENT_REGION
+    if [ -t 0 ]; then read -r CURRENT_REGION; else CURRENT_REGION="us-east-1"; fi
     if [[ -z "$CURRENT_REGION" ]]; then
         echo "ERROR: A region must be specified" | tee -a "$LOG_FILE"
         exit 1
@@ -369,7 +369,7 @@ cat > ssm-onboarding-policy.json << 'EOF'
 EOF
 
 # Create the IAM policy
-POLICY_OUTPUT=$(log_cmd "aws iam create-policy --policy-name SSMOnboardingPolicy --policy-document file://ssm-onboarding-policy.json --output json")
+POLICY_OUTPUT=$(log_cmd "aws iam create-policy --policy-name SSMOnboardingPolicy --policy-document file://ssm-onboarding-policy.json --tags Key=tutorial,Value=aws-systems-manager-gs --output json")
 POLICY_STATUS=$?
 check_error "$POLICY_OUTPUT" $POLICY_STATUS "Failed to create IAM policy"
 
@@ -453,6 +453,11 @@ track_resource "IAM_ROLE" "$ROLE_NAME"
 echo "Created IAM role: $ROLE_NAME" | tee -a "$LOG_FILE"
 echo "Role ARN: $ROLE_ARN" | tee -a "$LOG_FILE"
 
+# Tag the IAM role
+log_cmd "aws iam tag-role --role-name $ROLE_NAME --tags Key=tutorial,Value=aws-systems-manager-gs"
+TAG_STATUS=$?
+check_error "" $TAG_STATUS "Failed to tag IAM role"
+
 # Set identity variables for cleanup
 IDENTITY_TYPE="role"
 IDENTITY_NAME="$ROLE_NAME"
@@ -491,7 +496,7 @@ echo "Configuration file created:" | tee -a "$LOG_FILE"
 cat ssm-config.json | tee -a "$LOG_FILE"
 
 # Create the configuration manager
-CONFIG_OUTPUT=$(log_cmd "aws ssm-quicksetup create-configuration-manager --name \"$CONFIG_NAME\" --configuration-definitions file://ssm-config.json --region $CURRENT_REGION")
+CONFIG_OUTPUT=$(log_cmd "aws ssm-quicksetup create-configuration-manager --name \"$CONFIG_NAME\" --configuration-definitions file://ssm-config.json --tags Key=tutorial,Value=aws-systems-manager-gs --region $CURRENT_REGION")
 CONFIG_STATUS=$?
 check_error "$CONFIG_OUTPUT" $CONFIG_STATUS "Failed to create Systems Manager configuration"
 
@@ -537,7 +542,7 @@ echo "==========================================="
 echo "CLEANUP CONFIRMATION"
 echo "==========================================="
 echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+if [ -t 0 ]; then read -rp "(y/n): " CLEANUP_CHOICE; else CLEANUP_CHOICE=n; fi
 
 if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
     echo "Cleaning up resources..." | tee -a "$LOG_FILE"

@@ -66,7 +66,7 @@ echo "=========================================="
 echo "Creating stream: $STREAM_NAME"
 
 # Create the Kinesis video stream
-CREATE_STREAM_OUTPUT=$(aws kinesisvideo create-stream --stream-name "$STREAM_NAME" --data-retention-in-hours 24)
+CREATE_STREAM_OUTPUT=$(aws kinesisvideo create-stream --stream-name "$STREAM_NAME" --data-retention-in-hours 24 --tags Key=tutorial,Value=amazon-kinesis-video-streams-gs)
 check_error "$CREATE_STREAM_OUTPUT" "create-stream"
 echo "$CREATE_STREAM_OUTPUT"
 
@@ -156,7 +156,11 @@ echo "==========================================="
 echo "CLEANUP CONFIRMATION"
 echo "==========================================="
 echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+if [ -t 0 ]; then
+    read -r CLEANUP_CHOICE
+else
+    CLEANUP_CHOICE=y
+fi
 
 if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
     echo "Starting cleanup..."

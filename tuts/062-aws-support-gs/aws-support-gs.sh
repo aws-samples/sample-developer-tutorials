@@ -132,8 +132,12 @@ if [[ "$DEMO_MODE" == "true" ]]; then
     echo ""
     
     # Get user email for demo
-    echo "Enter your email address for the demo (leave blank to use example@example.com): "
-    read -r USER_EMAIL
+    if [ -t 0 ]; then
+        echo "Enter your email address for the demo (leave blank to use example@example.com): "
+        read -r USER_EMAIL
+    else
+        USER_EMAIL=""
+    fi
     
     if [[ -z "$USER_EMAIL" ]]; then
         USER_EMAIL="example@example.com"
@@ -176,15 +180,23 @@ if [[ "$DEMO_MODE" == "true" ]]; then
     
 else
     echo "This will create a test support case in your account."
-    echo "Do you want to continue? (y/n): "
-    read -r CREATE_CASE_CHOICE
+    if [ -t 0 ]; then
+        echo "Do you want to continue? (y/n): "
+        read -r CREATE_CASE_CHOICE
+    else
+        CREATE_CASE_CHOICE="y"
+    fi
 
     if [[ "$CREATE_CASE_CHOICE" =~ ^[Yy]$ ]]; then
         echo "Creating a test support case..."
         
         # Get user email for CC
-        echo "Enter your email address for case notifications (leave blank to skip): "
-        read -r USER_EMAIL
+        if [ -t 0 ]; then
+            echo "Enter your email address for case notifications (leave blank to skip): "
+            read -r USER_EMAIL
+        else
+            USER_EMAIL=""
+        fi
         
         CC_EMAIL_PARAM=""
         if [[ -n "$USER_EMAIL" ]]; then
@@ -244,8 +256,12 @@ else
             echo "==================================================="
             echo "CASE RESOLUTION"
             echo "==================================================="
-            echo "Do you want to resolve the test support case? (y/n): "
-            read -r RESOLVE_CASE_CHOICE
+            if [ -t 0 ]; then
+                echo "Do you want to resolve the test support case? (y/n): "
+                read -r RESOLVE_CASE_CHOICE
+            else
+                RESOLVE_CASE_CHOICE="n"
+            fi
             
             if [[ "$RESOLVE_CASE_CHOICE" =~ ^[Yy]$ ]]; then
                 echo "Resolving the support case..."

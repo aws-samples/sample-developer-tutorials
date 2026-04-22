@@ -46,6 +46,9 @@ create_iam_role() {
             return 1
         fi
         
+        # Tag the role after creation
+        aws iam tag-role --role-name "$ROLE_NAME" --tags Key=tutorial,Value=aws-iot-device-defender-gs
+        
         # For IoT logging role, create an inline policy instead of using a managed policy
         if [[ "$ROLE_NAME" == "AWSIoTLoggingRole" ]]; then
             LOGGING_POLICY='{
@@ -300,7 +303,8 @@ echo "Creating mitigation action to enable AWS IoT logging..."
 MITIGATION_RESULT=$(aws iot create-mitigation-action \
   --action-name "EnableErrorLoggingAction" \
   --role-arn "$MITIGATION_ROLE_ARN" \
-  --action-params "{\"enableIoTLoggingParams\":{\"roleArnForLogging\":\"$LOGGING_ROLE_ARN\",\"logLevel\":\"ERROR\"}}")
+  --action-params "{\"enableIoTLoggingParams\":{\"roleArnForLogging\":\"$LOGGING_ROLE_ARN\",\"logLevel\":\"ERROR\"}}" \
+  --tags Key=tutorial,Value=aws-iot-device-defender-gs)
 
 echo "$MITIGATION_RESULT"
 if ! check_error "$MITIGATION_RESULT"; then
@@ -372,7 +376,7 @@ if echo "$SNS_TOPICS" | grep -q "IoTDDNotifications"; then
     TOPIC_ARN=$(echo "$SNS_TOPICS" | grep -o '"TopicArn": "[^"]*IoTDDNotifications' | cut -d'"' -f4)
 else
     echo "Creating SNS topic for notifications..."
-    SNS_RESULT=$(aws sns create-topic --name "IoTDDNotifications")
+    SNS_RESULT=$(aws sns create-topic --name "IoTDDNotifications" --tags Key=tutorial,Value=aws-iot-device-defender-gs)
 
     if ! check_error "$SNS_RESULT"; then
         echo "Failed to create SNS topic"

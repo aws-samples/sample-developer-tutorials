@@ -51,6 +51,7 @@ log "Starting AWS Payment Cryptography tutorial"
 log "Step 1: Creating a card verification key (CVK)"
 KEY_OUTPUT=$(aws payment-cryptography create-key \
   --exportable \
+  --tags Key=tutorial,Value=aws-payment-cryptography-gs \
   --key-attributes KeyAlgorithm=TDES_2KEY,KeyUsage=TR31_C0_CARD_VERIFICATION_KEY,KeyClass=SYMMETRIC_KEY,KeyModesOfUse='{Generate=true,Verify=true}' 2>&1)
 
 echo "$KEY_OUTPUT"
@@ -126,7 +127,11 @@ echo "==========================================="
 echo "CLEANUP CONFIRMATION"
 echo "==========================================="
 echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+if [ -t 0 ]; then
+    read -r CLEANUP_CHOICE
+else
+    CLEANUP_CHOICE=y
+fi
 
 if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
     log "Step 5: Cleaning up resources"
