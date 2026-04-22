@@ -6,3 +6,8 @@
 - Type: functional
 - Initial version
 
+
+### 2026-04-22 v2 PR review fixes
+- Type: functional
+- Uses repo sample image instead of Python-generated image
+- Removed Python 3 prerequisite
