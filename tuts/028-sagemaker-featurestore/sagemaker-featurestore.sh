@@ -201,7 +201,17 @@ if [ -z "$REGION" ]; then
 else
     echo "Using region: $REGION"
 fi
-S3_BUCKET_NAME="sagemaker-featurestore-${RANDOM_ID}-${ACCOUNT_ID}"
+# Check for shared prereq bucket
+PREREQ_BUCKET=$(aws cloudformation describe-stacks --stack-name tutorial-prereqs-bucket \
+    --query 'Stacks[0].Outputs[?OutputKey==`BucketName`].OutputValue' --output text 2>/dev/null)
+if [ -n "$PREREQ_BUCKET" ] && [ "$PREREQ_BUCKET" != "None" ]; then
+    S3_BUCKET_NAME="$PREREQ_BUCKET"
+    BUCKET_IS_SHARED=true
+    echo "Using shared bucket: $S3_BUCKET_NAME"
+else
+    BUCKET_IS_SHARED=false
+    S3_BUCKET_NAME="sagemaker-featurestore-${RANDOM_ID}-${ACCOUNT_ID}"
+fi
 PREFIX="featurestore-tutorial"
 CURRENT_TIME=$(date +%s)
 

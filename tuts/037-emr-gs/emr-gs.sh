@@ -63,7 +63,17 @@ cleanup() {
 
 # Generate a random identifier for S3 bucket
 RANDOM_ID=$(openssl rand -hex 6)
-BUCKET_NAME="emr${RANDOM_ID}"
+# Check for shared prereq bucket
+PREREQ_BUCKET=$(aws cloudformation describe-stacks --stack-name tutorial-prereqs-bucket \
+    --query 'Stacks[0].Outputs[?OutputKey==`BucketName`].OutputValue' --output text 2>/dev/null)
+if [ -n "$PREREQ_BUCKET" ] && [ "$PREREQ_BUCKET" != "None" ]; then
+    BUCKET_NAME="$PREREQ_BUCKET"
+    BUCKET_IS_SHARED=true
+    echo "Using shared bucket: $BUCKET_NAME"
+else
+    BUCKET_IS_SHARED=false
+    BUCKET_NAME="emr${RANDOM_ID}"
+fi
 echo "Using bucket name: $BUCKET_NAME"
 
 # Create S3 bucket

@@ -78,7 +78,9 @@ cleanup_resources() {
         aws s3 rm "s3://$S3_BUCKET_NAME" --recursive 2>/dev/null || true
         
         echo "Deleting S3 bucket..."
-        aws s3api delete-bucket --bucket "$S3_BUCKET_NAME" 2>/dev/null || true
+        if [ "$BUCKET_IS_SHARED" = "false" ]; then
+            aws s3api delete-bucket --bucket "$S3_BUCKET_NAME" 2>/dev/null || true
+        fi
     fi
 }
 
@@ -118,7 +120,17 @@ RANDOM_ID=$(generate_random_id)
 echo "Generated random identifier: $RANDOM_ID"
 
 # Step 1: Create an S3 bucket
-S3_BUCKET_NAME="configservice-${RANDOM_ID}"
+# Check for shared prereq bucket
+PREREQ_BUCKET=$(aws cloudformation describe-stacks --stack-name tutorial-prereqs-bucket \
+    --query 'Stacks[0].Outputs[?OutputKey==`BucketName`].OutputValue' --output text 2>/dev/null)
+if [ -n "$PREREQ_BUCKET" ] && [ "$PREREQ_BUCKET" != "None" ]; then
+    S3_BUCKET_NAME="$PREREQ_BUCKET"
+    BUCKET_IS_SHARED=true
+    echo "Using shared bucket: $S3_BUCKET_NAME"
+else
+    BUCKET_IS_SHARED=false
+    S3_BUCKET_NAME="configservice-${RANDOM_ID}"
+fi
 echo "Creating S3 bucket: $S3_BUCKET_NAME"
 
 # Get the current region
