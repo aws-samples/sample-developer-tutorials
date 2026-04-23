@@ -1,0 +1,20 @@
+account_GettingStarted_077:
+  title: Managing your account
+  title_abbrev: Managing your account
+  synopsis_list:
+    - Update account name
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/077-aws-account-management-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/077-aws-account-management-gs/aws-account-management-gs.sh
+  services:
+    account: {GetAlternateContact, GetContactInformation, GetRegionOptStatus, ListRegions}
+    s3: {ListBuckets}
+    sts: {GetCallerIdentity}

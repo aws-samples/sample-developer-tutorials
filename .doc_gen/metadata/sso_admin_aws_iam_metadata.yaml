@@ -1,0 +1,24 @@
+sso_admin_GettingStarted_045:
+  title: Getting started with IAM Identity Center
+  title_abbrev: Getting started with IAM Identity Center
+  synopsis_list:
+    - Enable IAM Identity Center
+    - Create users and groups
+    - Set up user access to accounts (organization instance only)
+    - Set up user access to applications
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/045-aws-iam-identity-center-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/045-aws-iam-identity-center-gs/aws-iam-identity-center-gs.sh
+  services:
+    organizations: {DescribeOrganization}
+    sso-admin: {AttachManagedPolicyToPermissionSet, CreateAccountAssignment, CreateApplication, CreateApplicationAssignment, CreateInstance, CreatePermissionSet, DeleteAccountAssignment, DeleteApplication, DeleteApplicationAssignment, DeletePermissionSet, DescribeAccountAssignmentCreationStatus, DescribeAccountAssignmentDeletionStatus, DescribePermissionSetProvisioningStatus, DetachManagedPolicyFromPermissionSet, ListInstances, ProvisionPermissionSet}
+    sts: {GetCallerIdentity}
