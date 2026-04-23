@@ -1,0 +1,14 @@
+{
+  "name": "tutorial-servicediscovery",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@aws-sdk/client-servicediscovery": "latest"
+  },
+  "devDependencies": {
+    "vitest": "latest",
+    "aws-sdk-client-mock": "latest"
+  }
+}
