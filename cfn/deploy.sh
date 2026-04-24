@@ -6,8 +6,8 @@
 set -eo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-CFN_DIR="$SCRIPT_DIR/cfn"
-TUTS_DIR="$SCRIPT_DIR/tuts"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+TUTS_DIR="$REPO_ROOT/tuts"
 PREREQ_STACK="tutorial-prereqs"
 
 usage() {
