@@ -22,7 +22,7 @@ fi
 UNIQUE_ID=$(cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 12 | head -n 1)
 # Check for shared prereq bucket
 PREREQ_BUCKET=$(aws cloudformation describe-stacks --stack-name tutorial-prereqs-bucket \
-    --query 'Stacks[0].Outputs[?OutputKey==`BucketName`].OutputValue' --output text 2>/dev/null)
+    --query 'Stacks[0].Outputs[?OutputKey==`BucketName`].OutputValue' --output text 2>/dev/null || true)
 if [ -n "$PREREQ_BUCKET" ] && [ "$PREREQ_BUCKET" != "None" ]; then
     BUCKET_NAME="$PREREQ_BUCKET"
     BUCKET_IS_SHARED=true
@@ -92,9 +92,11 @@ cleanup() {
         done <<< "$DELETE_MARKERS_OUTPUT"
     fi
 
-    echo "Deleting bucket: ${BUCKET_NAME}"
     if [ "$BUCKET_IS_SHARED" = "false" ]; then
+        echo "Deleting bucket: ${BUCKET_NAME}"
         aws s3api delete-bucket --bucket "$BUCKET_NAME" 2>&1 || echo "WARNING: Failed to delete bucket ${BUCKET_NAME}"
+    else
+        echo "Keeping shared bucket: ${BUCKET_NAME}"
     fi
 
     echo ""
@@ -128,6 +130,7 @@ trap 'handle_error "line $LINENO"' ERR
 # ============================================================================
 
 echo "Step 1: Creating bucket ${BUCKET_NAME}..."
+if [ "$BUCKET_IS_SHARED" = "false" ]; then
 
 # CreateBucket requires LocationConstraint for all regions except us-east-1
 REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-${CONFIGURED_REGION}}}"
@@ -142,6 +145,7 @@ fi
 echo "$CREATE_OUTPUT"
 CREATED_RESOURCES+=("s3:bucket:${BUCKET_NAME}")
 echo "Bucket created."
+fi
 echo ""
 
 # ============================================================================
