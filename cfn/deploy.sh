@@ -27,6 +27,16 @@ TUT_DIR="$1"
 shift
 OVERRIDES="$@"
 
+# Prereq tutorials have their own deploy scripts
+if [[ "$TUT_DIR" == 000-prereqs-* ]]; then
+    DEPLOY_SCRIPT="$TUTS_DIR/$TUT_DIR/$(ls "$TUTS_DIR/$TUT_DIR/" | grep -v cleanup | grep -v cfn | grep -v README | grep -v REVISION | grep '\.sh$' | head -1)"
+    if [ -f "$DEPLOY_SCRIPT" ]; then
+        echo "Running prereq deploy script: $DEPLOY_SCRIPT"
+        bash "$DEPLOY_SCRIPT"
+        exit $?
+    fi
+fi
+
 # Find the template
 TEMPLATE=$(find "$TUTS_DIR/$TUT_DIR" -name 'cfn-*.yaml' -o -name 'cfn-*.yml' 2>/dev/null | head -1)
 if [ -z "$TEMPLATE" ]; then

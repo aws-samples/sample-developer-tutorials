@@ -5,6 +5,8 @@
 set -eo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+TUTS_DIR="$REPO_ROOT/tuts"
 PREREQ_STACK="tutorial-prereqs"
 
 if [ "$1" = "--prereqs" ]; then
@@ -64,6 +66,16 @@ fi
 # Delete a tutorial stack
 TUT_DIR="$1"
 [ -z "$TUT_DIR" ] && echo "Usage: $0 <tutorial-dir> | --prereqs" && exit 1
+
+# Prereq tutorials have their own cleanup scripts
+if [[ "$TUT_DIR" == 000-prereqs-* ]]; then
+    CLEANUP_SCRIPT="$TUTS_DIR/$TUT_DIR/$(ls "$TUTS_DIR/$TUT_DIR/" | grep cleanup | head -1)"
+    if [ -f "$CLEANUP_SCRIPT" ]; then
+        echo "Running prereq cleanup: $CLEANUP_SCRIPT"
+        bash "$CLEANUP_SCRIPT"
+        exit $?
+    fi
+fi
 
 STACK_NAME="tutorial-$(echo "$TUT_DIR" | sed 's/^[0-9]*-//')"
 
