@@ -24,7 +24,7 @@ This tutorial includes a CloudFormation template that creates the same resources
 ### Deploy with CloudFormation
 
 ```bash
-./deploy.sh 005-cloudfront-gettingstarted
+./cfn/deploy.sh 005-cloudfront-gettingstarted
 ```
 
 ### Run the interactive steps
@@ -38,5 +38,5 @@ bash tuts/005-cloudfront-gettingstarted/cloudfront-gettingstarted-cfn.sh
 ### Clean up
 
 ```bash
-./cleanup.sh 005-cloudfront-gettingstarted
+./cfn/cleanup.sh 005-cloudfront-gettingstarted
 ```

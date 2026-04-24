@@ -24,7 +24,7 @@ This tutorial includes a CloudFormation template that creates the same resources
 ### Deploy with CloudFormation
 
 ```bash
-./deploy.sh 001-lightsail-gs
+./cfn/deploy.sh 001-lightsail-gs
 ```
 
 ### Run the interactive steps
@@ -38,5 +38,5 @@ bash tuts/001-lightsail-gs/lightsail-gs-cfn.sh
 ### Clean up
 
 ```bash
-./cleanup.sh 001-lightsail-gs
+./cfn/cleanup.sh 001-lightsail-gs
 ```

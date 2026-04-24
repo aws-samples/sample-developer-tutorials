@@ -68,7 +68,7 @@ This tutorial includes a CloudFormation template that creates the same resources
 ### Deploy with CloudFormation
 
 ```bash
-./deploy.sh 003-s3-gettingstarted
+./cfn/deploy.sh 003-s3-gettingstarted
 ```
 
 ### Run the interactive steps
@@ -82,5 +82,5 @@ bash tuts/003-s3-gettingstarted/s3-gettingstarted-cfn.sh
 ### Clean up
 
 ```bash
-./cleanup.sh 003-s3-gettingstarted
+./cfn/cleanup.sh 003-s3-gettingstarted
 ```

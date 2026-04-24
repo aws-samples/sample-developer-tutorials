@@ -26,7 +26,7 @@ This tutorial includes a CloudFormation template that creates the same resources
 ### Deploy with CloudFormation
 
 ```bash
-./deploy.sh 010-cloudmap-service-discovery
+./cfn/deploy.sh 010-cloudmap-service-discovery
 ```
 
 ### Run the interactive steps
@@ -40,5 +40,5 @@ bash tuts/010-cloudmap-service-discovery/cloudmap-service-discovery-cfn.sh
 ### Clean up
 
 ```bash
-./cleanup.sh 010-cloudmap-service-discovery
+./cfn/cleanup.sh 010-cloudmap-service-discovery
 ```

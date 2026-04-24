@@ -26,7 +26,7 @@ This tutorial includes a CloudFormation template that creates the same resources
 ### Deploy with CloudFormation
 
 ```bash
-./deploy.sh 011-getting-started-batch-fargate
+./cfn/deploy.sh 011-getting-started-batch-fargate
 ```
 
 ### Run the interactive steps
@@ -40,5 +40,5 @@ bash tuts/011-getting-started-batch-fargate/batch-fargate-cfn.sh
 ### Clean up
 
 ```bash
-./cleanup.sh 011-getting-started-batch-fargate
+./cfn/cleanup.sh 011-getting-started-batch-fargate
 ```

@@ -41,7 +41,7 @@ This tutorial includes a CloudFormation template that creates the same resources
 ### Deploy with CloudFormation
 
 ```bash
-./deploy.sh 008-vpc-private-servers-gs
+./cfn/deploy.sh 008-vpc-private-servers-gs
 ```
 
 ### Run the interactive steps
@@ -55,5 +55,5 @@ bash tuts/008-vpc-private-servers-gs/vpc-private-servers-gs-cfn.sh
 ### Clean up
 
 ```bash
-./cleanup.sh 008-vpc-private-servers-gs
+./cfn/cleanup.sh 008-vpc-private-servers-gs
 ```
