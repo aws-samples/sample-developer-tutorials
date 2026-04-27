@@ -41,7 +41,8 @@ cleanup_resources() {
   echo "CLEANUP CONFIRMATION"
   echo "==========================================="
   echo "Do you want to clean up all created resources? (y/n):"
-  read -r CLEANUP_CHOICE
+  CLEANUP_CHOICE="y"
+  echo "$CLEANUP_CHOICE"
   
   if [[ "${CLEANUP_CHOICE,,}" != "y" ]]; then
     echo "Skipping cleanup. Resources will remain in your account."
@@ -208,7 +209,8 @@ select_vpc() {
   
   echo ""
   echo "Enter the number of the VPC you want to use:"
-  read -r VPC_CHOICE
+  VPC_CHOICE=1
+  echo "$VPC_CHOICE"
   
   # Validate choice
   if ! [[ "$VPC_CHOICE" =~ ^[0-9]+$ ]] || [ "$VPC_CHOICE" -lt 1 ] || [ "$VPC_CHOICE" -gt ${#VPC_ARRAY[@]} ]; then
@@ -271,7 +273,8 @@ select_subnet() {
   
   echo ""
   echo "Enter the number of the subnet for the firewall:"
-  read -r SUBNET_CHOICE
+  SUBNET_CHOICE=1
+  echo "$SUBNET_CHOICE"
   
   # Validate choice
   if ! [[ "$SUBNET_CHOICE" =~ ^[0-9]+$ ]] || [ "$SUBNET_CHOICE" -lt 1 ] || [ "$SUBNET_CHOICE" -gt ${#SUBNET_ARRAY[@]} ]; then
@@ -334,7 +337,8 @@ select_route_tables() {
   
   echo ""
   echo "Enter the number of the Internet Gateway route table:"
-  read -r IGW_RT_CHOICE
+  IGW_RT_CHOICE=1
+  echo "$IGW_RT_CHOICE"
   
   # Validate choice
   if ! [[ "$IGW_RT_CHOICE" =~ ^[0-9]+$ ]] || [ "$IGW_RT_CHOICE" -lt 1 ] || [ "$IGW_RT_CHOICE" -gt ${#RT_ARRAY[@]} ]; then
@@ -347,7 +351,8 @@ select_route_tables() {
   
   echo ""
   echo "Enter the number of the customer subnet route table:"
-  read -r SUBNET_RT_CHOICE
+  SUBNET_RT_CHOICE=1
+  echo "$SUBNET_RT_CHOICE"
   
   # Validate choice
   if ! [[ "$SUBNET_RT_CHOICE" =~ ^[0-9]+$ ]] || [ "$SUBNET_RT_CHOICE" -lt 1 ] || [ "$SUBNET_RT_CHOICE" -gt ${#RT_ARRAY[@]} ]; then
@@ -403,7 +408,8 @@ select_internet_gateway() {
   
   echo ""
   echo "Enter the number of the Internet Gateway:"
-  read -r IGW_CHOICE
+  IGW_CHOICE=1
+  echo "$IGW_CHOICE"
   
   # Validate choice
   if ! [[ "$IGW_CHOICE" =~ ^[0-9]+$ ]] || [ "$IGW_CHOICE" -lt 1 ] || [ "$IGW_CHOICE" -gt ${#IGW_ARRAY[@]} ]; then
@@ -552,7 +558,7 @@ echo "Firewall Subnet ID: $SUBNET_ID"
 echo "Customer Subnet CIDR: $CUSTOMER_SUBNET_CIDR"
 echo ""
 echo "Press Enter to continue with firewall creation, or Ctrl+C to abort..."
-read -r
+echo "(auto-confirmed)"
 
 # Create firewall
 FIREWALL_OUTPUT=$(aws network-firewall create-firewall \
@@ -652,7 +658,7 @@ echo "Internet Gateway ID: $INTERNET_GATEWAY_ID"
 echo "Firewall Endpoint ID: $FIREWALL_ENDPOINT"
 echo ""
 echo "Press Enter to continue with route table updates, or Ctrl+C to abort..."
-read -r
+echo "(auto-confirmed)"
 
 # Create a route table for the firewall endpoint
 echo "Creating route table for firewall endpoint..."

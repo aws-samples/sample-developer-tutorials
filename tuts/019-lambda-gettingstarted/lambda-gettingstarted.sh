@@ -156,7 +156,7 @@ echo "  1) Python 3.13"
 echo "  2) Node.js 22.x"
 echo ""
 echo "Enter your choice (1 or 2): "
-read -r RUNTIME_CHOICE
+RUNTIME_CHOICE="1"
 
 case "$RUNTIME_CHOICE" in
     1)
@@ -383,7 +383,7 @@ echo "CLEANUP CONFIRMATION"
 echo "==========================================="
 echo ""
 echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+CLEANUP_CHOICE="y"
 
 if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
     cleanup_resources
