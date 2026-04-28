@@ -134,10 +134,10 @@ USER_POOL_OUTPUT=$(aws cognito-idp create-user-pool \
   --username-attributes email \
   --policies '{"PasswordPolicy":{"MinimumLength":12,"RequireUppercase":true,"RequireLowercase":true,"RequireNumbers":true,"RequireSymbols":true}}' \
   --schema '[{"Name":"email","Required":true,"Mutable":true}]' \
-  --mfa-configuration OPTIONAL \
+  --mfa-configuration OFF \
   --user-attribute-update-settings '{"AttributesRequireVerificationBeforeUpdate":["email"]}' \
   --account-recovery-setting 'RecoveryMechanisms=[{Name=verified_email,Priority=1}]' \
-  --deletion-protection ACTIVE \
+  --deletion-protection INACTIVE \
   --region "$AWS_REGION" \
   2>&1)
 check_aws_error "create-user-pool"
@@ -150,7 +150,7 @@ if [ -z "$USER_POOL_ID" ]; then
 fi
 
 # Validate User Pool ID format
-if ! [[ "$USER_POOL_ID" =~ ^[a-z]{2}-[a-z]+-[0-9]{1}_[a-zA-Z0-9]{25}$ ]]; then
+if ! [[ "$USER_POOL_ID" =~ ^[a-z]{2}-[a-z]+-[0-9]+_[a-zA-Z0-9]+$ ]]; then
   echo "ERROR: Invalid User Pool ID format: $USER_POOL_ID" >&2
   exit 1
 fi
@@ -167,7 +167,7 @@ APP_CLIENT_OUTPUT=$(aws cognito-idp create-user-pool-client \
   --user-pool-id "$USER_POOL_ID" \
   --client-name "$APP_CLIENT_NAME" \
   --no-generate-secret \
-  --explicit-auth-flows ALLOW_REFRESH_TOKEN_AUTH \
+  --explicit-auth-flows ALLOW_REFRESH_TOKEN_AUTH ALLOW_USER_PASSWORD_AUTH \
   --callback-urls '["https://localhost:3000/callback"]' \
   --allowed-o-auth-flows 'code' \
   --allowed-o-auth-scopes 'openid' 'email' 'profile' \
@@ -231,7 +231,7 @@ echo "App Client details retrieved successfully"
 # Step 6: Create a User (Admin)
 echo "Creating admin user..."
 ADMIN_USER_EMAIL="admin@example.com"
-TEMP_PASSWORD=$(openssl rand -base64 12 | tr -d '\n')
+TEMP_PASSWORD="$(openssl rand -base64 12 | tr -d '\n')!@#"
 if [ -z "$TEMP_PASSWORD" ]; then
   echo "ERROR: Failed to generate temporary password" >&2
   cleanup_on_error

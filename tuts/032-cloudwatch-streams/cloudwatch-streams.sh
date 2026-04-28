@@ -195,7 +195,7 @@ if ! python3 -m py_compile lambda_function.py 2>/dev/null; then
 fi
 
 # Zip the Lambda function code
-log_cmd "zip -j -q lambda_function.zip lambda_function.py"
+zip -j -q lambda_function.zip lambda_function.py
 if [ ! -f lambda_function.zip ]; then
     echo "ERROR: Failed to create lambda_function.zip" | tee -a "$LOG_FILE"
     exit 1
@@ -203,7 +203,7 @@ fi
 chmod 600 lambda_function.zip
 
 # Validate zip file integrity
-if ! zip -t lambda_function.zip > /dev/null 2>&1; then
+if ! unzip -t lambda_function.zip > /dev/null 2>&1; then
     echo "ERROR: Created zip file is corrupted" | tee -a "$LOG_FILE"
     exit 1
 fi
