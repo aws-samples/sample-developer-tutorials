@@ -140,7 +140,7 @@ echo "Using AWS Region: $AWS_REGION"
 
 # Get available availability zones in the current region
 echo "Getting available availability zones in region $AWS_REGION..."
-local az_output
+az_output=""
 if az_output=$(aws ec2 describe-availability-zones --region "$AWS_REGION" --query "AvailabilityZones[0].ZoneName" --output text 2>&1); then
     AVAILABILITY_ZONE="$az_output"
     if [ -z "$AVAILABILITY_ZONE" ]; then
@@ -172,7 +172,7 @@ echo "Entitlement name: $ENTITLEMENT_NAME"
 
 # Step 1: Verify access to MediaConnect
 echo "Step 1: Verifying access to AWS Elemental MediaConnect..."
-local list_flows_output
+list_flows_output=""
 if list_flows_output=$(aws mediaconnect list-flows 2>&1); then
     echo "$list_flows_output"
 else
@@ -181,7 +181,7 @@ fi
 
 # Step 2: Create a flow
 echo "Step 2: Creating a flow..."
-local create_flow_output
+create_flow_output=""
 if create_flow_output=$(aws mediaconnect create-flow \
     --availability-zone "$AVAILABILITY_ZONE" \
     --name "$FLOW_NAME" \
@@ -205,7 +205,7 @@ fi
 
 # Step 3: Add an output
 echo "Step 3: Adding an output to the flow..."
-local add_output_output
+add_output_output=""
 if add_output_output=$(aws mediaconnect add-flow-outputs \
     --flow-arn "$FLOW_ARN" \
     --outputs "Name=$OUTPUT_NAME,Protocol=zixi-push,Destination=198.51.100.11,Port=1024,StreamId=ZixiAwardsOutput" 2>&1); then
@@ -215,7 +215,7 @@ else
 fi
 
 # Extract the output ARN
-local output_arn
+output_arn=""
 output_arn=$(extract_json_value "$add_output_output" "OutputArn")
 if [ -z "$output_arn" ]; then
     echo "WARNING: Failed to extract output ARN from output"
@@ -226,7 +226,7 @@ fi
 
 # Step 4: Grant an entitlement
 echo "Step 4: Granting an entitlement..."
-local grant_entitlement_output
+grant_entitlement_output=""
 if grant_entitlement_output=$(aws mediaconnect grant-flow-entitlements \
     --flow-arn "$FLOW_ARN" \
     --entitlements "Name=$ENTITLEMENT_NAME,Subscribers=222233334444" 2>&1); then
@@ -236,7 +236,7 @@ else
 fi
 
 # Extract the entitlement ARN
-local entitlement_arn
+entitlement_arn=""
 entitlement_arn=$(extract_json_value "$grant_entitlement_output" "EntitlementArn")
 if [ -z "$entitlement_arn" ]; then
     echo "WARNING: Failed to extract entitlement ARN from output"
@@ -247,7 +247,7 @@ fi
 
 # Step 5: List entitlements to share with affiliates
 echo "Step 5: Listing entitlements for the flow..."
-local describe_flow_output
+describe_flow_output=""
 if describe_flow_output=$(aws mediaconnect describe-flow --flow-arn "$FLOW_ARN" --query "Flow.Entitlements" 2>&1); then
     echo "Entitlements for the flow:"
     echo "$describe_flow_output"
