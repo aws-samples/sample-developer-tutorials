@@ -114,7 +114,7 @@ echo ""
 CURRENT_REGION=$(aws configure get region)
 if [[ -z "$CURRENT_REGION" ]]; then
     echo "No AWS region configured. Please specify a region:"
-    read -r CURRENT_REGION
+    CURRENT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
     if [[ -z "$CURRENT_REGION" ]]; then
         echo "ERROR: A region must be specified" | tee -a "$LOG_FILE"
         exit 1
@@ -537,7 +537,7 @@ echo "==========================================="
 echo "CLEANUP CONFIRMATION"
 echo "==========================================="
 echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+CLEANUP_CHOICE="y"
 
 if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
     echo "Cleaning up resources..." | tee -a "$LOG_FILE"

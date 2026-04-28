@@ -47,7 +47,7 @@ validate_input() {
     fi
     
     # Validate against common injection patterns
-    if [[ "$input" =~ [';$`|&<>(){}] ]]; then
+    if [[ "$input" =~ [\;\$\`\|\&\<\>\(\)\{\}] ]]; then
         echo "ERROR: $param_name contains invalid characters" | tee -a "$LOG_FILE"
         return 1
     fi
@@ -78,7 +78,7 @@ wait_for_resource() {
         status_output=$(eval "$command" 2>&1) || true
         echo "$status_output" >> "$LOG_FILE"
         
-        # For service networks, they don't have a status field in the output
+        # For service networks, they do not have a status field in the output
         # We'll consider them active if we can retrieve them
         if [[ "$resource_type" == "Service Network" ]]; then
             if [[ "$status_output" == *"$resource_id"* ]]; then

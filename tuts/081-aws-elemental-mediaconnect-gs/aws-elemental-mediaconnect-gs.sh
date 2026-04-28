@@ -121,7 +121,7 @@ trap cleanup_resources EXIT
 validate_aws_cli
 
 # Get the current AWS region
-local aws_region
+aws_region=""
 if aws_region=$(aws configure get region 2>/dev/null); then
     if [ -z "$aws_region" ]; then
         handle_error "Failed to get AWS region. Please make sure AWS CLI is configured."

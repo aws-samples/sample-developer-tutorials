@@ -80,7 +80,8 @@ CREATED_RESOURCES+=("Email identity: $EMAIL_ADDRESS")
 echo "A verification email has been sent to $EMAIL_ADDRESS."
 echo "Please check your inbox and click the verification link before continuing."
 echo ""
-echo "Press Enter after you've verified your email address..."
+echo "Waiting for email verification (auto-skipping in non-interactive mode)..."
+sleep 2
 sleep 1
 
 # Check verification status
@@ -217,7 +218,8 @@ if [[ "$SEND_TEST" =~ ^[Yy] ]]; then
             echo "A verification email has been sent to $RECIPIENT_EMAIL."
             echo "Please check the inbox and click the verification link before continuing."
             echo ""
-            echo "Press Enter after you've verified the recipient email address..."
+echo "Waiting for recipient verification (auto-skipping)..."
+sleep 2
             sleep 1
             
             # Check recipient verification status

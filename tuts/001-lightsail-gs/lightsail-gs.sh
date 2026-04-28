@@ -233,7 +233,7 @@ MAX_ATTEMPTS=60
 ATTEMPTS=0
 while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
   SNAPSHOT_STATE=$(aws lightsail get-instance-snapshot --instance-snapshot-name "$SNAPSHOT_NAME" --region "$AWS_REGION" --query 'instanceSnapshot.state' --output text 2>/dev/null || echo "unknown")
-  if [ "$SNAPSHOT_STATE" == "completed" ]; then
+  if [ "$SNAPSHOT_STATE" == "available" ]; then
     echo "Snapshot creation completed"
     break
   fi
