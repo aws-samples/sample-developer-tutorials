@@ -11,7 +11,7 @@ set -euo pipefail
 umask 0077
 
 # Initialize log file with restricted permissions
-LOG_FILE="vpc-peering-script-v6.log"
+LOG_FILE="./vpc-peering-script-v6.log"
 touch "$LOG_FILE"
 chmod 0600 "$LOG_FILE"
 echo "Starting VPC Peering script at $(date)" > "$LOG_FILE"

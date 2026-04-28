@@ -216,7 +216,8 @@ PREFIX="featurestore-tutorial"
 CURRENT_TIME=$(date +%s)
 
 echo "Creating S3 bucket: $S3_BUCKET_NAME"
-# Create bucket in current region
+# Create bucket in current region (skip if using shared bucket)
+if [ "$BUCKET_IS_SHARED" = "false" ]; then
 if [ "$REGION" = "us-east-1" ]; then
     BUCKET_RESULT=$(aws s3api create-bucket --bucket "$S3_BUCKET_NAME" \
         --region "$REGION" 2>&1)
@@ -243,6 +244,9 @@ if echo "$BLOCK_RESULT" | grep -i "error" > /dev/null; then
     echo "Failed to block public access to S3 bucket: $BLOCK_RESULT"
     cleanup_resources
     exit 1
+fi
+else
+    echo "Using shared bucket (skipping creation)"
 fi
 
 # Create feature groups

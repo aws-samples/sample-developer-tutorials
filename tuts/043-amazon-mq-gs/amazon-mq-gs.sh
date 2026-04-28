@@ -24,8 +24,8 @@ validate_aws_credentials() {
     fi
     
     if [ -z "${AWS_REGION:-}" ]; then
-        echo "ERROR: AWS_REGION environment variable not set"
-        exit 1
+        AWS_REGION=$(aws configure get region 2>/dev/null || echo "us-west-2")
+        export AWS_REGION
     fi
 }
 
