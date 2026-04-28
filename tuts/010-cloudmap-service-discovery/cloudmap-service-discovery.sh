@@ -89,7 +89,7 @@ check_operation() {
     local retry_count=0
     
     # Validate operation_id format (basic UUID validation)
-    if [[ -z "$operation_id" ]] || ! [[ "$operation_id" =~ ^[a-fA-F0-9-]+$ ]]; then
+    if [[ -z "$operation_id" ]] || ! [[ "$operation_id" =~ ^[a-z0-9-]+$ ]]; then
         log "Error: Invalid operation_id format"
         return 1
     fi
@@ -240,7 +240,7 @@ NAMESPACE_ID=$(aws servicediscovery list-namespaces \
     --query "Namespaces[?Name=='$NAMESPACE_NAME'].Id" \
     --output text)
 
-if [[ -z "$NAMESPACE_ID" ]] || ! [[ "$NAMESPACE_ID" =~ ^[a-fA-F0-9-]+$ ]]; then
+if [[ -z "$NAMESPACE_ID" ]] || ! [[ "$NAMESPACE_ID" =~ ^[a-z0-9-]+$ ]]; then
     log "Error: Failed to retrieve namespace ID"
     exit 1
 fi

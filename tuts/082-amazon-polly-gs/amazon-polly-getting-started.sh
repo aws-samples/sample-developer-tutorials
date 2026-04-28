@@ -87,7 +87,7 @@ fi
 
 # Step 1: Verify Amazon Polly is available
 echo "Step 1: Verifying Amazon Polly availability" | tee -a "$LOG_FILE"
-if aws polly describe-voices --max-results 1 &> /dev/null; then
+if aws polly describe-voices --query 'Voices[0].Name' --output text &> /dev/null; then
     echo "Amazon Polly is available. Proceeding with tutorial." | tee -a "$LOG_FILE"
 else
     echo "Amazon Polly is not available in your AWS CLI installation or region." | tee -a "$LOG_FILE"
@@ -120,7 +120,7 @@ fi
 echo "" | tee -a "$LOG_FILE"
 echo "Step 4: Using SSML for enhanced speech" | tee -a "$LOG_FILE"
 SSML_OUTPUT="${WORK_DIR}/ssml-output.mp3"
-SSML_TEXT="<speak>Hello! <break time='1s'/> This is a sample of <emphasis>SSML enhanced speech</emphasis>.</speak>"
+SSML_TEXT='<speak>Hello! <break time="1s"/> This is a sample of <emphasis>SSML enhanced speech</emphasis>.</speak>'
 log_cmd "aws polly synthesize-speech --output-format mp3 --voice-id Matthew --text-type ssml --text '$SSML_TEXT' '$SSML_OUTPUT'" || true
 
 if [[ -f "$SSML_OUTPUT" ]]; then

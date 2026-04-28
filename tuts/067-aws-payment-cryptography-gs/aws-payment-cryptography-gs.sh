@@ -118,17 +118,11 @@ log "Successfully verified CVV2 value"
 
 # Step 4: Perform a negative test
 log "Step 4: Performing a negative test with incorrect CVV2"
-if ! NEGATIVE_OUTPUT=$(aws payment-cryptography-data verify-card-validation-data \
+if aws payment-cryptography-data verify-card-validation-data \
   --key-identifier "$KEY_ARN" \
   --primary-account-number=171234567890123 \
   --verification-attributes CardVerificationValue2={CardExpiryDate=0123} \
-  --validation-data 999 2>&1); then
-    NEGATIVE_OUTPUT=$?
-fi
-
-echo "$NEGATIVE_OUTPUT"
-
-if ! echo "$NEGATIVE_OUTPUT" | grep -iq "fail\|error"; then
+  --validation-data 999 2>&1; then
     handle_error "Negative test did not fail as expected"
 fi
 
