@@ -2,7 +2,9 @@
 
 # Amazon Redshift Provisioned Cluster Tutorial Script
 # This script creates a Redshift cluster, loads sample data, runs queries, and cleans up resources
-# Version 3: Fixed IAM role usage in COPY commands
+# Version 4: Enhanced security improvements
+
+set -euo pipefail
 
 # Set up logging
 LOG_FILE="redshift_tutorial.log"
@@ -15,8 +17,8 @@ echo "All commands and outputs will be logged to $LOG_FILE"
 handle_error() {
     echo "ERROR: $1"
     echo "Resources created so far:"
-    if [ -n "$CLUSTER_ID" ]; then echo "- Redshift Cluster: $CLUSTER_ID"; fi
-    if [ -n "$ROLE_NAME" ]; then echo "- IAM Role: $ROLE_NAME"; fi
+    if [ -n "${CLUSTER_ID:-}" ]; then echo "- Redshift Cluster: $CLUSTER_ID"; fi
+    if [ -n "${ROLE_NAME:-}" ]; then echo "- IAM Role: $ROLE_NAME"; fi
     
     echo "Attempting to clean up resources..."
     cleanup_resources
@@ -28,24 +30,40 @@ cleanup_resources() {
     echo "Cleaning up resources..."
     
     # Delete the cluster if it exists
-    if [ -n "$CLUSTER_ID" ]; then
+    if [ -n "${CLUSTER_ID:-}" ]; then
         echo "Deleting Redshift cluster: $CLUSTER_ID"
-        aws redshift delete-cluster --cluster-identifier "$CLUSTER_ID" --skip-final-cluster-snapshot
+        aws redshift delete-cluster --cluster-identifier "$CLUSTER_ID" --skip-final-cluster-snapshot 2>/dev/null || echo "Cluster deletion already in progress or failed"
         echo "Waiting for cluster deletion to complete..."
-        aws redshift wait cluster-deleted --cluster-identifier "$CLUSTER_ID"
+        aws redshift wait cluster-deleted --cluster-identifier "$CLUSTER_ID" 2>/dev/null || echo "Cluster deletion timeout"
         echo "Cluster deleted successfully."
     fi
     
     # Delete the IAM role if it exists
-    if [ -n "$ROLE_NAME" ]; then
+    if [ -n "${ROLE_NAME:-}" ]; then
         echo "Removing IAM role policy..."
-        aws iam delete-role-policy --role-name "$ROLE_NAME" --policy-name RedshiftS3Access || echo "Failed to delete role policy"
+        aws iam delete-role-policy --role-name "$ROLE_NAME" --policy-name RedshiftS3Access 2>/dev/null || echo "Failed to delete role policy"
         
         echo "Deleting IAM role: $ROLE_NAME"
-        aws iam delete-role --role-name "$ROLE_NAME" || echo "Failed to delete role"
+        aws iam delete-role --role-name "$ROLE_NAME" 2>/dev/null || echo "Failed to delete role"
     fi
     
+    # Clean up temporary policy files
+    rm -f redshift-trust-policy.json redshift-s3-policy.json
+    
     echo "Cleanup completed."
+}
+
+# Function to validate AWS CLI is installed and configured
+validate_aws_cli() {
+    if ! command -v aws &> /dev/null; then
+        handle_error "AWS CLI is not installed. Please install it first."
+    fi
+    
+    if ! aws sts get-caller-identity &>/dev/null; then
+        handle_error "AWS CLI is not properly configured. Please run 'aws configure'"
+    fi
+    
+    echo "AWS CLI validation passed."
 }
 
 # Function to wait for SQL statement to complete
@@ -58,13 +76,13 @@ wait_for_statement() {
     echo "Waiting for statement $statement_id to complete..."
     
     while [ $attempt -le $max_attempts ]; do
-        status=$(aws redshift-data describe-statement --id "$statement_id" --query 'Status' --output text)
+        status=$(aws redshift-data describe-statement --id "$statement_id" --query 'Status' --output text 2>/dev/null || echo "UNKNOWN")
         
         if [ "$status" == "FINISHED" ]; then
             echo "Statement completed successfully."
             return 0
         elif [ "$status" == "FAILED" ]; then
-            local error=$(aws redshift-data describe-statement --id "$statement_id" --query 'Error' --output text)
+            local error=$(aws redshift-data describe-statement --id "$statement_id" --query 'Error' --output text 2>/dev/null || echo "Unknown error")
             echo "Statement failed with error: $error"
             return 1
         elif [ "$status" == "ABORTED" ]; then
@@ -93,7 +111,7 @@ check_role_attached() {
         local status=$(aws redshift describe-clusters \
             --cluster-identifier "$CLUSTER_ID" \
             --query "Clusters[0].IamRoles[?IamRoleArn=='$role_arn'].ApplyStatus" \
-            --output text)
+            --output text 2>/dev/null || echo "")
         
         if [ "$status" == "in-sync" ]; then
             echo "IAM role is successfully attached to the cluster."
@@ -109,12 +127,32 @@ check_role_attached() {
     return 1
 }
 
+# Function to generate secure password
+generate_secure_password() {
+    openssl rand -base64 32 | tr -d "=+/" | cut -c1-16
+}
+
+# Trap errors and cleanup
+trap 'handle_error "Script interrupted"' EXIT INT TERM
+
+# Validate AWS CLI
+validate_aws_cli
+
 # Variables to track created resources
 CLUSTER_ID="examplecluster"
 ROLE_NAME="RedshiftS3Role-$(date +%s)"
 DB_NAME="dev"
 DB_USER="awsuser"
-DB_PASSWORD="Changeit1"  # In production, use AWS Secrets Manager to generate and store passwords
+DB_PASSWORD=$(generate_secure_password)
+
+# Store password in a temporary secure file
+TEMP_PASSWORD_FILE=$(mktemp)
+chmod 600 "$TEMP_PASSWORD_FILE"
+echo "$DB_PASSWORD" > "$TEMP_PASSWORD_FILE"
+trap "rm -f $TEMP_PASSWORD_FILE" EXIT
+
+echo "Generated secure password for database user"
+echo "IMPORTANT: Store your database password securely or use AWS Secrets Manager"
 
 echo "=== Step 1: Creating Amazon Redshift Cluster ==="
 
@@ -127,10 +165,13 @@ CLUSTER_RESULT=$(aws redshift create-cluster \
   --master-username "$DB_USER" \
   --master-user-password "$DB_PASSWORD" \
   --db-name "$DB_NAME" \
-  --port 5439 2>&1)
+  --port 5439 \
+  --publicly-accessible false \
+  --enhanced-vpc-routing true \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=redshift-provisioned 2>&1)
 
 # Check for errors
-if echo "$CLUSTER_RESULT" | grep -i "error"; then
+if echo "$CLUSTER_RESULT" | grep -qi "error"; then
     handle_error "Failed to create Redshift cluster: $CLUSTER_RESULT"
 fi
 
@@ -138,7 +179,9 @@ echo "$CLUSTER_RESULT"
 echo "Waiting for cluster to become available..."
 
 # Wait for the cluster to be available
-aws redshift wait cluster-available --cluster-identifier "$CLUSTER_ID" || handle_error "Timeout waiting for cluster to become available"
+if ! aws redshift wait cluster-available --cluster-identifier "$CLUSTER_ID"; then
+    handle_error "Timeout waiting for cluster to become available"
+fi
 
 # Get cluster status to confirm
 CLUSTER_STATUS=$(aws redshift describe-clusters \
@@ -150,9 +193,9 @@ echo "Cluster status: $CLUSTER_STATUS"
 
 echo "=== Step 2: Creating IAM Role for S3 Access ==="
 
-# Create trust policy file
+# Create trust policy file with restricted permissions
 echo "Creating trust policy for Redshift"
-cat > redshift-trust-policy.json << EOF
+cat > redshift-trust-policy.json << 'EOF'
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -161,32 +204,43 @@ cat > redshift-trust-policy.json << EOF
       "Principal": {
         "Service": "redshift.amazonaws.com"
       },
-      "Action": "sts:AssumeRole"
+      "Action": "sts:AssumeRole",
+      "Condition": {
+        "StringEquals": {
+          "sts:ExternalId": "example-external-id"
+        }
+      }
     }
   ]
 }
 EOF
+chmod 600 redshift-trust-policy.json
 
 # Create IAM role
 echo "Creating IAM role: $ROLE_NAME"
 ROLE_RESULT=$(aws iam create-role \
   --role-name "$ROLE_NAME" \
-  --assume-role-policy-document file://redshift-trust-policy.json 2>&1)
+  --assume-role-policy-document file://redshift-trust-policy.json \
+  --description "Role for Redshift S3 access in tutorial" 2>&1)
 
 # Check for errors
-if echo "$ROLE_RESULT" | grep -i "error"; then
+if echo "$ROLE_RESULT" | grep -qi "error"; then
     handle_error "Failed to create IAM role: $ROLE_RESULT"
 fi
 
 echo "$ROLE_RESULT"
 
+# Tag the IAM role
+echo "Tagging IAM role: $ROLE_NAME"
+aws iam tag-role --role-name "$ROLE_NAME" --tags Key=project,Value=doc-smith Key=tutorial,Value=redshift-provisioned
+
 # Get the role ARN
 ROLE_ARN=$(aws iam get-role --role-name "$ROLE_NAME" --query 'Role.Arn' --output text)
 echo "Role ARN: $ROLE_ARN"
 
-# Create policy document for S3 access
+# Create policy document for S3 access with least privilege
 echo "Creating S3 access policy"
-cat > redshift-s3-policy.json << EOF
+cat > redshift-s3-policy.json << 'EOF'
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -199,11 +253,22 @@ cat > redshift-s3-policy.json << EOF
       "Resource": [
         "arn:aws:s3:::redshift-downloads",
         "arn:aws:s3:::redshift-downloads/*"
-      ]
+      ],
+      "Condition": {
+        "StringEquals": {
+          "s3:x-amz-server-side-encryption": "AES256"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": "s3:ListAllMyBuckets",
+      "Resource": "*"
     }
   ]
 }
 EOF
+chmod 600 redshift-s3-policy.json
 
 # Attach policy to role
 echo "Attaching S3 access policy to role"
@@ -213,7 +278,7 @@ POLICY_RESULT=$(aws iam put-role-policy \
   --policy-document file://redshift-s3-policy.json 2>&1)
 
 # Check for errors
-if echo "$POLICY_RESULT" | grep -i "error"; then
+if echo "$POLICY_RESULT" | grep -qi "error"; then
     handle_error "Failed to attach policy to role: $POLICY_RESULT"
 fi
 
@@ -226,7 +291,7 @@ ATTACH_ROLE_RESULT=$(aws redshift modify-cluster-iam-roles \
   --add-iam-roles "$ROLE_ARN" 2>&1)
 
 # Check for errors
-if echo "$ATTACH_ROLE_RESULT" | grep -i "error"; then
+if echo "$ATTACH_ROLE_RESULT" | grep -qi "error"; then
     handle_error "Failed to attach role to cluster: $ATTACH_ROLE_RESULT"
 fi
 
@@ -363,7 +428,8 @@ echo "==========================================="
 echo "Do you want to clean up all created resources? (y/n): "
 read -r CLEANUP_CHOICE
 
-if [[ "$CLEANUP_CHOICE" =~ ^[Yy] ]]; then
+if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
+    trap - EXIT
     cleanup_resources
     echo "All resources have been cleaned up."
 else

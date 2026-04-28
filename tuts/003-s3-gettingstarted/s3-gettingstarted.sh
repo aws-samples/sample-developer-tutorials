@@ -19,7 +19,9 @@ fi
 # Setup: logging, temp directory, resource tracking
 # ============================================================================
 
-UNIQUE_ID=$(cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 12 | head -n 1)
+# Use secure random generation for unique ID
+UNIQUE_ID=$(openssl rand -hex 3 2>/dev/null || head -c 6 /dev/urandom | od -An -tx1 | tr -d ' ')
+
 # Check for shared prereq bucket
 PREREQ_BUCKET=$(aws cloudformation describe-stacks --stack-name tutorial-prereqs-bucket \
     --query 'Stacks[0].Outputs[?OutputKey==`BucketName`].OutputValue' --output text 2>/dev/null || true)
@@ -35,6 +37,10 @@ fi
 TEMP_DIR=$(mktemp -d)
 LOG_FILE="${TEMP_DIR}/s3-gettingstarted.log"
 CREATED_RESOURCES=()
+ERRORS_OCCURRED=0
+
+# Secure temp directory permissions
+chmod 700 "$TEMP_DIR"
 
 exec > >(tee -a "$LOG_FILE") 2>&1
 
@@ -56,45 +62,39 @@ cleanup() {
     echo "CLEANUP"
     echo "============================================"
 
-    # Delete all object versions and delete markers
-    echo "Listing all object versions in bucket..."
-    VERSIONS_OUTPUT=$(aws s3api list-object-versions \
-        --bucket "$BUCKET_NAME" \
-        --query "Versions[].{Key:Key,VersionId:VersionId}" \
-        --output text 2>&1) || true
-
-    if [ -n "$VERSIONS_OUTPUT" ] && [ "$VERSIONS_OUTPUT" != "None" ]; then
-        while IFS=$'\t' read -r KEY VERSION_ID; do
-            if [ -n "$KEY" ] && [ "$KEY" != "None" ]; then
-                echo "Deleting version: ${KEY} (${VERSION_ID})"
-                aws s3api delete-object \
-                    --bucket "$BUCKET_NAME" \
-                    --key "$KEY" \
-                    --version-id "$VERSION_ID" 2>&1 || echo "WARNING: Failed to delete version ${KEY} (${VERSION_ID})"
-            fi
-        done <<< "$VERSIONS_OUTPUT"
-    fi
-
-    DELETE_MARKERS_OUTPUT=$(aws s3api list-object-versions \
-        --bucket "$BUCKET_NAME" \
-        --query "DeleteMarkers[].{Key:Key,VersionId:VersionId}" \
-        --output text 2>&1) || true
-
-    if [ -n "$DELETE_MARKERS_OUTPUT" ] && [ "$DELETE_MARKERS_OUTPUT" != "None" ]; then
-        while IFS=$'\t' read -r KEY VERSION_ID; do
-            if [ -n "$KEY" ] && [ "$KEY" != "None" ]; then
-                echo "Deleting delete marker: ${KEY} (${VERSION_ID})"
-                aws s3api delete-object \
-                    --bucket "$BUCKET_NAME" \
-                    --key "$KEY" \
-                    --version-id "$VERSION_ID" 2>&1 || echo "WARNING: Failed to delete marker ${KEY} (${VERSION_ID})"
-            fi
-        done <<< "$DELETE_MARKERS_OUTPUT"
-    fi
-
     if [ "$BUCKET_IS_SHARED" = "false" ]; then
-        echo "Deleting bucket: ${BUCKET_NAME}"
-        aws s3api delete-bucket --bucket "$BUCKET_NAME" 2>&1 || echo "WARNING: Failed to delete bucket ${BUCKET_NAME}"
+        # Delete all object versions and delete markers
+        echo "Listing and deleting all object versions in bucket..."
+        
+        # Check if bucket exists before attempting deletion
+        if ! aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
+            echo "Bucket ${BUCKET_NAME} does not exist, skipping deletion."
+        else
+            # Use s3 rm command for efficient bulk deletion with built-in retry logic
+            if aws s3 rm "s3://${BUCKET_NAME}" --recursive --quiet 2>/dev/null; then
+                echo "Objects deleted successfully."
+            else
+                echo "WARNING: Some objects may not have been deleted, but continuing with bucket deletion..."
+            fi
+            
+            # Delete the bucket itself with retry logic
+            local RETRY_COUNT=0
+            local MAX_RETRIES=3
+            while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+                if aws s3api delete-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
+                    echo "Bucket ${BUCKET_NAME} deleted successfully."
+                    break
+                else
+                    RETRY_COUNT=$((RETRY_COUNT + 1))
+                    if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                        echo "Retrying bucket deletion (attempt $((RETRY_COUNT + 1))/$MAX_RETRIES)..."
+                        sleep 2
+                    else
+                        echo "WARNING: Failed to delete bucket ${BUCKET_NAME} after $MAX_RETRIES attempts"
+                    fi
+                fi
+            done
+        fi
     else
         echo "Keeping shared bucket: ${BUCKET_NAME}"
     fi
@@ -108,15 +108,22 @@ cleanup() {
 }
 
 handle_error() {
+    local ERROR_LINE=$1
+    ERRORS_OCCURRED=1
+    
     echo ""
     echo "============================================"
-    echo "ERROR on $1"
+    echo "ERROR on ${ERROR_LINE}"
     echo "============================================"
     echo ""
     echo "Resources created before error:"
-    for RESOURCE in "${CREATED_RESOURCES[@]}"; do
-        echo "  - ${RESOURCE}"
-    done
+    if [ ${#CREATED_RESOURCES[@]} -eq 0 ]; then
+        echo "  (none)"
+    else
+        for RESOURCE in "${CREATED_RESOURCES[@]}"; do
+            echo "  - ${RESOURCE}"
+        done
+    fi
     echo ""
     echo "Attempting cleanup..."
     cleanup
@@ -132,19 +139,85 @@ trap 'handle_error "line $LINENO"' ERR
 echo "Step 1: Creating bucket ${BUCKET_NAME}..."
 if [ "$BUCKET_IS_SHARED" = "false" ]; then
 
-# CreateBucket requires LocationConstraint for all regions except us-east-1
 REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-${CONFIGURED_REGION}}}"
+
+# Create bucket with appropriate region configuration
 if [ "$REGION" = "us-east-1" ]; then
-    CREATE_OUTPUT=$(aws s3api create-bucket \
-        --bucket "$BUCKET_NAME" 2>&1)
+    aws s3api create-bucket \
+        --bucket "$BUCKET_NAME" 2>&1
 else
-    CREATE_OUTPUT=$(aws s3api create-bucket \
+    aws s3api create-bucket \
         --bucket "$BUCKET_NAME" \
-        --create-bucket-configuration LocationConstraint="$REGION" 2>&1)
+        --region "$REGION" \
+        --create-bucket-configuration LocationConstraint="$REGION" 2>&1
 fi
-echo "$CREATE_OUTPUT"
+
 CREATED_RESOURCES+=("s3:bucket:${BUCKET_NAME}")
 echo "Bucket created."
+
+# Apply configurations in parallel for better performance
+(
+    echo "Tagging bucket with project and tutorial tags..."
+    if ! aws s3api put-bucket-tagging \
+        --bucket "$BUCKET_NAME" \
+        --tagging 'TagSet=[{Key=project,Value=doc-smith},{Key=tutorial,Value=s3-gettingstarted}]' 2>&1; then
+        echo "WARNING: Failed to tag bucket on creation"
+    fi
+) &
+TAG_PID=$!
+
+(
+    echo "Enabling bucket versioning..."
+    if ! aws s3api put-bucket-versioning \
+        --bucket "$BUCKET_NAME" \
+        --versioning-configuration Status=Enabled 2>&1; then
+        echo "WARNING: Failed to enable versioning on creation"
+    fi
+) &
+VERSION_PID=$!
+
+(
+    echo "Configuring SSE-S3 encryption..."
+    if ! aws s3api put-bucket-encryption \
+        --bucket "$BUCKET_NAME" \
+        --server-side-encryption-configuration '{
+            "Rules": [
+                {
+                    "ApplyServerSideEncryptionByDefault": {
+                        "SSEAlgorithm": "AES256"
+                    },
+                    "BucketKeyEnabled": true
+                }
+            ]
+        }' 2>&1; then
+        echo "WARNING: Failed to configure encryption on creation"
+    fi
+) &
+ENCRYPT_PID=$!
+
+(
+    echo "Blocking all public access..."
+    if ! aws s3api put-public-access-block \
+        --bucket "$BUCKET_NAME" \
+        --public-access-block-configuration '{
+            "BlockPublicAcls": true,
+            "IgnorePublicAcls": true,
+            "BlockPublicPolicy": true,
+            "RestrictPublicBuckets": true
+        }' 2>&1; then
+        echo "WARNING: Failed to block public access on creation"
+    fi
+) &
+PAB_PID=$!
+
+# Wait for all background processes and capture any failures
+WAIT_FAILED=0
+wait $TAG_PID $VERSION_PID $ENCRYPT_PID $PAB_PID || WAIT_FAILED=1
+
+if [ $WAIT_FAILED -ne 0 ]; then
+    echo "WARNING: One or more background processes failed during bucket configuration"
+fi
+
 fi
 echo ""
 
@@ -155,14 +228,21 @@ echo ""
 echo "Step 2: Uploading a sample text file..."
 
 SAMPLE_FILE="${TEMP_DIR}/sample.txt"
+# Secure file creation with restricted permissions
+umask 077
 echo "Hello, Amazon S3! This is a sample file for the getting started tutorial." > "$SAMPLE_FILE"
 
-UPLOAD_OUTPUT=$(aws s3api put-object \
+if aws s3api put-object \
     --bucket "$BUCKET_NAME" \
     --key "sample.txt" \
-    --body "$SAMPLE_FILE" 2>&1)
-echo "$UPLOAD_OUTPUT"
-echo "File uploaded."
+    --body "$SAMPLE_FILE" \
+    --server-side-encryption AES256 \
+    --output text 2>&1 > /dev/null; then
+    echo "File uploaded."
+else
+    echo "ERROR: Failed to upload sample file"
+    handle_error "line $LINENO"
+fi
 echo ""
 
 # ============================================================================
@@ -172,13 +252,18 @@ echo ""
 echo "Step 3: Downloading the object..."
 
 DOWNLOAD_FILE="${TEMP_DIR}/downloaded-sample.txt"
-aws s3api get-object \
+if aws s3api get-object \
     --bucket "$BUCKET_NAME" \
     --key "sample.txt" \
-    "$DOWNLOAD_FILE" 2>&1
-echo "Downloaded to: ${DOWNLOAD_FILE}"
-echo "Contents:"
-cat "$DOWNLOAD_FILE"
+    "$DOWNLOAD_FILE" \
+    --output text 2>&1 > /dev/null; then
+    echo "Downloaded to: ${DOWNLOAD_FILE}"
+    echo "Contents:"
+    cat "$DOWNLOAD_FILE"
+else
+    echo "ERROR: Failed to download object"
+    handle_error "line $LINENO"
+fi
 echo ""
 
 # ============================================================================
@@ -187,126 +272,99 @@ echo ""
 
 echo "Step 4: Copying object to a folder prefix..."
 
-COPY_OUTPUT=$(aws s3api copy-object \
+if aws s3api copy-object \
     --bucket "$BUCKET_NAME" \
     --copy-source "${BUCKET_NAME}/sample.txt" \
-    --key "backup/sample.txt" 2>&1)
-echo "$COPY_OUTPUT"
-echo "Object copied to backup/sample.txt."
+    --key "backup/sample.txt" \
+    --server-side-encryption AES256 \
+    --output text 2>&1 > /dev/null; then
+    echo "Object copied to backup/sample.txt."
+else
+    echo "ERROR: Failed to copy object"
+    handle_error "line $LINENO"
+fi
 echo ""
 
 # ============================================================================
-# Step 5: Enable versioning and upload a second version
+# Step 5: Upload a second version
 # ============================================================================
 
-echo "Step 5: Enabling versioning..."
-
-VERSIONING_OUTPUT=$(aws s3api put-bucket-versioning \
-    --bucket "$BUCKET_NAME" \
-    --versioning-configuration Status=Enabled 2>&1)
-echo "$VERSIONING_OUTPUT"
-echo "Versioning enabled."
-
-echo "Uploading a second version of sample.txt..."
+echo "Step 5: Uploading a second version of sample.txt..."
+umask 077
 echo "Hello, Amazon S3! This is version 2 of the sample file." > "$SAMPLE_FILE"
 
-UPLOAD_V2_OUTPUT=$(aws s3api put-object \
+if aws s3api put-object \
     --bucket "$BUCKET_NAME" \
     --key "sample.txt" \
-    --body "$SAMPLE_FILE" 2>&1)
-echo "$UPLOAD_V2_OUTPUT"
-echo "Second version uploaded."
+    --body "$SAMPLE_FILE" \
+    --server-side-encryption AES256 \
+    --output text 2>&1 > /dev/null; then
+    echo "Second version uploaded."
+else
+    echo "ERROR: Failed to upload second version"
+    handle_error "line $LINENO"
+fi
 echo ""
 
 # ============================================================================
-# Step 6: Configure SSE-S3 encryption
+# Step 6: List objects and versions
 # ============================================================================
 
-echo "Step 6: Configuring SSE-S3 default encryption..."
+echo "Step 6: Listing objects..."
 
-ENCRYPTION_OUTPUT=$(aws s3api put-bucket-encryption \
+if aws s3api list-objects-v2 \
     --bucket "$BUCKET_NAME" \
-    --server-side-encryption-configuration '{
-        "Rules": [
-            {
-                "ApplyServerSideEncryptionByDefault": {
-                    "SSEAlgorithm": "AES256"
-                },
-                "BucketKeyEnabled": true
-            }
-        ]
-    }' 2>&1)
-echo "$ENCRYPTION_OUTPUT"
-echo "SSE-S3 encryption configured."
-echo ""
-
-# ============================================================================
-# Step 7: Block all public access
-# ============================================================================
-
-echo "Step 7: Blocking all public access..."
-
-PUBLIC_ACCESS_OUTPUT=$(aws s3api put-public-access-block \
-    --bucket "$BUCKET_NAME" \
-    --public-access-block-configuration '{
-        "BlockPublicAcls": true,
-        "IgnorePublicAcls": true,
-        "BlockPublicPolicy": true,
-        "RestrictPublicBuckets": true
-    }' 2>&1)
-echo "$PUBLIC_ACCESS_OUTPUT"
-echo "Public access blocked."
-echo ""
-
-# ============================================================================
-# Step 8: Tag the bucket
-# ============================================================================
-
-echo "Step 8: Tagging the bucket..."
-
-TAG_OUTPUT=$(aws s3api put-bucket-tagging \
-    --bucket "$BUCKET_NAME" \
-    --tagging '{
-        "TagSet": [
-            {
-                "Key": "Environment",
-                "Value": "Tutorial"
-            },
-            {
-                "Key": "Project",
-                "Value": "S3-GettingStarted"
-            }
-        ]
-    }' 2>&1)
-echo "$TAG_OUTPUT"
-echo "Bucket tagged."
-
-echo "Verifying tags..."
-GET_TAGS_OUTPUT=$(aws s3api get-bucket-tagging \
-    --bucket "$BUCKET_NAME" 2>&1)
-echo "$GET_TAGS_OUTPUT"
-echo ""
-
-# ============================================================================
-# Step 9: List objects and versions
-# ============================================================================
-
-echo "Step 9: Listing objects..."
-
-LIST_OUTPUT=$(aws s3api list-objects-v2 \
-    --bucket "$BUCKET_NAME" 2>&1)
-echo "$LIST_OUTPUT"
-echo ""
+    --output table 2>&1; then
+    echo ""
+else
+    echo "WARNING: Failed to list objects"
+fi
 
 echo "Listing object versions..."
 
-VERSIONS_LIST=$(aws s3api list-object-versions \
-    --bucket "$BUCKET_NAME" 2>&1)
-echo "$VERSIONS_LIST"
-echo ""
+if aws s3api list-object-versions \
+    --bucket "$BUCKET_NAME" \
+    --output table 2>&1; then
+    echo ""
+else
+    echo "WARNING: Failed to list object versions"
+fi
 
 # ============================================================================
-# Step 10: Cleanup
+# Step 7: Verify bucket configuration
+# ============================================================================
+
+echo "Step 7: Verifying bucket configuration..."
+
+echo "Bucket tags:"
+if aws s3api get-bucket-tagging \
+    --bucket "$BUCKET_NAME" \
+    --output table 2>&1; then
+    echo ""
+else
+    echo "WARNING: Failed to retrieve bucket tags"
+fi
+
+echo "Bucket encryption:"
+if aws s3api get-bucket-encryption \
+    --bucket "$BUCKET_NAME" \
+    --output table 2>&1; then
+    echo ""
+else
+    echo "WARNING: Failed to retrieve bucket encryption"
+fi
+
+echo "Public access block:"
+if aws s3api get-public-access-block \
+    --bucket "$BUCKET_NAME" \
+    --output table 2>&1; then
+    echo ""
+else
+    echo "WARNING: Failed to retrieve public access block"
+fi
+
+# ============================================================================
+# Step 8: Cleanup
 # ============================================================================
 
 echo ""
@@ -315,9 +373,13 @@ echo "TUTORIAL COMPLETE"
 echo "============================================"
 echo ""
 echo "Resources created:"
-for RESOURCE in "${CREATED_RESOURCES[@]}"; do
-    echo "  - ${RESOURCE}"
-done
+if [ ${#CREATED_RESOURCES[@]} -eq 0 ]; then
+    echo "  (none)"
+else
+    for RESOURCE in "${CREATED_RESOURCES[@]}"; do
+        echo "  - ${RESOURCE}"
+    done
+fi
 echo ""
 echo "==========================================="
 echo "CLEANUP CONFIRMATION"
@@ -331,16 +393,12 @@ else
     echo ""
     echo "Resources were NOT deleted. To clean up manually, run:"
     echo ""
-    echo "  # Delete all object versions"
-    echo "  aws s3api list-object-versions --bucket ${BUCKET_NAME} --query 'Versions[].{Key:Key,VersionId:VersionId}' --output text | while IFS=\$'\\t' read -r KEY VID; do aws s3api delete-object --bucket ${BUCKET_NAME} --key \"\$KEY\" --version-id \"\$VID\"; done"
+    echo "  aws s3 rm s3://${BUCKET_NAME} --recursive --quiet"
     echo ""
-    echo "  # Delete all delete markers"
-    echo "  aws s3api list-object-versions --bucket ${BUCKET_NAME} --query 'DeleteMarkers[].{Key:Key,VersionId:VersionId}' --output text | while IFS=\$'\\t' read -r KEY VID; do aws s3api delete-object --bucket ${BUCKET_NAME} --key \"\$KEY\" --version-id \"\$VID\"; done"
+    if [ "$BUCKET_IS_SHARED" = "false" ]; then
+        echo "  aws s3api delete-bucket --bucket ${BUCKET_NAME}"
+    fi
     echo ""
-    echo "  # Delete the bucket"
-    echo "  aws s3api delete-bucket --bucket ${BUCKET_NAME}"
-    echo ""
-    echo "  # Remove temp directory"
     echo "  rm -rf ${TEMP_DIR}"
 fi
 

@@ -1,36 +1,122 @@
 #!/bin/bash
 
-# Amazon ECS Fargate Tutorial Script - Version 5
+# Amazon ECS Fargate Tutorial Script - Version 7
 # This script creates an ECS cluster, task definition, and service using Fargate launch type
-# Fixed version with proper resource dependency handling during cleanup
+# Security improvements: enhanced input validation, secrets handling, credential verification
 
 set -e  # Exit on any error
+set -u  # Exit on undefined variable
+set -o pipefail  # Exit on pipe failures
 
 # Initialize logging
-LOG_FILE="ecs-fargate-tutorial-v5.log"
+LOG_FILE="ecs-fargate-tutorial-v7.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 echo "Starting Amazon ECS Fargate tutorial at $(date)"
 echo "Log file: $LOG_FILE"
 
+# Verify AWS CLI is available and credentials are configured
+if ! command -v aws &> /dev/null; then
+    echo "ERROR: AWS CLI is not installed or not in PATH"
+    exit 1
+fi
+
+# Verify AWS CLI version
+AWS_CLI_VERSION=$(aws --version 2>&1 | head -1)
+echo "AWS CLI version: $AWS_CLI_VERSION"
+
+# Verify AWS credentials are available
+if ! aws sts get-caller-identity >/dev/null 2>&1; then
+    echo "ERROR: AWS credentials are not configured or invalid"
+    echo "Please configure your AWS credentials using: aws configure"
+    exit 1
+fi
+
+# Verify jq is installed for JSON parsing
+if ! command -v jq &> /dev/null; then
+    echo "WARNING: jq is not installed. Installing may be required for robust JSON parsing."
+fi
+
 # Generate random identifier for unique resource names
 RANDOM_ID=$(openssl rand -hex 6)
+if [[ -z "$RANDOM_ID" ]]; then
+    echo "ERROR: Failed to generate random identifier"
+    exit 1
+fi
+
 CLUSTER_NAME="fargate-cluster-${RANDOM_ID}"
 SERVICE_NAME="fargate-service-${RANDOM_ID}"
 TASK_FAMILY="sample-fargate-${RANDOM_ID}"
 SECURITY_GROUP_NAME="ecs-fargate-sg-${RANDOM_ID}"
+SECURITY_GROUP_ID=""
+
+# Validate resource names
+if ! [[ "$CLUSTER_NAME" =~ ^[a-zA-Z0-9_-]{1,255}$ ]]; then
+    echo "ERROR: Invalid cluster name: $CLUSTER_NAME"
+    exit 1
+fi
 
 # Array to track created resources for cleanup
 CREATED_RESOURCES=()
 
-# Function to log and execute commands
+# Function to validate AWS resource IDs
+validate_resource_id() {
+    local resource_id="$1"
+    local resource_type="$2"
+    
+    if [[ -z "$resource_id" || "$resource_id" == "None" ]]; then
+        echo "ERROR: Invalid or empty $resource_type: $resource_id"
+        return 1
+    fi
+    return 0
+}
+
+# Function to validate IP address format
+validate_ip_address() {
+    local ip="$1"
+    
+    if [[ "$ip" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        return 0
+    fi
+    return 1
+}
+
+# Function to validate CIDR block format
+validate_cidr_block() {
+    local cidr="$1"
+    
+    if [[ "$cidr" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,2}$ ]]; then
+        return 0
+    fi
+    return 1
+}
+
+# Function to sanitize output for logging
+sanitize_output() {
+    local output="$1"
+    
+    # Remove or mask sensitive information patterns
+    echo "$output" | sed -e 's/"password":"[^"]*"/"password":"***"/g' \
+                         -e 's/"secret":"[^"]*"/"secret":"***"/g' \
+                         -e 's/"token":"[^"]*"/"token":"***"/g' \
+                         -e 's/"accessKey":"[^"]*"/"accessKey":"***"/g'
+}
+
+# Function to log and execute commands securely
 execute_command() {
     local cmd="$1"
     local description="$2"
     echo ""
     echo "=========================================="
     echo "EXECUTING: $description"
-    echo "COMMAND: $cmd"
+    echo "=========================================="
+    
+    # Do not log the actual command if it contains sensitive information
+    if [[ "$cmd" != *"secret"* && "$cmd" != *"password"* && "$cmd" != *"key"* ]]; then
+        echo "COMMAND: $cmd"
+    else
+        echo "COMMAND: [REDACTED - contains sensitive information]"
+    fi
     echo "=========================================="
     
     local output
@@ -42,12 +128,22 @@ execute_command() {
     
     if [[ $exit_code -eq 0 ]]; then
         echo "SUCCESS: $description"
-        echo "OUTPUT: $output"
+        # Limit output logging to prevent sensitive data exposure
+        local sanitized_output
+        sanitized_output=$(sanitize_output "$output")
+        if [[ ${#sanitized_output} -gt 2000 ]]; then
+            echo "OUTPUT: ${sanitized_output:0:2000}... (truncated)"
+        else
+            echo "OUTPUT: $sanitized_output"
+        fi
+        echo "$output"
         return 0
     else
         echo "FAILED: $description"
         echo "EXIT CODE: $exit_code"
-        echo "OUTPUT: $output"
+        local sanitized_output
+        sanitized_output=$(sanitize_output "$output")
+        echo "OUTPUT: $sanitized_output"
         return 1
     fi
 }
@@ -72,6 +168,10 @@ wait_for_network_interfaces_cleanup() {
     local max_attempts=30
     local attempt=1
     
+    if ! validate_resource_id "$security_group_id" "security group ID"; then
+        return 1
+    fi
+    
     echo "Waiting for network interfaces to be cleaned up..."
     
     while [[ $attempt -le $max_attempts ]]; do
@@ -83,6 +183,11 @@ wait_for_network_interfaces_cleanup() {
             --filters "Name=group-id,Values=$security_group_id" \
             --query "length(NetworkInterfaces)" \
             --output text 2>/dev/null || echo "0")
+        
+        if [[ -z "$eni_count" ]] || ! [[ "$eni_count" =~ ^[0-9]+$ ]]; then
+            echo "ERROR: Failed to parse network interface count"
+            return 1
+        fi
         
         if [[ "$eni_count" == "0" ]]; then
             echo "No network interfaces found using security group $security_group_id"
@@ -107,10 +212,14 @@ retry_security_group_deletion() {
     local attempt=1
     local wait_time=5
     
+    if ! validate_resource_id "$security_group_id" "security group ID"; then
+        return 1
+    fi
+    
     while [[ $attempt -le $max_attempts ]]; do
         echo "Attempt $attempt/$max_attempts: Trying to delete security group $security_group_id"
         
-        if execute_command "aws ec2 delete-security-group --group-id $security_group_id" "Delete security group (attempt $attempt)"; then
+        if execute_command "aws ec2 delete-security-group --group-id '$security_group_id'" "Delete security group (attempt $attempt)"; then
             echo "Successfully deleted security group $security_group_id"
             return 0
         else
@@ -143,6 +252,12 @@ cleanup_resources() {
     echo "Do you want to clean up all created resources? (y/n): "
     read -r CLEANUP_CHOICE
     
+    # Validate cleanup choice
+    if [[ ! "$CLEANUP_CHOICE" =~ ^[YyNn]$ ]]; then
+        echo "Invalid input. Assuming no (n)"
+        CLEANUP_CHOICE="n"
+    fi
+    
     if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
         echo "Starting cleanup process..."
         
@@ -150,15 +265,15 @@ cleanup_resources() {
         if [[ " ${CREATED_RESOURCES[*]} " =~ " ECS Service: $SERVICE_NAME " ]]; then
             echo ""
             echo "Step 1: Scaling service to 0 tasks..."
-            if execute_command "aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --desired-count 0" "Scale service to 0 tasks"; then
+            if execute_command "aws ecs update-service --cluster '$CLUSTER_NAME' --service '$SERVICE_NAME' --desired-count 0" "Scale service to 0 tasks"; then
                 echo "Waiting for service to stabilize after scaling to 0..."
-                execute_command "aws ecs wait services-stable --cluster $CLUSTER_NAME --services $SERVICE_NAME" "Wait for service to stabilize"
+                execute_command "aws ecs wait services-stable --cluster '$CLUSTER_NAME' --services '$SERVICE_NAME'" "Wait for service to stabilize" || true
                 
                 echo "Deleting service..."
-                execute_command "aws ecs delete-service --cluster $CLUSTER_NAME --service $SERVICE_NAME" "Delete ECS service"
+                execute_command "aws ecs delete-service --cluster '$CLUSTER_NAME' --service '$SERVICE_NAME'" "Delete ECS service" || true
             else
                 echo "WARNING: Failed to scale service. Attempting to delete anyway..."
-                execute_command "aws ecs delete-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --force" "Force delete ECS service"
+                execute_command "aws ecs delete-service --cluster '$CLUSTER_NAME' --service '$SERVICE_NAME' --force" "Force delete ECS service" || true
             fi
         fi
         
@@ -171,7 +286,7 @@ cleanup_resources() {
         if [[ " ${CREATED_RESOURCES[*]} " =~ " ECS Cluster: $CLUSTER_NAME " ]]; then
             echo ""
             echo "Step 3: Deleting cluster..."
-            execute_command "aws ecs delete-cluster --cluster $CLUSTER_NAME" "Delete ECS cluster"
+            execute_command "aws ecs delete-cluster --cluster '$CLUSTER_NAME'" "Delete ECS cluster" || true
         fi
         
         # Step 4: Wait for network interfaces to be cleaned up, then delete security group
@@ -198,11 +313,19 @@ cleanup_resources() {
             if [[ -n "$revisions" && "$revisions" != "None" ]]; then
                 for revision_arn in $revisions; do
                     echo "Deregistering task definition: $revision_arn"
-                    execute_command "aws ecs deregister-task-definition --task-definition $revision_arn" "Deregister task definition $revision_arn" || true
+                    execute_command "aws ecs deregister-task-definition --task-definition '$revision_arn'" "Deregister task definition $revision_arn" || true
                 done
             else
                 echo "No task definition revisions found to deregister"
             fi
+        fi
+        
+        # Step 6: Clean up IAM role if it was created
+        if [[ " ${CREATED_RESOURCES[*]} " =~ " IAM Role: ecsTaskExecutionRole " ]]; then
+            echo ""
+            echo "Step 6: Cleaning up IAM role..."
+            execute_command "aws iam detach-role-policy --role-name ecsTaskExecutionRole --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy" "Detach policy from IAM role" || true
+            execute_command "aws iam delete-role --role-name ecsTaskExecutionRole" "Delete IAM role" || true
         fi
         
         echo ""
@@ -215,13 +338,13 @@ cleanup_resources() {
         echo "Cleanup skipped. Resources remain active."
         echo ""
         echo "To clean up manually later, use the following commands in order:"
-        echo "1. Scale service to 0: aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --desired-count 0"
-        echo "2. Wait for stability: aws ecs wait services-stable --cluster $CLUSTER_NAME --services $SERVICE_NAME"
-        echo "3. Delete service: aws ecs delete-service --cluster $CLUSTER_NAME --service $SERVICE_NAME"
-        echo "4. Delete cluster: aws ecs delete-cluster --cluster $CLUSTER_NAME"
-        echo "5. Wait 2-3 minutes, then delete security group: aws ec2 delete-security-group --group-id $SECURITY_GROUP_ID"
+        echo "1. Scale service to 0: aws ecs update-service --cluster '$CLUSTER_NAME' --service '$SERVICE_NAME' --desired-count 0"
+        echo "2. Wait for stability: aws ecs wait services-stable --cluster '$CLUSTER_NAME' --services '$SERVICE_NAME'"
+        echo "3. Delete service: aws ecs delete-service --cluster '$CLUSTER_NAME' --service '$SERVICE_NAME'"
+        echo "4. Delete cluster: aws ecs delete-cluster --cluster '$CLUSTER_NAME'"
+        echo "5. Wait 2-3 minutes, then delete security group: aws ec2 delete-security-group --group-id '$SECURITY_GROUP_ID'"
         if [[ " ${CREATED_RESOURCES[*]} " =~ " Task Definition: $TASK_FAMILY " ]]; then
-            echo "6. Deregister task definitions: aws ecs list-task-definitions --family-prefix $TASK_FAMILY"
+            echo "6. Deregister task definitions: aws ecs list-task-definitions --family-prefix '$TASK_FAMILY'"
             echo "   Then for each ARN: aws ecs deregister-task-definition --task-definition <ARN>"
         fi
     fi
@@ -242,11 +365,28 @@ echo "STEP 1: VERIFY ECS TASK EXECUTION ROLE"
 echo "==========================================="
 
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+if ! validate_resource_id "$ACCOUNT_ID" "AWS account ID"; then
+    exit 1
+fi
+
+# Validate account ID format (12 digits)
+if ! [[ "$ACCOUNT_ID" =~ ^[0-9]{12}$ ]]; then
+    echo "ERROR: Invalid AWS account ID format: $ACCOUNT_ID"
+    exit 1
+fi
+
 EXECUTION_ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/ecsTaskExecutionRole"
+
+# Validate ARN format
+if ! [[ "$EXECUTION_ROLE_ARN" =~ ^arn:aws:iam::[0-9]{12}:role/[a-zA-Z0-9_+=,.@-]{1,128}$ ]]; then
+    echo "ERROR: Invalid IAM role ARN format: $EXECUTION_ROLE_ARN"
+    exit 1
+fi
 
 # Check if role exists
 if aws iam get-role --role-name ecsTaskExecutionRole >/dev/null 2>&1; then
     echo "ECS task execution role already exists"
+    execute_command "aws iam tag-role --role-name ecsTaskExecutionRole --tags Key=project,Value=doc-smith Key=tutorial,Value=amazon-ecs-fargate-linux" "Tag existing IAM role" || true
 else
     echo "Creating ECS task execution role..."
     
@@ -266,12 +406,21 @@ else
 }
 EOF
     
+    # Validate JSON
+    if ! python3 -m json.tool trust-policy.json >/dev/null 2>&1; then
+        echo "ERROR: Invalid JSON in trust policy"
+        rm -f trust-policy.json
+        exit 1
+    fi
+    
     execute_command "aws iam create-role --role-name ecsTaskExecutionRole --assume-role-policy-document file://trust-policy.json" "Create ECS task execution role"
+    
+    execute_command "aws iam tag-role --role-name ecsTaskExecutionRole --tags Key=project,Value=doc-smith Key=tutorial,Value=amazon-ecs-fargate-linux" "Tag IAM role"
     
     execute_command "aws iam attach-role-policy --role-name ecsTaskExecutionRole --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy" "Attach ECS task execution policy"
     
-    # Clean up temporary file
-    rm -f trust-policy.json
+    # Clean up temporary file securely
+    shred -vfz -n 3 trust-policy.json 2>/dev/null || rm -f trust-policy.json
     
     CREATED_RESOURCES+=("IAM Role: ecsTaskExecutionRole")
 fi
@@ -282,7 +431,7 @@ echo "==========================================="
 echo "STEP 2: CREATE ECS CLUSTER"
 echo "==========================================="
 
-CLUSTER_OUTPUT=$(execute_command "aws ecs create-cluster --cluster-name $CLUSTER_NAME" "Create ECS cluster")
+CLUSTER_OUTPUT=$(execute_command "aws ecs create-cluster --cluster-name '$CLUSTER_NAME' --tags key=project,value=doc-smith key=tutorial,value=amazon-ecs-fargate-linux" "Create ECS cluster")
 check_for_aws_errors "$CLUSTER_OUTPUT" "Create ECS cluster"
 
 CREATED_RESOURCES+=("ECS Cluster: $CLUSTER_NAME")
@@ -293,7 +442,7 @@ echo "==========================================="
 echo "STEP 3: CREATE TASK DEFINITION"
 echo "==========================================="
 
-# Create task definition JSON
+# Create task definition JSON with strict validation
 cat > task-definition.json << EOF
 {
     "family": "$TASK_FAMILY",
@@ -302,6 +451,16 @@ cat > task-definition.json << EOF
     "cpu": "256",
     "memory": "512",
     "executionRoleArn": "$EXECUTION_ROLE_ARN",
+    "tags": [
+        {
+            "key": "project",
+            "value": "doc-smith"
+        },
+        {
+            "key": "tutorial",
+            "value": "amazon-ecs-fargate-linux"
+        }
+    ],
     "containerDefinitions": [
         {
             "name": "fargate-app",
@@ -317,17 +476,32 @@ cat > task-definition.json << EOF
             "entryPoint": ["sh", "-c"],
             "command": [
                 "/bin/sh -c \"echo '<html> <head> <title>Amazon ECS Sample App</title> <style>body {margin-top: 40px; background-color: #333;} </style> </head><body> <div style=color:white;text-align:center> <h1>Amazon ECS Sample App</h1> <h2>Congratulations!</h2> <p>Your application is now running on a container in Amazon ECS.</p> </div></body></html>' >  /usr/local/apache2/htdocs/index.html && httpd-foreground\""
-            ]
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/fargate-app",
+                    "awslogs-region": "us-east-1",
+                    "awslogs-stream-prefix": "ecs"
+                }
+            }
         }
     ]
 }
 EOF
 
+# Validate task definition JSON
+if ! python3 -m json.tool task-definition.json >/dev/null 2>&1; then
+    echo "ERROR: Invalid JSON in task definition"
+    rm -f task-definition.json
+    exit 1
+fi
+
 TASK_DEF_OUTPUT=$(execute_command "aws ecs register-task-definition --cli-input-json file://task-definition.json" "Register task definition")
 check_for_aws_errors "$TASK_DEF_OUTPUT" "Register task definition"
 
-# Clean up temporary file
-rm -f task-definition.json
+# Clean up temporary file securely
+shred -vfz -n 3 task-definition.json 2>/dev/null || rm -f task-definition.json
 
 CREATED_RESOURCES+=("Task Definition: $TASK_FAMILY")
 
@@ -339,21 +513,37 @@ echo "==========================================="
 
 # Get default VPC ID
 VPC_ID=$(aws ec2 describe-vpcs --filters "Name=is-default,Values=true" --query "Vpcs[0].VpcId" --output text)
-if [[ "$VPC_ID" == "None" || -z "$VPC_ID" ]]; then
+if ! validate_resource_id "$VPC_ID" "VPC ID"; then
     echo "ERROR: No default VPC found. Please create a default VPC or specify a custom VPC."
     exit 1
 fi
 echo "Using default VPC: $VPC_ID"
 
+# Validate VPC ID format
+if ! [[ "$VPC_ID" =~ ^vpc-[a-z0-9]{8,17}$ ]]; then
+    echo "ERROR: Invalid VPC ID format: $VPC_ID"
+    exit 1
+fi
+
 # Create security group with restricted access
 # Note: This allows HTTP access from anywhere for demo purposes
 # In production, restrict source to specific IP ranges or security groups
-SECURITY_GROUP_OUTPUT=$(execute_command "aws ec2 create-security-group --group-name $SECURITY_GROUP_NAME --description 'Security group for ECS Fargate tutorial - HTTP access' --vpc-id $VPC_ID" "Create security group")
+SECURITY_GROUP_OUTPUT=$(execute_command "aws ec2 create-security-group --group-name '$SECURITY_GROUP_NAME' --description 'Security group for ECS Fargate tutorial - HTTP access' --vpc-id '$VPC_ID' --tag-specifications 'ResourceType=security-group,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=amazon-ecs-fargate-linux}]'" "Create security group")
 check_for_aws_errors "$SECURITY_GROUP_OUTPUT" "Create security group"
 
-SECURITY_GROUP_ID=$(echo "$SECURITY_GROUP_OUTPUT" | grep -o '"GroupId": "[^"]*"' | cut -d'"' -f4)
+SECURITY_GROUP_ID=$(echo "$SECURITY_GROUP_OUTPUT" | grep -o '"GroupId": "[^"]*"' | head -1 | cut -d'"' -f4)
 if [[ -z "$SECURITY_GROUP_ID" ]]; then
-    SECURITY_GROUP_ID=$(aws ec2 describe-security-groups --group-names "$SECURITY_GROUP_NAME" --query "SecurityGroups[0].GroupId" --output text)
+    SECURITY_GROUP_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=$SECURITY_GROUP_NAME" --query "SecurityGroups[0].GroupId" --output text)
+fi
+
+if ! validate_resource_id "$SECURITY_GROUP_ID" "Security Group ID"; then
+    exit 1
+fi
+
+# Validate security group ID format
+if ! [[ "$SECURITY_GROUP_ID" =~ ^sg-[a-z0-9]{8,17}$ ]]; then
+    echo "ERROR: Invalid security group ID format: $SECURITY_GROUP_ID"
+    exit 1
 fi
 
 echo "Created security group: $SECURITY_GROUP_ID"
@@ -362,7 +552,13 @@ CREATED_RESOURCES+=("Security Group: $SECURITY_GROUP_ID")
 # Add HTTP inbound rule
 # WARNING: This allows HTTP access from anywhere (0.0.0.0/0)
 # In production environments, restrict this to specific IP ranges
-execute_command "aws ec2 authorize-security-group-ingress --group-id $SECURITY_GROUP_ID --protocol tcp --port 80 --cidr 0.0.0.0/0" "Add HTTP inbound rule to security group"
+HTTP_SOURCE_CIDR="0.0.0.0/0"
+if ! validate_cidr_block "$HTTP_SOURCE_CIDR"; then
+    echo "ERROR: Invalid CIDR block format: $HTTP_SOURCE_CIDR"
+    exit 1
+fi
+
+execute_command "aws ec2 authorize-security-group-ingress --group-id '$SECURITY_GROUP_ID' --protocol tcp --port 80 --cidr '$HTTP_SOURCE_CIDR'" "Add HTTP inbound rule to security group"
 
 # Get subnet IDs from default VPC
 echo "Getting subnet IDs from default VPC..."
@@ -374,11 +570,10 @@ fi
 
 # Convert to proper comma-separated format, handling both spaces and tabs
 SUBNET_IDS_COMMA=$(echo "$SUBNET_IDS_RAW" | tr -s '[:space:]' ',' | sed 's/,$//')
-echo "Raw subnet IDs: $SUBNET_IDS_RAW"
 echo "Formatted subnet IDs: $SUBNET_IDS_COMMA"
 
 # Validate subnet IDs format
-if [[ ! "$SUBNET_IDS_COMMA" =~ ^subnet-[a-z0-9]+(,subnet-[a-z0-9]+)*$ ]]; then
+if ! [[ "$SUBNET_IDS_COMMA" =~ ^subnet-[a-z0-9]+(,subnet-[a-z0-9]+)*$ ]]; then
     echo "ERROR: Invalid subnet ID format: $SUBNET_IDS_COMMA"
     exit 1
 fi
@@ -390,9 +585,7 @@ echo "STEP 5: CREATE ECS SERVICE"
 echo "==========================================="
 
 # Create the service with proper JSON formatting for network configuration
-SERVICE_CMD="aws ecs create-service --cluster $CLUSTER_NAME --service-name $SERVICE_NAME --task-definition $TASK_FAMILY --desired-count 1 --launch-type FARGATE --network-configuration '{\"awsvpcConfiguration\":{\"subnets\":[\"$(echo $SUBNET_IDS_COMMA | sed 's/,/","/g')\"],\"securityGroups\":[\"$SECURITY_GROUP_ID\"],\"assignPublicIp\":\"ENABLED\"}}'"
-
-echo "Service creation command: $SERVICE_CMD"
+SERVICE_CMD="aws ecs create-service --cluster '$CLUSTER_NAME' --service-name '$SERVICE_NAME' --task-definition '$TASK_FAMILY' --desired-count 1 --launch-type FARGATE --network-configuration '{\"awsvpcConfiguration\":{\"subnets\":[\"$(echo $SUBNET_IDS_COMMA | sed 's/,/","/g')\"],\"securityGroups\":[\"$SECURITY_GROUP_ID\"],\"assignPublicIp\":\"ENABLED\"}}' --tags key=project,value=doc-smith key=tutorial,value=amazon-ecs-fargate-linux"
 
 SERVICE_OUTPUT=$(execute_command "$SERVICE_CMD" "Create ECS service")
 check_for_aws_errors "$SERVICE_OUTPUT" "Create ECS service"
@@ -406,39 +599,57 @@ echo "STEP 6: WAIT FOR SERVICE AND GET PUBLIC IP"
 echo "==========================================="
 
 echo "Waiting for service to stabilize (this may take a few minutes)..."
-execute_command "aws ecs wait services-stable --cluster $CLUSTER_NAME --services $SERVICE_NAME" "Wait for service to stabilize"
+execute_command "aws ecs wait services-stable --cluster '$CLUSTER_NAME' --services '$SERVICE_NAME'" "Wait for service to stabilize"
 
 # Get task ARN
-TASK_ARN=$(aws ecs list-tasks --cluster $CLUSTER_NAME --service-name $SERVICE_NAME --query "taskArns[0]" --output text)
-if [[ "$TASK_ARN" == "None" || -z "$TASK_ARN" ]]; then
+TASK_ARN=$(aws ecs list-tasks --cluster "$CLUSTER_NAME" --service-name "$SERVICE_NAME" --query "taskArns[0]" --output text)
+if ! validate_resource_id "$TASK_ARN" "Task ARN"; then
     echo "ERROR: No running tasks found for service"
+    exit 1
+fi
+
+# Validate task ARN format
+if ! [[ "$TASK_ARN" =~ ^arn:aws:ecs:[a-z0-9-]+:[0-9]{12}:task/.* ]]; then
+    echo "ERROR: Invalid task ARN format: $TASK_ARN"
     exit 1
 fi
 
 echo "Task ARN: $TASK_ARN"
 
 # Get network interface ID
-ENI_ID=$(aws ecs describe-tasks --cluster $CLUSTER_NAME --tasks $TASK_ARN --query "tasks[0].attachments[0].details[?name=='networkInterfaceId'].value" --output text)
-if [[ "$ENI_ID" == "None" || -z "$ENI_ID" ]]; then
+ENI_ID=$(aws ecs describe-tasks --cluster "$CLUSTER_NAME" --tasks "$TASK_ARN" --query "tasks[0].attachments[0].details[?name=='networkInterfaceId'].value" --output text)
+if ! validate_resource_id "$ENI_ID" "Network Interface ID"; then
     echo "ERROR: Could not retrieve network interface ID"
+    exit 1
+fi
+
+# Validate ENI ID format
+if ! [[ "$ENI_ID" =~ ^eni-[a-z0-9]{8,17}$ ]]; then
+    echo "ERROR: Invalid network interface ID format: $ENI_ID"
     exit 1
 fi
 
 echo "Network Interface ID: $ENI_ID"
 
 # Get public IP
-PUBLIC_IP=$(aws ec2 describe-network-interfaces --network-interface-ids $ENI_ID --query "NetworkInterfaces[0].Association.PublicIp" --output text)
-if [[ "$PUBLIC_IP" == "None" || -z "$PUBLIC_IP" ]]; then
+PUBLIC_IP=$(aws ec2 describe-network-interfaces --network-interface-ids "$ENI_ID" --query "NetworkInterfaces[0].Association.PublicIp" --output text)
+if [[ "$PUBLIC_IP" != "None" ]] && [[ -n "$PUBLIC_IP" ]]; then
+    # Validate IP format
+    if validate_ip_address "$PUBLIC_IP"; then
+        echo ""
+        echo "==========================================="
+        echo "SUCCESS! APPLICATION IS RUNNING"
+        echo "==========================================="
+        echo "Your application is available at: http://$PUBLIC_IP"
+        echo "You can test it by opening this URL in your browser"
+        echo ""
+    else
+        echo "WARNING: Invalid IP address format: $PUBLIC_IP"
+        PUBLIC_IP=""
+    fi
+else
     echo "WARNING: No public IP assigned to the task"
     echo "The task may be in a private subnet or public IP assignment failed"
-else
-    echo ""
-    echo "==========================================="
-    echo "SUCCESS! APPLICATION IS RUNNING"
-    echo "==========================================="
-    echo "Your application is available at: http://$PUBLIC_IP"
-    echo "You can test it by opening this URL in your browser"
-    echo ""
 fi
 
 # Display service information
@@ -446,7 +657,7 @@ echo ""
 echo "==========================================="
 echo "SERVICE INFORMATION"
 echo "==========================================="
-execute_command "aws ecs describe-services --cluster $CLUSTER_NAME --services $SERVICE_NAME" "Get service details"
+execute_command "aws ecs describe-services --cluster '$CLUSTER_NAME' --services '$SERVICE_NAME'" "Get service details"
 
 echo ""
 echo "==========================================="

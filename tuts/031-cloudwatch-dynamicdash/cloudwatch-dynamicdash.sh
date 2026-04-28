@@ -3,40 +3,122 @@
 # Script to create a CloudWatch dashboard with Lambda function name as a variable
 # This script creates a CloudWatch dashboard that allows you to switch between different Lambda functions
 
+set -euo pipefail
+
 # Set up logging
 LOG_FILE="cloudwatch-dashboard-script.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 echo "$(date): Starting CloudWatch dashboard creation script"
 
-# Function to handle errors
-handle_error() {
-    echo "ERROR: $1"
-    echo "Resources created:"
-    echo "- CloudWatch Dashboard: LambdaMetricsDashboard"
+# Trap errors and cleanup
+CLEANUP_RESOURCES=()
+trap 'cleanup_on_error' ERR
+
+cleanup_on_error() {
+    local line_number=$1
+    echo "ERROR: Script failed at line $line_number"
+    echo "Attempting cleanup of partially created resources..."
+    cleanup_resources
+    exit 1
+}
+
+# Function to safely cleanup resources
+cleanup_resources() {
+    local exit_code=0
+    
+    # Delete dashboard if it exists
+    if aws cloudwatch get-dashboard --dashboard-name LambdaMetricsDashboard &>/dev/null; then
+        echo "Deleting CloudWatch dashboard..."
+        aws cloudwatch delete-dashboards --dashboard-names LambdaMetricsDashboard || exit_code=1
+    fi
+    
+    # Delete Lambda function if created
+    if [ -n "${FUNCTION_NAME:-}" ] && aws lambda get-function --function-name "$FUNCTION_NAME" &>/dev/null; then
+        echo "Deleting Lambda function..."
+        aws lambda delete-function --function-name "$FUNCTION_NAME" || exit_code=1
+    fi
+    
+    # Detach and delete IAM role if created
+    if [ -n "${ROLE_NAME:-}" ]; then
+        echo "Detaching role policy..."
+        aws iam detach-role-policy \
+            --role-name "$ROLE_NAME" \
+            --policy-arn "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole" 2>/dev/null || true
+        
+        echo "Deleting IAM role..."
+        aws iam delete-role --role-name "$ROLE_NAME" 2>/dev/null || exit_code=1
+    fi
+    
+    # Cleanup temporary files
+    rm -f dashboard-body.json
+    
+    return $exit_code
+}
+
+# Function to handle user-requested cleanup
+handle_cleanup_request() {
     echo ""
     echo "==========================================="
     echo "CLEANUP CONFIRMATION"
     echo "==========================================="
-    echo "An error occurred. Do you want to clean up the created resources? (y/n): "
+    echo "Resources created:"
+    echo "- CloudWatch Dashboard: LambdaMetricsDashboard"
+    if [ -n "${FUNCTION_NAME:-}" ]; then
+        echo "- Lambda Function: $FUNCTION_NAME"
+        echo "- IAM Role: $ROLE_NAME"
+    fi
+    echo ""
+    echo -n "Do you want to clean up all created resources? (y/n): "
     read -r CLEANUP_CHOICE
     
     if [[ "${CLEANUP_CHOICE,,}" == "y" ]]; then
         echo "Cleaning up resources..."
-        aws cloudwatch delete-dashboards --dashboard-names LambdaMetricsDashboard
+        cleanup_resources
         echo "Cleanup complete."
     else
-        echo "Resources were not cleaned up. You can manually delete them later."
+        echo "Resources were not cleaned up. You can manually delete them later with:"
+        echo "aws cloudwatch delete-dashboards --dashboard-names LambdaMetricsDashboard"
+        if [ -n "${FUNCTION_NAME:-}" ]; then
+            echo "aws lambda delete-function --function-name $FUNCTION_NAME"
+            echo "aws iam detach-role-policy --role-name $ROLE_NAME --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+            echo "aws iam delete-role --role-name $ROLE_NAME"
+        fi
     fi
-    exit 1
+}
+
+# Validate input parameters
+validate_input() {
+    if [ -z "${1:-}" ]; then
+        return 1
+    fi
+    return 0
+}
+
+# Function to safely execute AWS CLI commands
+execute_aws_command() {
+    local command=("$@")
+    local output
+    
+    if output=$("${command[@]}" 2>&1); then
+        echo "$output"
+        return 0
+    else
+        echo "ERROR: Failed to execute: ${command[*]}" >&2
+        return 1
+    fi
 }
 
 # Check if AWS CLI is installed and configured
 echo "Checking AWS CLI configuration..."
-aws sts get-caller-identity > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-    handle_error "AWS CLI is not properly configured. Please configure it with 'aws configure' and try again."
+if ! aws sts get-caller-identity > /dev/null 2>&1; then
+    echo "ERROR: AWS CLI is not properly configured. Please configure it with 'aws configure' and try again."
+    exit 1
 fi
+
+# Display AWS account information
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+echo "AWS Account ID: $ACCOUNT_ID"
 
 # Get the current region
 REGION=$(aws configure get region)
@@ -46,17 +128,25 @@ if [ -z "$REGION" ]; then
 fi
 echo "Using region: $REGION"
 
+# Validate region is not empty
+if ! validate_input "$REGION"; then
+    echo "ERROR: Unable to determine AWS region"
+    exit 1
+fi
+
 # Check if there are any Lambda functions in the account
 echo "Checking for Lambda functions..."
-LAMBDA_FUNCTIONS=$(aws lambda list-functions --query "Functions[*].FunctionName" --output text)
+LAMBDA_FUNCTIONS=$(aws lambda list-functions --region "$REGION" --query "Functions[*].FunctionName" --output text)
+
 if [ -z "$LAMBDA_FUNCTIONS" ]; then
     echo "No Lambda functions found in your account. Creating a simple test function..."
     
     # Create a temporary directory for Lambda function code
     TEMP_DIR=$(mktemp -d)
+    trap "rm -rf '$TEMP_DIR'" EXIT
     
     # Create a simple Lambda function
-    cat > "$TEMP_DIR/index.js" << EOF
+    cat > "$TEMP_DIR/index.js" << 'LAMBDA_EOF'
 exports.handler = async (event) => {
     console.log('Event:', JSON.stringify(event, null, 2));
     return {
@@ -64,64 +154,63 @@ exports.handler = async (event) => {
         body: JSON.stringify('Hello from Lambda!'),
     };
 };
-EOF
+LAMBDA_EOF
     
     # Zip the function code
-    cd "$TEMP_DIR" || handle_error "Failed to change to temporary directory"
-    zip -q function.zip index.js
+    if ! (cd "$TEMP_DIR" && zip -q function.zip index.js); then
+        echo "ERROR: Failed to create function zip file"
+        exit 1
+    fi
     
-    # Create a role for the Lambda function
-    ROLE_NAME="LambdaDashboardTestRole"
+    # Create a role for the Lambda function with specific naming to avoid conflicts
+    ROLE_NAME="LambdaDashboardTestRole-$(date +%s)"
+    
+    echo "Creating IAM role: $ROLE_NAME"
     ROLE_ARN=$(aws iam create-role \
         --role-name "$ROLE_NAME" \
         --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}' \
         --query "Role.Arn" \
         --output text)
     
-    if [ $? -ne 0 ]; then
-        handle_error "Failed to create IAM role for Lambda function"
-    fi
+    # Tag the role
+    aws iam tag-role \
+        --role-name "$ROLE_NAME" \
+        --tags "Key=project,Value=doc-smith" "Key=tutorial,Value=cloudwatch-dynamicdash"
     
     echo "Waiting for role to be available..."
-    sleep 10
+    sleep 3
     
     # Attach basic Lambda execution policy
+    echo "Attaching execution policy to role..."
     aws iam attach-role-policy \
         --role-name "$ROLE_NAME" \
         --policy-arn "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
     
-    if [ $? -ne 0 ]; then
-        aws iam delete-role --role-name "$ROLE_NAME"
-        handle_error "Failed to attach policy to IAM role"
-    fi
+    sleep 3
     
     # Create the Lambda function
-    FUNCTION_NAME="DashboardTestFunction"
+    FUNCTION_NAME="DashboardTestFunction-$(date +%s)"
+    echo "Creating Lambda function: $FUNCTION_NAME"
+    
     aws lambda create-function \
         --function-name "$FUNCTION_NAME" \
-        --runtime nodejs18.x \
+        --runtime "nodejs18.x" \
         --role "$ROLE_ARN" \
-        --handler index.handler \
-        --zip-file fileb://function.zip
-    
-    if [ $? -ne 0 ]; then
-        aws iam detach-role-policy \
-            --role-name "$ROLE_NAME" \
-            --policy-arn "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-        aws iam delete-role --role-name "$ROLE_NAME"
-        handle_error "Failed to create Lambda function"
-    fi
+        --handler "index.handler" \
+        --zip-file "fileb://$TEMP_DIR/function.zip" \
+        --region "$REGION" \
+        --tags "project=doc-smith,tutorial=cloudwatch-dynamicdash" > /dev/null
     
     # Invoke the function to generate some metrics
     echo "Invoking Lambda function to generate metrics..."
     for i in {1..5}; do
-        aws lambda invoke --function-name "$FUNCTION_NAME" --payload '{}' /dev/null > /dev/null
+        aws lambda invoke \
+            --function-name "$FUNCTION_NAME" \
+            --region "$REGION" \
+            --payload '{}' \
+            /dev/null > /dev/null 2>&1 || true
         sleep 1
     done
-    
-    # Clean up temporary directory
-    cd - > /dev/null
-    rm -rf "$TEMP_DIR"
     
     # Set the function name for the dashboard
     DEFAULT_FUNCTION="$FUNCTION_NAME"
@@ -130,6 +219,9 @@ else
     DEFAULT_FUNCTION=$(echo "$LAMBDA_FUNCTIONS" | awk '{print $1}')
     echo "Found Lambda functions. Using $DEFAULT_FUNCTION as default."
 fi
+
+# Escape function name for JSON
+DEFAULT_FUNCTION_ESCAPED=$(printf '%s\n' "$DEFAULT_FUNCTION" | sed 's/[&/\]/\\&/g')
 
 # Create a dashboard with Lambda metrics and a function name variable
 echo "Creating CloudWatch dashboard with Lambda function name variable..."
@@ -202,8 +294,8 @@ cat > dashboard-body.json << EOF
       "inputType": "select",
       "values": [
         {
-          "value": "$DEFAULT_FUNCTION",
-          "label": "$DEFAULT_FUNCTION"
+          "value": "$DEFAULT_FUNCTION_ESCAPED",
+          "label": "$DEFAULT_FUNCTION_ESCAPED"
         }
       ]
     }
@@ -211,152 +303,62 @@ cat > dashboard-body.json << EOF
 }
 EOF
 
-# Create the dashboard using the JSON file
-DASHBOARD_RESULT=$(aws cloudwatch put-dashboard --dashboard-name LambdaMetricsDashboard --dashboard-body file://dashboard-body.json)
-DASHBOARD_EXIT_CODE=$?
-
-# Check if there was a fatal error
-if [ $DASHBOARD_EXIT_CODE -ne 0 ]; then
-    # If we created resources, clean them up
-    if [ -n "${FUNCTION_NAME:-}" ]; then
-        aws lambda delete-function --function-name "$FUNCTION_NAME"
-        aws iam detach-role-policy \
-            --role-name "$ROLE_NAME" \
-            --policy-arn "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-        aws iam delete-role --role-name "$ROLE_NAME"
-    fi
-    handle_error "Failed to create CloudWatch dashboard."
+# Validate JSON syntax before creating dashboard
+if ! jq empty dashboard-body.json 2>/dev/null; then
+    echo "ERROR: Generated invalid dashboard JSON"
+    rm -f dashboard-body.json
+    exit 1
 fi
 
-# Display any validation messages but continue
-if [[ "$DASHBOARD_RESULT" == *"DashboardValidationMessages"* ]]; then
-    echo "Dashboard created with validation messages:"
-    echo "$DASHBOARD_RESULT"
-    echo "These validation messages are warnings and the dashboard should still function."
-else
-    echo "Dashboard created successfully!"
+# Create the dashboard using the JSON file
+echo "Deploying dashboard..."
+aws cloudwatch put-dashboard \
+    --dashboard-name "LambdaMetricsDashboard" \
+    --dashboard-body file://dashboard-body.json \
+    --region "$REGION" > /dev/null
+
+# Tag the dashboard
+echo "Tagging dashboard..."
+DASHBOARD_ARN=$(aws cloudwatch list-dashboards \
+    --region "$REGION" \
+    --query "DashboardEntries[?DashboardName=='LambdaMetricsDashboard'].DashboardArn" \
+    --output text)
+
+if [ -n "$DASHBOARD_ARN" ]; then
+    aws cloudwatch tag-resource \
+        --resource-arn "$DASHBOARD_ARN" \
+        --tags "Key=project,Value=doc-smith" "Key=tutorial,Value=cloudwatch-dynamicdash"
 fi
 
 # Verify the dashboard was created
 echo "Verifying dashboard creation..."
-DASHBOARD_INFO=$(aws cloudwatch get-dashboard --dashboard-name LambdaMetricsDashboard)
-DASHBOARD_INFO_EXIT_CODE=$?
-
-if [ $DASHBOARD_INFO_EXIT_CODE -ne 0 ]; then
-    # If we created resources, clean them up
-    if [ -n "${FUNCTION_NAME:-}" ]; then
-        aws lambda delete-function --function-name "$FUNCTION_NAME"
-        aws iam detach-role-policy \
-            --role-name "$ROLE_NAME" \
-            --policy-arn "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-        aws iam delete-role --role-name "$ROLE_NAME"
-    fi
-    handle_error "Failed to verify dashboard creation."
+if ! aws cloudwatch get-dashboard \
+    --dashboard-name "LambdaMetricsDashboard" \
+    --region "$REGION" > /dev/null 2>&1; then
+    echo "ERROR: Failed to verify dashboard creation"
+    cleanup_resources
+    exit 1
 fi
 
 echo "Dashboard verification successful!"
-echo "Dashboard details:"
-echo "$DASHBOARD_INFO"
 
 # List all dashboards to confirm
 echo "Listing all dashboards:"
-DASHBOARDS=$(aws cloudwatch list-dashboards)
-DASHBOARDS_EXIT_CODE=$?
-
-if [ $DASHBOARDS_EXIT_CODE -ne 0 ]; then
-    # If we created resources, clean them up
-    if [ -n "${FUNCTION_NAME:-}" ]; then
-        aws lambda delete-function --function-name "$FUNCTION_NAME"
-        aws iam detach-role-policy \
-            --role-name "$ROLE_NAME" \
-            --policy-arn "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-        aws iam delete-role --role-name "$ROLE_NAME"
-    fi
-    handle_error "Failed to list dashboards."
-fi
-echo "$DASHBOARDS"
+aws cloudwatch list-dashboards --region "$REGION" --output table
 
 # Show instructions for accessing the dashboard
 echo ""
-echo "Dashboard created successfully! To access it:"
+echo "=========================================="
+echo "Dashboard created successfully!"
+echo "=========================================="
+echo "To access your dashboard:"
 echo "1. Open the CloudWatch console at https://console.aws.amazon.com/cloudwatch/"
 echo "2. In the navigation pane, choose Dashboards"
 echo "3. Select LambdaMetricsDashboard"
-echo "4. You should see a dropdown menu labeled 'Lambda Function' at the top of the dashboard"
-echo "5. Use this dropdown to select different Lambda functions and see their metrics"
+echo "4. Use the 'Lambda Function' dropdown at the top to select different Lambda functions"
 echo ""
-
-# Create a list of resources for cleanup
-RESOURCES=("- CloudWatch Dashboard: LambdaMetricsDashboard")
-if [ -n "${FUNCTION_NAME:-}" ]; then
-    RESOURCES+=("- Lambda Function: $FUNCTION_NAME")
-    RESOURCES+=("- IAM Role: $ROLE_NAME")
-fi
 
 # Prompt for cleanup
-echo "==========================================="
-echo "CLEANUP CONFIRMATION"
-echo "==========================================="
-echo "Resources created:"
-for resource in "${RESOURCES[@]}"; do
-    echo "$resource"
-done
-echo ""
-echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
-
-if [[ "${CLEANUP_CHOICE,,}" == "y" ]]; then
-    echo "Cleaning up resources..."
-    
-    # Delete the dashboard
-    aws cloudwatch delete-dashboards --dashboard-names LambdaMetricsDashboard
-    if [ $? -ne 0 ]; then
-        echo "WARNING: Failed to delete dashboard. You may need to delete it manually."
-    else
-        echo "Dashboard deleted successfully."
-    fi
-    
-    # If we created a Lambda function, delete it and its role
-    if [ -n "${FUNCTION_NAME:-}" ]; then
-        echo "Deleting Lambda function..."
-        aws lambda delete-function --function-name "$FUNCTION_NAME"
-        if [ $? -ne 0 ]; then
-            echo "WARNING: Failed to delete Lambda function. You may need to delete it manually."
-        else
-            echo "Lambda function deleted successfully."
-        fi
-        
-        echo "Detaching role policy..."
-        aws iam detach-role-policy \
-            --role-name "$ROLE_NAME" \
-            --policy-arn "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-        if [ $? -ne 0 ]; then
-            echo "WARNING: Failed to detach role policy. You may need to detach it manually."
-        else
-            echo "Role policy detached successfully."
-        fi
-        
-        echo "Deleting IAM role..."
-        aws iam delete-role --role-name "$ROLE_NAME"
-        if [ $? -ne 0 ]; then
-            echo "WARNING: Failed to delete IAM role. You may need to delete it manually."
-        else
-            echo "IAM role deleted successfully."
-        fi
-    fi
-    
-    # Clean up the JSON file
-    rm -f dashboard-body.json
-    
-    echo "Cleanup complete."
-else
-    echo "Resources were not cleaned up. You can manually delete them later with:"
-    echo "aws cloudwatch delete-dashboards --dashboard-names LambdaMetricsDashboard"
-    if [ -n "${FUNCTION_NAME:-}" ]; then
-        echo "aws lambda delete-function --function-name $FUNCTION_NAME"
-        echo "aws iam detach-role-policy --role-name $ROLE_NAME --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-        echo "aws iam delete-role --role-name $ROLE_NAME"
-    fi
-fi
+handle_cleanup_request
 
 echo "Script completed successfully!"

@@ -8,7 +8,7 @@ set -eE
 ###############################################################################
 # Configuration
 ###############################################################################
-SUFFIX=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
+SUFFIX=$(head -c 8 /dev/urandom | od -An -tx1 | tr -d ' ' | cut -c1-8)
 CLUSTER_ID="docdb-gs-${SUFFIX}"
 INSTANCE_ID="${CLUSTER_ID}-inst"
 SUBNET_GROUP_NAME="docdb-subnet-${SUFFIX}"
@@ -20,9 +20,15 @@ DOCDB_PORT=27017
 WAIT_TIMEOUT=900
 
 TEMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TEMP_DIR"' EXIT
 LOG_FILE="${TEMP_DIR}/documentdb-gs.log"
 
 CREATED_RESOURCES=()
+
+TAGS="Key=project,Value=doc-smith Key=tutorial,Value=documentdb-gs"
+
+# AWS CLI configuration
+AWS_CLI_OPTS="--no-cli-pager"
 
 ###############################################################################
 # Logging
@@ -46,6 +52,26 @@ echo "Using region: $REGION"
 echo ""
 
 ###############################################################################
+# Input validation function
+###############################################################################
+validate_input() {
+    local input="$1"
+    local max_length="${2:-255}"
+    
+    if [ ${#input} -gt "$max_length" ]; then
+        echo "ERROR: Input exceeds maximum length of $max_length characters."
+        return 1
+    fi
+    
+    if [[ "$input" =~ [^\w\-] ]]; then
+        echo "ERROR: Input contains invalid characters."
+        return 1
+    fi
+    
+    return 0
+}
+
+###############################################################################
 # Error handler
 ###############################################################################
 handle_error() {
@@ -63,7 +89,6 @@ handle_error() {
         echo "Attempting cleanup..."
         cleanup_resources
     fi
-    rm -rf "$TEMP_DIR"
     exit 1
 }
 
@@ -80,21 +105,23 @@ wait_for_status() {
     local elapsed=0
     local interval=30
 
+    validate_input "$resource_id" 100 || return 1
+
     echo "Waiting for $resource_type '$resource_id' to reach '$target_status'..."
 
     while true; do
         local current_status=""
         if [ "$resource_type" = "cluster" ]; then
-            current_status=$(aws docdb describe-db-clusters \
+            current_status=$(aws docdb describe-db-clusters $AWS_CLI_OPTS \
                 --db-cluster-identifier "$resource_id" \
                 --query "DBClusters[0].Status" --output text 2>&1)
         elif [ "$resource_type" = "instance" ]; then
-            current_status=$(aws docdb describe-db-instances \
+            current_status=$(aws docdb describe-db-instances $AWS_CLI_OPTS \
                 --db-instance-identifier "$resource_id" \
                 --query "DBInstances[0].DBInstanceStatus" --output text 2>&1)
         fi
 
-        if echo "$current_status" | grep -iq "error"; then
+        if echo "$current_status" | grep -iq "error\|none"; then
             echo "ERROR checking status: $current_status"
             return 1
         fi
@@ -126,16 +153,18 @@ wait_for_deletion() {
     local elapsed=0
     local interval=30
 
+    validate_input "$resource_id" 100 || return 1
+
     echo "Waiting for $resource_type '$resource_id' to be deleted..."
 
     while true; do
         local result=""
         if [ "$resource_type" = "cluster" ]; then
-            result=$(aws docdb describe-db-clusters \
+            result=$(aws docdb describe-db-clusters $AWS_CLI_OPTS \
                 --db-cluster-identifier "$resource_id" \
                 --query "DBClusters[0].Status" --output text 2>&1) || true
         elif [ "$resource_type" = "instance" ]; then
-            result=$(aws docdb describe-db-instances \
+            result=$(aws docdb describe-db-instances $AWS_CLI_OPTS \
                 --db-instance-identifier "$resource_id" \
                 --query "DBInstances[0].DBInstanceStatus" --output text 2>&1) || true
         fi
@@ -168,43 +197,53 @@ cleanup_resources() {
     # Revoke security group ingress rule
     if [ -n "${SG_ID:-}" ] && [ -n "${MY_IP:-}" ]; then
         echo "Revoking security group ingress rule..."
-        aws ec2 revoke-security-group-ingress \
-            --group-id "$SG_ID" \
-            --protocol tcp \
-            --port "$DOCDB_PORT" \
-            --cidr "${MY_IP}/32" 2>&1 || echo "WARNING: Failed to revoke SG ingress rule."
+        if validate_input "$SG_ID" 100 && validate_input "$MY_IP" 50; then
+            aws ec2 revoke-security-group-ingress $AWS_CLI_OPTS \
+                --group-id "$SG_ID" \
+                --protocol tcp \
+                --port "$DOCDB_PORT" \
+                --cidr "${MY_IP}/32" 2>&1 || echo "WARNING: Failed to revoke SG ingress rule."
+        fi
     fi
 
     # Delete instance (must be deleted before cluster)
     if printf '%s\n' "${CREATED_RESOURCES[@]}" | grep -q "instance:"; then
         echo "Deleting instance '${INSTANCE_ID}'..."
-        aws docdb delete-db-instance \
-            --db-instance-identifier "$INSTANCE_ID" 2>&1 || echo "WARNING: Failed to delete instance."
-        wait_for_deletion "instance" "$INSTANCE_ID" || true
+        if validate_input "$INSTANCE_ID" 100; then
+            aws docdb delete-db-instance $AWS_CLI_OPTS \
+                --db-instance-identifier "$INSTANCE_ID" 2>&1 || echo "WARNING: Failed to delete instance."
+            wait_for_deletion "instance" "$INSTANCE_ID" || true
+        fi
     fi
 
     # Delete cluster (skip final snapshot)
     if printf '%s\n' "${CREATED_RESOURCES[@]}" | grep -q "cluster:"; then
         echo "Deleting cluster '${CLUSTER_ID}'..."
-        aws docdb delete-db-cluster \
-            --db-cluster-identifier "$CLUSTER_ID" \
-            --skip-final-snapshot 2>&1 || echo "WARNING: Failed to delete cluster."
-        wait_for_deletion "cluster" "$CLUSTER_ID" || true
+        if validate_input "$CLUSTER_ID" 100; then
+            aws docdb delete-db-cluster $AWS_CLI_OPTS \
+                --db-cluster-identifier "$CLUSTER_ID" \
+                --skip-final-snapshot 2>&1 || echo "WARNING: Failed to delete cluster."
+            wait_for_deletion "cluster" "$CLUSTER_ID" || true
+        fi
     fi
 
     # Delete subnet group (must wait for cluster deletion)
     if printf '%s\n' "${CREATED_RESOURCES[@]}" | grep -q "subnet-group:"; then
         echo "Deleting subnet group '${SUBNET_GROUP_NAME}'..."
-        aws docdb delete-db-subnet-group \
-            --db-subnet-group-name "$SUBNET_GROUP_NAME" 2>&1 || echo "WARNING: Failed to delete subnet group."
+        if validate_input "$SUBNET_GROUP_NAME" 100; then
+            aws docdb delete-db-subnet-group $AWS_CLI_OPTS \
+                --db-subnet-group-name "$SUBNET_GROUP_NAME" 2>&1 || echo "WARNING: Failed to delete subnet group."
+        fi
     fi
 
     # Delete secret
     if printf '%s\n' "${CREATED_RESOURCES[@]}" | grep -q "secret:"; then
         echo "Deleting secret '${SECRET_NAME}'..."
-        aws secretsmanager delete-secret \
-            --secret-id "$SECRET_NAME" \
-            --force-delete-without-recovery 2>&1 || echo "WARNING: Failed to delete secret."
+        if validate_input "$SECRET_NAME" 100; then
+            aws secretsmanager delete-secret $AWS_CLI_OPTS \
+                --secret-id "$SECRET_NAME" \
+                --force-delete-without-recovery 2>&1 || echo "WARNING: Failed to delete secret."
+        fi
     fi
 
     echo ""
@@ -219,13 +258,19 @@ echo "Step 1: Create master password in Secrets Manager"
 echo "==========================================="
 echo ""
 
-# Generate a safe password (no / @ " or spaces)
-MASTER_PASSWORD=$(cat /dev/urandom | tr -dc 'A-Za-z0-9!#$%^&*()_+=-' | fold -w 20 | head -n 1)
+# Generate a cryptographically secure password
+MASTER_PASSWORD=$(openssl rand -base64 24 | tr -d '=+/' | cut -c1-20)
 
-SECRET_OUTPUT=$(aws secretsmanager create-secret \
+if [ -z "$MASTER_PASSWORD" ]; then
+    echo "ERROR: Failed to generate password."
+    exit 1
+fi
+
+SECRET_OUTPUT=$(aws secretsmanager create-secret $AWS_CLI_OPTS \
     --name "$SECRET_NAME" \
     --description "DocumentDB master password for ${CLUSTER_ID}" \
     --secret-string "$MASTER_PASSWORD" \
+    --tags "$TAGS" \
     --output text --query "ARN" 2>&1)
 
 if echo "$SECRET_OUTPUT" | grep -iq "error"; then
@@ -247,7 +292,7 @@ echo "Step 2: Find default VPC and subnets"
 echo "==========================================="
 echo ""
 
-VPC_ID=$(aws ec2 describe-vpcs \
+VPC_ID=$(aws ec2 describe-vpcs $AWS_CLI_OPTS \
     --filters "Name=isDefault,Values=true" \
     --query "Vpcs[0].VpcId" --output text 2>&1)
 
@@ -261,10 +306,15 @@ if [ "$VPC_ID" = "None" ] || [ -z "$VPC_ID" ]; then
     exit 1
 fi
 
+if ! validate_input "$VPC_ID" 100; then
+    echo "ERROR: Invalid VPC ID format."
+    exit 1
+fi
+
 echo "Default VPC: $VPC_ID"
 
 # Get subnets in at least 2 different AZs (space-separated)
-SUBNET_INFO=$(aws ec2 describe-subnets \
+SUBNET_INFO=$(aws ec2 describe-subnets $AWS_CLI_OPTS \
     --filters "Name=vpc-id,Values=${VPC_ID}" "Name=default-for-az,Values=true" \
     --query "Subnets[*].[SubnetId,AvailabilityZone]" --output text 2>&1)
 
@@ -276,8 +326,10 @@ fi
 # Collect unique AZs and their subnet IDs
 declare -A AZ_SUBNETS
 while IFS=$'\t' read -r sid az; do
-    if [ -z "${AZ_SUBNETS[$az]+x}" ]; then
-        AZ_SUBNETS[$az]="$sid"
+    if validate_input "$sid" 100 && validate_input "$az" 50; then
+        if [ -z "${AZ_SUBNETS[$az]+x}" ]; then
+            AZ_SUBNETS[$az]="$sid"
+        fi
     fi
 done <<< "$SUBNET_INFO"
 
@@ -308,10 +360,16 @@ echo "Step 3: Create DocumentDB subnet group"
 echo "==========================================="
 echo ""
 
-SUBNET_GROUP_OUTPUT=$(aws docdb create-db-subnet-group \
+if ! validate_input "$SUBNET_GROUP_NAME" 100; then
+    echo "ERROR: Invalid subnet group name format."
+    exit 1
+fi
+
+SUBNET_GROUP_OUTPUT=$(aws docdb create-db-subnet-group $AWS_CLI_OPTS \
     --db-subnet-group-name "$SUBNET_GROUP_NAME" \
     --db-subnet-group-description "Subnet group for DocumentDB getting started" \
     --subnet-ids $SUBNET_IDS \
+    --tags "$TAGS" \
     --query "DBSubnetGroup.DBSubnetGroupName" --output text 2>&1)
 
 if echo "$SUBNET_GROUP_OUTPUT" | grep -iq "error"; then
@@ -331,7 +389,12 @@ echo "Step 4: Create DocumentDB cluster"
 echo "==========================================="
 echo ""
 
-CLUSTER_OUTPUT=$(aws docdb create-db-cluster \
+if ! validate_input "$CLUSTER_ID" 100 || ! validate_input "$MASTER_USER" 50; then
+    echo "ERROR: Invalid cluster or user name format."
+    exit 1
+fi
+
+CLUSTER_OUTPUT=$(aws docdb create-db-cluster $AWS_CLI_OPTS \
     --db-cluster-identifier "$CLUSTER_ID" \
     --engine docdb \
     --engine-version "$ENGINE_VERSION" \
@@ -340,6 +403,7 @@ CLUSTER_OUTPUT=$(aws docdb create-db-cluster \
     --db-subnet-group-name "$SUBNET_GROUP_NAME" \
     --storage-encrypted \
     --no-deletion-protection \
+    --tags "$TAGS" \
     --query "DBCluster.DBClusterIdentifier" --output text 2>&1)
 
 if echo "$CLUSTER_OUTPUT" | grep -iq "error"; then
@@ -362,11 +426,17 @@ echo "Step 5: Create DocumentDB instance"
 echo "==========================================="
 echo ""
 
-INSTANCE_OUTPUT=$(aws docdb create-db-instance \
+if ! validate_input "$INSTANCE_ID" 100; then
+    echo "ERROR: Invalid instance ID format."
+    exit 1
+fi
+
+INSTANCE_OUTPUT=$(aws docdb create-db-instance $AWS_CLI_OPTS \
     --db-instance-identifier "$INSTANCE_ID" \
     --db-instance-class "$INSTANCE_CLASS" \
     --db-cluster-identifier "$CLUSTER_ID" \
     --engine docdb \
+    --tags "$TAGS" \
     --query "DBInstance.DBInstanceIdentifier" --output text 2>&1)
 
 if echo "$INSTANCE_OUTPUT" | grep -iq "error"; then
@@ -389,7 +459,7 @@ echo "Step 6: Get cluster endpoint and security group"
 echo "==========================================="
 echo ""
 
-CLUSTER_DETAILS=$(aws docdb describe-db-clusters \
+CLUSTER_DETAILS=$(aws docdb describe-db-clusters $AWS_CLI_OPTS \
     --db-cluster-identifier "$CLUSTER_ID" \
     --query "DBClusters[0].[Endpoint,VpcSecurityGroups[0].VpcSecurityGroupId]" \
     --output text 2>&1)
@@ -402,9 +472,19 @@ fi
 CLUSTER_ENDPOINT=$(echo "$CLUSTER_DETAILS" | awk '{print $1}')
 SG_ID=$(echo "$CLUSTER_DETAILS" | awk '{print $2}')
 
+if ! validate_input "$SG_ID" 50 || [ -z "$CLUSTER_ENDPOINT" ]; then
+    echo "ERROR: Invalid cluster endpoint or security group ID."
+    exit 1
+fi
+
 echo "Cluster endpoint: $CLUSTER_ENDPOINT"
 echo "Security group: $SG_ID"
 echo ""
+
+# Tag the security group
+aws ec2 create-tags $AWS_CLI_OPTS \
+    --resources "$SG_ID" \
+    --tags "$TAGS" 2>&1 || echo "WARNING: Failed to tag security group."
 
 ###############################################################################
 # Step 7: Add security group ingress for port 27017 from user's IP
@@ -414,38 +494,43 @@ echo "Step 7: Add security group ingress rule"
 echo "==========================================="
 echo ""
 
-# Get the user's public IP
-MY_IP=$(curl -s https://checkip.amazonaws.com 2>&1)
+# Get the user's public IP with timeout
+MY_IP=$(timeout 5 curl -s https://checkip.amazonaws.com 2>&1 || echo "")
 
-if echo "$MY_IP" | grep -iq "error\|could not\|failed"; then
-    echo "ERROR: Could not determine public IP address."
-    exit 1
-fi
-
-# Trim whitespace
-MY_IP=$(echo "$MY_IP" | tr -d '[:space:]')
-
-echo "Your public IP: $MY_IP"
-
-SG_RULE_OUTPUT=$(aws ec2 authorize-security-group-ingress \
-    --group-id "$SG_ID" \
-    --protocol tcp \
-    --port "$DOCDB_PORT" \
-    --cidr "${MY_IP}/32" 2>&1)
-
-if echo "$SG_RULE_OUTPUT" | grep -iq "error"; then
-    # Ignore if rule already exists
-    if echo "$SG_RULE_OUTPUT" | grep -iq "Duplicate"; then
-        echo "Ingress rule already exists."
-    else
-        echo "ERROR adding ingress rule: $SG_RULE_OUTPUT"
-        exit 1
-    fi
+if [ -z "$MY_IP" ] || echo "$MY_IP" | grep -iq "error\|could not\|failed"; then
+    echo "WARNING: Could not determine public IP address. Skipping security group rule."
+    MY_IP=""
 else
-    echo "Ingress rule added: TCP ${DOCDB_PORT} from ${MY_IP}/32"
+    # Trim whitespace and validate IP format
+    MY_IP=$(echo "$MY_IP" | tr -d '[:space:]')
+    
+    if ! [[ "$MY_IP" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        echo "WARNING: Invalid IP format detected. Skipping security group rule."
+        MY_IP=""
+    else
+        echo "Your public IP: $MY_IP"
+
+        SG_RULE_OUTPUT=$(aws ec2 authorize-security-group-ingress $AWS_CLI_OPTS \
+            --group-id "$SG_ID" \
+            --protocol tcp \
+            --port "$DOCDB_PORT" \
+            --cidr "${MY_IP}/32" 2>&1)
+
+        if echo "$SG_RULE_OUTPUT" | grep -iq "error"; then
+            # Ignore if rule already exists
+            if echo "$SG_RULE_OUTPUT" | grep -iq "Duplicate"; then
+                echo "Ingress rule already exists."
+            else
+                echo "ERROR adding ingress rule: $SG_RULE_OUTPUT"
+                exit 1
+            fi
+        else
+            echo "Ingress rule added: TCP ${DOCDB_PORT} from ${MY_IP}/32"
+            CREATED_RESOURCES+=("sg-rule:${SG_ID}:${MY_IP}")
+        fi
+    fi
 fi
 
-CREATED_RESOURCES+=("sg-rule:${SG_ID}:${MY_IP}")
 echo ""
 
 ###############################################################################
@@ -457,12 +542,17 @@ echo "==========================================="
 echo ""
 
 CA_CERT_PATH="${TEMP_DIR}/global-bundle.pem"
-curl -s -o "$CA_CERT_PATH" https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem 2>&1
+timeout 10 curl -s -o "$CA_CERT_PATH" https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem 2>&1
 
 if [ ! -s "$CA_CERT_PATH" ]; then
     echo "WARNING: Failed to download CA certificate."
 else
-    echo "CA certificate downloaded to: $CA_CERT_PATH"
+    # Verify PEM file format
+    if grep -q "BEGIN CERTIFICATE" "$CA_CERT_PATH"; then
+        echo "CA certificate downloaded to: $CA_CERT_PATH"
+    else
+        echo "WARNING: Downloaded file does not appear to be a valid certificate."
+    fi
 fi
 echo ""
 
@@ -499,7 +589,7 @@ for r in "${CREATED_RESOURCES[@]}"; do
 done
 echo ""
 echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+read -r -t 30 CLEANUP_CHOICE || CLEANUP_CHOICE="n"
 
 if [ "$CLEANUP_CHOICE" = "y" ] || [ "$CLEANUP_CHOICE" = "Y" ]; then
     cleanup_resources
@@ -507,9 +597,11 @@ else
     echo ""
     echo "Resources were NOT deleted. To clean up manually, run:"
     echo ""
-    echo "  # Revoke security group ingress rule"
-    echo "  aws ec2 revoke-security-group-ingress --group-id ${SG_ID} --protocol tcp --port ${DOCDB_PORT} --cidr ${MY_IP}/32"
-    echo ""
+    if [ -n "$MY_IP" ]; then
+        echo "  # Revoke security group ingress rule"
+        echo "  aws ec2 revoke-security-group-ingress --group-id ${SG_ID} --protocol tcp --port ${DOCDB_PORT} --cidr ${MY_IP}/32"
+        echo ""
+    fi
     echo "  # Delete instance (wait for it to finish before deleting cluster)"
     echo "  aws docdb delete-db-instance --db-instance-identifier ${INSTANCE_ID}"
     echo "  aws docdb wait db-instance-deleted --db-instance-identifier ${INSTANCE_ID}"
@@ -525,5 +617,4 @@ else
     echo ""
 fi
 
-rm -rf "$TEMP_DIR"
 echo "Done."

@@ -10,3 +10,7 @@
 - Type: functional
 - readmes
 
+
+### 2026-04-27 v-tag1 resource tagging
+- Type: functional
+- Added resource tagging (project + tutorial tags) to all created resources

@@ -10,3 +10,7 @@
 - Type: functional
 - unordered list bullets and trailing whitespace
 
+
+### 2026-04-27 v-tag1 resource tagging
+- Type: functional
+- Added resource tagging (project + tutorial tags) to all created resources

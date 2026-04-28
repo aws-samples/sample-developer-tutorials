@@ -15,3 +15,7 @@
 - Type: functional
 - Script checks for prereq bucket stack before creating its own S3 bucket
 - Skips bucket deletion if using shared bucket
+
+### 2026-04-27 v-tag1 resource tagging
+- Type: functional
+- Added resource tagging (project + tutorial tags) to all created resources
