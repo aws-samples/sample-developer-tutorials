@@ -344,7 +344,7 @@ echo ""
 
 echo "$TEST_EVENT" > "${TEMP_DIR}/test-event.json"
 
-if ! validate_input "$TEST_EVENT" '{"length": [0-9]+, "width": [0-9]+}'; then
+if ! validate_input "$TEST_EVENT" '"length": [0-9]+, "width": [0-9]+'; then
     echo "ERROR: Invalid test event format"
     exit 1
 fi
