@@ -5,6 +5,9 @@
 
 # - Added checks for Java and Maven installations before creating the Java application
 # - Generate secure password and store in AWS Secrets Manager instead of hardcoding
+# - Security improvements implemented
+
+set -euo pipefail
 
 # Set up logging
 LOG_FILE="amazon-mq-tutorial.log"
@@ -13,14 +16,27 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 echo "Starting Amazon MQ tutorial script at $(date)"
 echo "All commands and outputs will be logged to $LOG_FILE"
 
+# Validation function for AWS region
+validate_aws_credentials() {
+    if ! aws sts get-caller-identity &> /dev/null; then
+        echo "ERROR: AWS credentials not configured or invalid"
+        exit 1
+    fi
+    
+    if [ -z "${AWS_REGION:-}" ]; then
+        echo "ERROR: AWS_REGION environment variable not set"
+        exit 1
+    fi
+}
+
 # Function to handle errors
 handle_error() {
     echo "ERROR: $1"
     echo "Resources created:"
-    if [ -n "$BROKER_ID" ]; then
+    if [ -n "${BROKER_ID:-}" ]; then
         echo "- Amazon MQ Broker: $BROKER_ID"
     fi
-    if [ -n "$SECRET_ARN" ]; then
+    if [ -n "${SECRET_ARN:-}" ]; then
         echo "- AWS Secrets Manager Secret: $SECRET_ARN"
     fi
     
@@ -28,14 +44,9 @@ handle_error() {
     echo "==========================================="
     echo "CLEANUP CONFIRMATION"
     echo "==========================================="
-    echo "An error occurred. Do you want to clean up all created resources? (y/n): "
-    read -r CLEANUP_CHOICE
+    echo "An error occurred. Cleaning up all created resources..."
     
-    if [[ "${CLEANUP_CHOICE,,}" == "y" ]]; then
-        cleanup_resources
-    else
-        echo "Resources were not cleaned up. You can manually delete them later."
-    fi
+    cleanup_resources
     
     exit 1
 }
@@ -44,18 +55,30 @@ handle_error() {
 cleanup_resources() {
     echo "Cleaning up resources..."
     
-    if [ -n "$BROKER_ID" ]; then
+    if [ -n "${BROKER_ID:-}" ]; then
         echo "Deleting Amazon MQ broker: $BROKER_ID"
-        aws mq delete-broker --broker-id "$BROKER_ID"
-        echo "Broker deletion initiated. It may take several minutes to complete."
+        if ! aws mq delete-broker --broker-id "$BROKER_ID" 2>/dev/null; then
+            echo "Warning: Failed to delete broker or broker already deleted"
+        else
+            echo "Broker deletion initiated. It may take several minutes to complete."
+        fi
     fi
     
-    if [ -n "$SECRET_ARN" ]; then
+    if [ -n "${SECRET_ARN:-}" ]; then
         echo "Deleting AWS Secrets Manager secret: $SECRET_ARN"
-        aws secretsmanager delete-secret --secret-id "$SECRET_ARN" --force-delete-without-recovery
-        echo "Secret deleted."
+        if ! aws secretsmanager delete-secret --secret-id "$SECRET_ARN" --force-delete-without-recovery 2>/dev/null; then
+            echo "Warning: Failed to delete secret or secret already deleted"
+        else
+            echo "Secret deleted."
+        fi
     fi
 }
+
+# Trap errors and perform cleanup
+trap 'handle_error "Script interrupted"' EXIT INT TERM
+
+# Validate AWS credentials and region
+validate_aws_credentials
 
 # Generate a random identifier for resource names
 RANDOM_ID=$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | fold -w 8 | head -n 1)
@@ -68,25 +91,35 @@ SECRET_ARN=""
 echo "Generating secure password and storing in AWS Secrets Manager..."
 
 # Generate a secure password with special characters, numbers, uppercase and lowercase letters
-MQ_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9!@#$%^&*()_+' < /dev/urandom | fold -w 20 | head -n 1)
+# Avoid characters that may cause issues: backslash, quotes
+MQ_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9!@#$%^&*()_+-=' < /dev/urandom | fold -w 20 | head -n 1)
 MQ_USERNAME="mqadmin"
 
-# Create a JSON document with the credentials
-CREDENTIALS_JSON="{\"username\":\"$MQ_USERNAME\",\"password\":\"$MQ_PASSWORD\"}"
+# Validate password was generated
+if [ -z "$MQ_PASSWORD" ] || [ ${#MQ_PASSWORD} -lt 12 ]; then
+    handle_error "Failed to generate secure password"
+fi
+
+# Create a JSON document with the credentials using printf for safer quoting
+CREDENTIALS_JSON=$(printf '{"username":"%s","password":"%s"}' "$MQ_USERNAME" "$MQ_PASSWORD" | jq -c .)
+
+if [ -z "$CREDENTIALS_JSON" ]; then
+    handle_error "Failed to create credentials JSON"
+fi
 
 # Store the credentials in AWS Secrets Manager
 SECRET_RESULT=$(aws secretsmanager create-secret \
   --name "$SECRET_NAME" \
   --description "Amazon MQ broker credentials for $BROKER_NAME" \
-  --secret-string "$CREDENTIALS_JSON")
+  --secret-string "$CREDENTIALS_JSON" 2>&1)
 
 # Check for errors
 if echo "$SECRET_RESULT" | grep -i "error" > /dev/null; then
     handle_error "Failed to create secret: $SECRET_RESULT"
 fi
 
-# Extract secret ARN
-SECRET_ARN=$(echo "$SECRET_RESULT" | grep -o '"ARN": "[^"]*' | cut -d'"' -f4)
+# Extract secret ARN using jq for safer parsing
+SECRET_ARN=$(echo "$SECRET_RESULT" | jq -r '.ARN // empty')
 if [ -z "$SECRET_ARN" ]; then
     handle_error "Failed to extract secret ARN from response"
 fi
@@ -95,8 +128,9 @@ echo "Secret created successfully. ARN: $SECRET_ARN"
 
 # Step 2: Create an Amazon MQ broker
 echo "Creating Amazon MQ broker: $BROKER_NAME"
-# Note: Using publicly-accessible for tutorial purposes only
-# In production, you should use private access and proper network controls
+echo "WARNING: Broker is being created with public accessibility for tutorial purposes only"
+echo "In production, use private subnets and proper network controls"
+
 BROKER_RESULT=$(aws mq create-broker \
   --broker-name "$BROKER_NAME" \
   --engine-type ACTIVEMQ \
@@ -106,15 +140,17 @@ BROKER_RESULT=$(aws mq create-broker \
   --authentication-strategy SIMPLE \
   --users "Username=$MQ_USERNAME,Password=$MQ_PASSWORD,ConsoleAccess=true" \
   --publicly-accessible \
-  --auto-minor-version-upgrade)
+  --auto-minor-version-upgrade \
+  --storage-type EBS \
+  2>&1)
 
 # Check for errors
 if echo "$BROKER_RESULT" | grep -i "error" > /dev/null; then
     handle_error "Failed to create broker: $BROKER_RESULT"
 fi
 
-# Extract broker ID
-BROKER_ID=$(echo "$BROKER_RESULT" | grep -o '"BrokerId": "[^"]*' | cut -d'"' -f4)
+# Extract broker ID using jq for safer parsing
+BROKER_ID=$(echo "$BROKER_RESULT" | jq -r '.BrokerId // empty')
 if [ -z "$BROKER_ID" ]; then
     handle_error "Failed to extract broker ID from response"
 fi
@@ -123,14 +159,17 @@ echo "Broker creation initiated. Broker ID: $BROKER_ID"
 
 # Step 3: Wait for the broker to be in RUNNING state
 echo "Waiting for broker to be in RUNNING state. This may take 15-20 minutes..."
-while true; do
-    BROKER_STATE=$(aws mq describe-broker --broker-id "$BROKER_ID" --query 'BrokerState' --output text)
+MAX_ATTEMPTS=120
+ATTEMPT=0
+
+while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+    BROKER_STATE=$(aws mq describe-broker --broker-id "$BROKER_ID" --query 'BrokerState' --output text 2>&1)
     
     if echo "$BROKER_STATE" | grep -i "error" > /dev/null; then
         handle_error "Error checking broker state: $BROKER_STATE"
     fi
     
-    echo "Current broker state: $BROKER_STATE"
+    echo "Current broker state: $BROKER_STATE (Attempt $((ATTEMPT + 1))/$MAX_ATTEMPTS)"
     
     if [ "$BROKER_STATE" == "RUNNING" ]; then
         echo "Broker is now in RUNNING state"
@@ -139,26 +178,33 @@ while true; do
         handle_error "Broker creation failed"
     fi
     
-    echo "Waiting 60 seconds before checking again..."
-    sleep 60
+    ATTEMPT=$((ATTEMPT + 1))
+    if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+        echo "Waiting 60 seconds before checking again..."
+        sleep 60
+    fi
 done
+
+if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+    handle_error "Broker did not reach RUNNING state within expected time"
+fi
 
 # Step 4: Get broker connection details
 echo "Retrieving broker connection details..."
-BROKER_DETAILS=$(aws mq describe-broker --broker-id "$BROKER_ID")
+BROKER_DETAILS=$(aws mq describe-broker --broker-id "$BROKER_ID" 2>&1)
 
 if echo "$BROKER_DETAILS" | grep -i "error" > /dev/null; then
     handle_error "Failed to get broker details: $BROKER_DETAILS"
 fi
 
-# Extract web console URL
-WEB_CONSOLE=$(aws mq describe-broker --broker-id "$BROKER_ID" --query 'BrokerInstances[0].ConsoleURL' --output text)
+# Extract web console URL using jq
+WEB_CONSOLE=$(echo "$BROKER_DETAILS" | jq -r '.BrokerInstances[0].ConsoleURL // empty')
 if [ -z "$WEB_CONSOLE" ] || [ "$WEB_CONSOLE" == "None" ]; then
     handle_error "Failed to get web console URL"
 fi
 
-# Extract wire-level endpoint for OpenWire
-WIRE_ENDPOINT=$(aws mq describe-broker --broker-id "$BROKER_ID" --query 'BrokerInstances[0].Endpoints[0]' --output text)
+# Extract wire-level endpoint for OpenWire using jq
+WIRE_ENDPOINT=$(echo "$BROKER_DETAILS" | jq -r '.BrokerInstances[0].Endpoints[0] // empty')
 if [ -z "$WIRE_ENDPOINT" ] || [ "$WIRE_ENDPOINT" == "None" ]; then
     handle_error "Failed to get wire-level endpoint"
 fi
@@ -168,7 +214,7 @@ echo "Wire-level Endpoint: $WIRE_ENDPOINT"
 
 # Step 5: Configure security group for the broker
 echo "Configuring security group for the broker..."
-SECURITY_GROUP_ID=$(aws mq describe-broker --broker-id "$BROKER_ID" --query 'SecurityGroups[0]' --output text)
+SECURITY_GROUP_ID=$(echo "$BROKER_DETAILS" | jq -r '.SecurityGroups[0] // empty')
 
 if [ -z "$SECURITY_GROUP_ID" ] || [ "$SECURITY_GROUP_ID" == "None" ]; then
     handle_error "Failed to get security group ID"
@@ -176,36 +222,38 @@ fi
 
 echo "Security Group ID: $SECURITY_GROUP_ID"
 
-# Get current IP address
-CURRENT_IP=$(curl -s https://checkip.amazonaws.com)
+# Get current IP address with timeout and validation
+CURRENT_IP=$(timeout 5 curl -s https://checkip.amazonaws.com | tr -d '[:space:]')
 if [ -z "$CURRENT_IP" ]; then
-    handle_error "Failed to get current IP address"
-fi
+    echo "WARNING: Failed to get current IP address. Skipping security group configuration."
+    echo "You will need to manually configure security group rules for ports 8162 and 61617"
+else
+    # Validate IP format
+    if ! [[ $CURRENT_IP =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        echo "WARNING: Invalid IP address format: $CURRENT_IP. Skipping security group configuration."
+    else
+        echo "Your current IP address: $CURRENT_IP"
 
-echo "Your current IP address: $CURRENT_IP"
+        # Allow inbound connections to the web console (port 8162)
+        echo "Adding inbound rule for web console access (port 8162)..."
+        if ! aws ec2 authorize-security-group-ingress \
+          --group-id "$SECURITY_GROUP_ID" \
+          --protocol tcp \
+          --port 8162 \
+          --cidr "${CURRENT_IP}/32" 2>/dev/null; then
+            echo "Warning: Failed to add security group rule for port 8162. It might already exist or you may not have permissions."
+        fi
 
-# Allow inbound connections to the web console (port 8162)
-echo "Adding inbound rule for web console access (port 8162)..."
-SG_RESULT=$(aws ec2 authorize-security-group-ingress \
-  --group-id "$SECURITY_GROUP_ID" \
-  --protocol tcp \
-  --port 8162 \
-  --cidr "${CURRENT_IP}/32")
-
-if echo "$SG_RESULT" | grep -i "error" > /dev/null; then
-    echo "Warning: Failed to add security group rule for port 8162. It might already exist or you may not have permissions."
-fi
-
-# Allow inbound connections to the OpenWire endpoint (port 61617)
-echo "Adding inbound rule for OpenWire access (port 61617)..."
-SG_RESULT=$(aws ec2 authorize-security-group-ingress \
-  --group-id "$SECURITY_GROUP_ID" \
-  --protocol tcp \
-  --port 61617 \
-  --cidr "${CURRENT_IP}/32")
-
-if echo "$SG_RESULT" | grep -i "error" > /dev/null; then
-    echo "Warning: Failed to add security group rule for port 61617. It might already exist or you may not have permissions."
+        # Allow inbound connections to the OpenWire endpoint (port 61617)
+        echo "Adding inbound rule for OpenWire access (port 61617)..."
+        if ! aws ec2 authorize-security-group-ingress \
+          --group-id "$SECURITY_GROUP_ID" \
+          --protocol tcp \
+          --port 61617 \
+          --cidr "${CURRENT_IP}/32" 2>/dev/null; then
+            echo "Warning: Failed to add security group rule for port 61617. It might already exist or you may not have permissions."
+        fi
+    fi
 fi
 
 # Step 6: Create Java application to connect to the broker
@@ -232,11 +280,13 @@ else
     echo "Maven is not installed. You will need to install Maven to build and run the sample application."
 fi
 
-# Create project directory
-mkdir -p amazon-mq-demo/src/main/java/com/example
+# Create project directory with safe permissions
+PROJECT_DIR="amazon-mq-demo"
+mkdir -p "$PROJECT_DIR/src/main/java/com/example"
+chmod 755 "$PROJECT_DIR"
 
 # Create pom.xml file
-cat > amazon-mq-demo/pom.xml << 'EOF'
+cat > "$PROJECT_DIR/pom.xml" << 'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -250,28 +300,34 @@ cat > amazon-mq-demo/pom.xml << 'EOF'
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.activemq</groupId>
             <artifactId>activemq-client</artifactId>
-            <version>5.15.16</version>
+            <version>5.18.3</version>
         </dependency>
         <dependency>
             <groupId>org.apache.activemq</groupId>
             <artifactId>activemq-pool</artifactId>
-            <version>5.15.16</version>
+            <version>5.18.3</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>secretsmanager</artifactId>
-            <version>2.20.45</version>
+            <version>2.21.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.10.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.7</version>
         </dependency>
     </dependencies>
 
@@ -280,12 +336,12 @@ cat > amazon-mq-demo/pom.xml << 'EOF'
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>3.11.0</version>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>3.0.0</version>
+                <version>3.1.0</version>
                 <configuration>
                     <mainClass>com.example.AmazonMQExample</mainClass>
                 </configuration>
@@ -296,7 +352,7 @@ cat > amazon-mq-demo/pom.xml << 'EOF'
 EOF
 
 # Create Java application file with the actual endpoint and secret retrieval
-cat > amazon-mq-demo/src/main/java/com/example/AmazonMQExample.java << EOF
+cat > "$PROJECT_DIR/src/main/java/com/example/AmazonMQExample.java" << EOF
 package com.example;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -305,6 +361,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
+import software.amazon.awssdk.services.secretsmanager.model.ResourceNotFoundException;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
@@ -321,23 +378,37 @@ public class AmazonMQExample {
     private static String password;
 
     public static void main(String[] args) throws JMSException {
-        // Retrieve credentials from AWS Secrets Manager
-        retrieveCredentials();
-        
-        final ActiveMQConnectionFactory connectionFactory = createActiveMQConnectionFactory();
-        final PooledConnectionFactory pooledConnectionFactory = createPooledConnectionFactory(connectionFactory);
+        try {
+            // Retrieve credentials from AWS Secrets Manager
+            retrieveCredentials();
+            
+            final ActiveMQConnectionFactory connectionFactory = createActiveMQConnectionFactory();
+            final PooledConnectionFactory pooledConnectionFactory = createPooledConnectionFactory(connectionFactory);
 
-        sendMessage(pooledConnectionFactory);
-        receiveMessage(connectionFactory);
+            sendMessage(pooledConnectionFactory);
+            receiveMessage(connectionFactory);
 
-        pooledConnectionFactory.stop();
+            pooledConnectionFactory.stop();
+            
+            System.out.println("Application completed successfully");
+        } catch (Exception e) {
+            System.err.println("Fatal error: " + e.getMessage());
+            e.printStackTrace();
+            System.exit(1);
+        }
     }
     
     private static void retrieveCredentials() {
+        SecretsManagerClient client = null;
         try {
             // Create a Secrets Manager client
-            SecretsManagerClient client = SecretsManagerClient.builder()
-                    .region(Region.of(System.getenv("AWS_REGION")))
+            String region = System.getenv("AWS_REGION");
+            if (region == null || region.isEmpty()) {
+                throw new IllegalArgumentException("AWS_REGION environment variable not set");
+            }
+            
+            client = SecretsManagerClient.builder()
+                    .region(Region.of(region))
                     .build();
                     
             GetSecretValueRequest getSecretValueRequest = GetSecretValueRequest.builder()
@@ -347,21 +418,45 @@ public class AmazonMQExample {
             GetSecretValueResponse getSecretValueResponse = client.getSecretValue(getSecretValueRequest);
             String secretString = getSecretValueResponse.secretString();
             
+            if (secretString == null || secretString.isEmpty()) {
+                throw new IllegalArgumentException("Secret value is empty");
+            }
+            
             // Parse the JSON string
             JsonObject jsonObject = new Gson().fromJson(secretString, JsonObject.class);
+            
+            if (!jsonObject.has("username") || !jsonObject.has("password")) {
+                throw new IllegalArgumentException("Secret does not contain required fields");
+            }
+            
             username = jsonObject.get("username").getAsString();
             password = jsonObject.get("password").getAsString();
             
+            if (username == null || username.isEmpty() || password == null || password.isEmpty()) {
+                throw new IllegalArgumentException("Username or password is empty");
+            }
+            
             System.out.println("Successfully retrieved credentials from AWS Secrets Manager");
+        } catch (ResourceNotFoundException e) {
+            System.err.println("Error: Secret not found in AWS Secrets Manager: " + e.getMessage());
+            System.exit(1);
         } catch (Exception e) {
             System.err.println("Error retrieving credentials from AWS Secrets Manager: " + e.getMessage());
             System.exit(1);
+        } finally {
+            if (client != null) {
+                client.close();
+            }
         }
     }
 
     private static void sendMessage(PooledConnectionFactory pooledConnectionFactory) throws JMSException {
         // Establish a connection for the producer
         final Connection producerConnection = pooledConnectionFactory.createConnection();
+        producerConnection.setExceptionListener(exception -> {
+            System.err.println("JMS Exception: " + exception.getMessage());
+            exception.printStackTrace();
+        });
         producerConnection.start();
 
         // Create a session
@@ -392,6 +487,10 @@ public class AmazonMQExample {
         // Establish a connection for the consumer
         // Note: Consumers should not use PooledConnectionFactory
         final Connection consumerConnection = connectionFactory.createConnection();
+        consumerConnection.setExceptionListener(exception -> {
+            System.err.println("JMS Exception: " + exception.getMessage());
+            exception.printStackTrace();
+        });
         consumerConnection.start();
 
         // Create a session
@@ -407,8 +506,12 @@ public class AmazonMQExample {
         final Message consumerMessage = consumer.receive(1000);
 
         // Receive the message when it arrives
-        final TextMessage consumerTextMessage = (TextMessage) consumerMessage;
-        System.out.println("Message received: " + consumerTextMessage.getText());
+        if (consumerMessage != null) {
+            final TextMessage consumerTextMessage = (TextMessage) consumerMessage;
+            System.out.println("Message received: " + consumerTextMessage.getText());
+        } else {
+            System.out.println("No message received within timeout period");
+        }
 
         // Clean up the consumer
         consumer.close();
@@ -437,12 +540,13 @@ public class AmazonMQExample {
 EOF
 
 echo "Java application created successfully"
-echo "Project location: $(pwd)/amazon-mq-demo"
+echo "Project location: $(pwd)/$PROJECT_DIR"
 
 # Step 7: Instructions for building and running the application
 echo ""
 echo "To build and run the Java application, execute the following commands:"
-echo "cd amazon-mq-demo"
+echo "cd $PROJECT_DIR"
+echo "export AWS_REGION=$AWS_REGION"
 echo "mvn clean compile"
 echo "mvn exec:java"
 echo ""
@@ -483,25 +587,22 @@ echo "Amazon MQ Broker ID: $BROKER_ID"
 echo "Web Console URL: $WEB_CONSOLE"
 echo "Wire-level Endpoint: $WIRE_ENDPOINT"
 echo "Username: $MQ_USERNAME"
-echo "Password: Stored in AWS Secrets Manager"
+echo "Password: Stored in AWS Secrets Manager (not displayed)"
 echo "Secret Name: $SECRET_NAME"
 echo "Secret ARN: $SECRET_ARN"
+echo "Security Group ID: $SECURITY_GROUP_ID"
 echo ""
 
-# Ask if user wants to clean up resources
+# Display cleanup instructions
+echo "==========================================="
+echo "CLEANUP INSTRUCTIONS"
+echo "==========================================="
+echo "To manually clean up resources created by this script, execute:"
+echo "aws mq delete-broker --broker-id $BROKER_ID"
+echo "aws secretsmanager delete-secret --secret-id $SECRET_ARN --force-delete-without-recovery"
 echo ""
-echo "==========================================="
-echo "CLEANUP CONFIRMATION"
-echo "==========================================="
-echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
-
-if [[ "${CLEANUP_CHOICE,,}" == "y" ]]; then
-    cleanup_resources
-else
-    echo "Resources were not cleaned up. You can manually delete them later using:"
-    echo "aws mq delete-broker --broker-id $BROKER_ID"
-    echo "aws secretsmanager delete-secret --secret-id $SECRET_ARN --force-delete-without-recovery"
-fi
 
 echo "Script completed at $(date)"
+
+# Disable automatic cleanup trap
+trap - EXIT INT TERM

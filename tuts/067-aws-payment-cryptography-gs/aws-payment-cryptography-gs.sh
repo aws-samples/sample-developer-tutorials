@@ -4,14 +4,18 @@
 # This script demonstrates how to use AWS Payment Cryptography to create a key,
 # generate and verify CVV2 values, and clean up resources.
 
-# Initialize log file
+set -euo pipefail
+
+# Initialize log file with secure permissions
 LOG_FILE="payment-cryptography-tutorial.log"
-echo "AWS Payment Cryptography Tutorial - $(date)" > $LOG_FILE
+touch "$LOG_FILE"
+chmod 600 "$LOG_FILE"
+echo "AWS Payment Cryptography Tutorial - $(date)" > "$LOG_FILE"
 
 # Function to log messages
 log() {
     local message="$1"
-    echo "$(date +"%Y-%m-%d %H:%M:%S") - $message" | tee -a $LOG_FILE
+    echo "$(date +"%Y-%m-%d %H:%M:%S") - $message" | tee -a "$LOG_FILE"
 }
 
 # Function to handle errors
@@ -28,7 +32,7 @@ handle_error() {
     echo "Resources created will be listed below."
     echo ""
     
-    if [ -n "$KEY_ARN" ]; then
+    if [ -n "${KEY_ARN:-}" ]; then
         echo "Key ARN: $KEY_ARN"
     fi
     
@@ -40,18 +44,29 @@ check_error() {
     local output="$1"
     local command="$2"
     
-    if echo "$output" | grep -i "error\|exception\|fail" > /dev/null; then
-        handle_error "Command failed: $command. Output: $output"
+    if echo "$output" | grep -iq "error\|exception\|fail"; then
+        handle_error "Command failed: $command"
     fi
 }
+
+# Validate AWS CLI is available and credentials are configured
+if ! command -v aws &> /dev/null; then
+    handle_error "AWS CLI is not installed or not in PATH"
+fi
+
+if ! aws sts get-caller-identity &> /dev/null; then
+    handle_error "AWS credentials are not properly configured"
+fi
 
 log "Starting AWS Payment Cryptography tutorial"
 
 # Step 1: Create a key
 log "Step 1: Creating a card verification key (CVK)"
-KEY_OUTPUT=$(aws payment-cryptography create-key \
+if ! KEY_OUTPUT=$(aws payment-cryptography create-key \
   --exportable \
-  --key-attributes KeyAlgorithm=TDES_2KEY,KeyUsage=TR31_C0_CARD_VERIFICATION_KEY,KeyClass=SYMMETRIC_KEY,KeyModesOfUse='{Generate=true,Verify=true}' 2>&1)
+  --key-attributes KeyAlgorithm=TDES_2KEY,KeyUsage=TR31_C0_CARD_VERIFICATION_KEY,KeyClass=SYMMETRIC_KEY,KeyModesOfUse='{Generate=true,Verify=true}' 2>&1); then
+    handle_error "Failed to create key"
+fi
 
 echo "$KEY_OUTPUT"
 check_error "$KEY_OUTPUT" "create-key"
@@ -67,10 +82,12 @@ log "Successfully created key with ARN: $KEY_ARN"
 
 # Step 2: Generate a CVV2 value
 log "Step 2: Generating a CVV2 value"
-CVV2_OUTPUT=$(aws payment-cryptography-data generate-card-validation-data \
+if ! CVV2_OUTPUT=$(aws payment-cryptography-data generate-card-validation-data \
   --key-identifier "$KEY_ARN" \
   --primary-account-number=171234567890123 \
-  --generation-attributes CardVerificationValue2={CardExpiryDate=0123} 2>&1)
+  --generation-attributes CardVerificationValue2={CardExpiryDate=0123} 2>&1); then
+    handle_error "Failed to generate CVV2 value"
+fi
 
 echo "$CVV2_OUTPUT"
 check_error "$CVV2_OUTPUT" "generate-card-validation-data"
@@ -82,15 +99,17 @@ if [ -z "$CVV2_VALUE" ]; then
     handle_error "Failed to extract CVV2 value from output"
 fi
 
-log "Successfully generated CVV2 value: $CVV2_VALUE"
+log "Successfully generated CVV2 value"
 
 # Step 3: Verify the CVV2 value
 log "Step 3: Verifying the CVV2 value"
-VERIFY_OUTPUT=$(aws payment-cryptography-data verify-card-validation-data \
+if ! VERIFY_OUTPUT=$(aws payment-cryptography-data verify-card-validation-data \
   --key-identifier "$KEY_ARN" \
   --primary-account-number=171234567890123 \
   --verification-attributes CardVerificationValue2={CardExpiryDate=0123} \
-  --validation-data "$CVV2_VALUE" 2>&1)
+  --validation-data "$CVV2_VALUE" 2>&1); then
+    handle_error "Failed to verify CVV2 value"
+fi
 
 echo "$VERIFY_OUTPUT"
 check_error "$VERIFY_OUTPUT" "verify-card-validation-data"
@@ -99,15 +118,17 @@ log "Successfully verified CVV2 value"
 
 # Step 4: Perform a negative test
 log "Step 4: Performing a negative test with incorrect CVV2"
-NEGATIVE_OUTPUT=$(aws payment-cryptography-data verify-card-validation-data \
+if ! NEGATIVE_OUTPUT=$(aws payment-cryptography-data verify-card-validation-data \
   --key-identifier "$KEY_ARN" \
   --primary-account-number=171234567890123 \
   --verification-attributes CardVerificationValue2={CardExpiryDate=0123} \
-  --validation-data 999 2>&1 || echo "Expected error: Verification failed")
+  --validation-data 999 2>&1); then
+    NEGATIVE_OUTPUT=$?
+fi
 
 echo "$NEGATIVE_OUTPUT"
 
-if ! echo "$NEGATIVE_OUTPUT" | grep -i "fail\|error" > /dev/null; then
+if ! echo "$NEGATIVE_OUTPUT" | grep -iq "fail\|error"; then
     handle_error "Negative test did not fail as expected"
 fi
 
@@ -121,43 +142,35 @@ echo "==========================================="
 echo "Key ARN: $KEY_ARN"
 echo ""
 
-# Prompt for cleanup
+# Auto-confirm cleanup
 echo "==========================================="
 echo "CLEANUP CONFIRMATION"
 echo "==========================================="
-echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+echo "Proceeding with cleanup of all created resources..."
 
-if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
-    log "Step 5: Cleaning up resources"
-    
-    # Delete the key
-    log "Deleting key: $KEY_ARN"
-    DELETE_OUTPUT=$(aws payment-cryptography delete-key \
-      --key-identifier "$KEY_ARN" 2>&1)
-    
-    echo "$DELETE_OUTPUT"
-    check_error "$DELETE_OUTPUT" "delete-key"
-    
-    log "Key scheduled for deletion. Default waiting period is 7 days."
-    log "To cancel deletion before the waiting period ends, use:"
-    log "aws payment-cryptography restore-key --key-identifier $KEY_ARN"
-    
-    echo ""
-    echo "==========================================="
-    echo "CLEANUP COMPLETE"
-    echo "==========================================="
-    echo "The key has been scheduled for deletion after the default waiting period (7 days)."
-    echo "To cancel deletion before the waiting period ends, use:"
-    echo "aws payment-cryptography restore-key --key-identifier $KEY_ARN"
-else
-    log "Cleanup skipped. Resources were not deleted."
-    echo ""
-    echo "==========================================="
-    echo "CLEANUP SKIPPED"
-    echo "==========================================="
-    echo "Resources were not deleted. You can manually delete them later."
+log "Step 5: Cleaning up resources"
+
+# Delete the key
+log "Deleting key: $KEY_ARN"
+if ! DELETE_OUTPUT=$(aws payment-cryptography delete-key \
+  --key-identifier "$KEY_ARN" 2>&1); then
+    handle_error "Failed to delete key"
 fi
+
+echo "$DELETE_OUTPUT"
+check_error "$DELETE_OUTPUT" "delete-key"
+
+log "Key scheduled for deletion. Default waiting period is 7 days."
+log "To cancel deletion before the waiting period ends, use:"
+log "aws payment-cryptography restore-key --key-identifier $KEY_ARN"
+
+echo ""
+echo "==========================================="
+echo "CLEANUP COMPLETE"
+echo "==========================================="
+echo "The key has been scheduled for deletion after the default waiting period (7 days)."
+echo "To cancel deletion before the waiting period ends, use:"
+echo "aws payment-cryptography restore-key --key-identifier $KEY_ARN"
 
 log "Tutorial completed successfully"
 echo ""

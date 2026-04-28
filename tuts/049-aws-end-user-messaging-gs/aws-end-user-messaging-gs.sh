@@ -8,21 +8,55 @@
 # - AWS CLI installed and configured
 # - Appropriate IAM permissions for Pinpoint operations
 #
-# Usage: ./2-cli-script-final-working.sh [--auto-cleanup]
+# Usage: ./aws-end-user-messaging-gs.sh [--auto-cleanup]
 
-# Check for auto-cleanup flag
-AUTO_CLEANUP=false
-if [[ "${1:-}" == "--auto-cleanup" ]]; then
-    AUTO_CLEANUP=true
-fi
+set -euo pipefail
 
-# Set up logging
-LOG_FILE="aws-end-user-messaging-push-script-$(date +%Y%m%d-%H%M%S).log"
+# Security: Set secure umask for created files
+umask 0077
+
+# Set up logging with secure file permissions
+LOG_DIR="${XDG_STATE_HOME:-.}/aws-eump-logs"
+mkdir -p "$LOG_DIR"
+chmod 700 "$LOG_DIR"
+
+LOG_FILE="$LOG_DIR/aws-end-user-messaging-push-script-$(date +%Y%m%d-%H%M%S).log"
 exec > >(tee -a "$LOG_FILE") 2>&1
+chmod 600 "$LOG_FILE"
 
 echo "Starting AWS End User Messaging Push setup script..."
 echo "Logging to $LOG_FILE"
 echo "Timestamp: $(date)"
+
+# Security: Track created resources for cleanup
+declare -a TEMP_FILES=()
+declare -a AWS_RESOURCES=()
+
+# Cleanup function with improved security
+cleanup() {
+    local exit_code=$?
+    echo "Cleaning up temporary resources..."
+    
+    # Remove temporary files securely
+    for temp_file in "${TEMP_FILES[@]}"; do
+        if [ -f "$temp_file" ]; then
+            shred -vfz -n 3 "$temp_file" 2>/dev/null || rm -f "$temp_file"
+        fi
+    done
+    
+    # Optionally delete AWS resources
+    if [ "${DELETE_AWS_RESOURCES:-false}" = "true" ]; then
+        for resource in "${AWS_RESOURCES[@]}"; do
+            echo "Deleting AWS resource: $resource"
+            aws pinpoint delete-app --application-id "$resource" 2>/dev/null || \
+                echo "Warning: Failed to delete application $resource"
+        done
+    fi
+    
+    exit "$exit_code"
+}
+
+trap cleanup EXIT INT TERM
 
 # Function to check for errors in command output
 check_error() {
@@ -31,34 +65,18 @@ check_error() {
     local ignore_error=${3:-false}
     
     if echo "$output" | grep -qi "error\|exception\|fail"; then
-        echo "ERROR: Command failed: $cmd"
-        echo "Error details: $output"
+        echo "ERROR: Command failed: $cmd" >&2
+        echo "Error details: $output" >&2
         
         if [ "$ignore_error" = "true" ]; then
-            echo "Ignoring error and continuing..."
+            echo "Ignoring error and continuing..." >&2
             return 1
         else
-            cleanup_on_error
-            exit 1
+            return 2
         fi
     fi
     
     return 0
-}
-
-# Function to clean up resources on error
-cleanup_on_error() {
-    echo "Error encountered. Cleaning up resources..."
-    
-    if [ -n "${APP_ID:-}" ]; then
-        echo "Deleting application with ID: $APP_ID"
-        aws pinpoint delete-app --application-id "$APP_ID" 2>/dev/null || echo "Failed to delete application"
-    fi
-    
-    # Clean up any created files
-    rm -f gcm-message.json apns-message.json
-    
-    echo "Cleanup completed."
 }
 
 # Function to validate AWS CLI is configured
@@ -67,20 +85,20 @@ validate_aws_cli() {
     
     # Check if AWS CLI is installed
     if ! command -v aws &> /dev/null; then
-        echo "ERROR: AWS CLI is not installed. Please install it first."
-        echo "Visit: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html"
-        exit 1
+        echo "ERROR: AWS CLI is not installed. Please install it first." >&2
+        echo "Visit: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html" >&2
+        return 1
     fi
     
     # Check AWS CLI version
     AWS_VERSION=$(aws --version 2>&1 | head -n1)
     echo "AWS CLI version: $AWS_VERSION"
     
-    # Check if AWS CLI is configured
+    # Verify credentials are set (check for credential env vars or config file)
     if ! aws sts get-caller-identity &> /dev/null; then
-        echo "ERROR: AWS CLI is not configured or credentials are invalid."
-        echo "Please run 'aws configure' to set up your credentials."
-        exit 1
+        echo "ERROR: AWS CLI credentials are not configured or invalid." >&2
+        echo "Please configure credentials via environment variables, credential file, or 'aws configure'" >&2
+        return 1
     fi
     
     # Get current AWS identity and region
@@ -90,6 +108,8 @@ validate_aws_cli() {
     echo "$CALLER_IDENTITY"
     echo "Current region: $CURRENT_REGION"
     echo ""
+    
+    return 0
 }
 
 # Function to check if jq is available for JSON parsing
@@ -104,16 +124,16 @@ check_json_tools() {
     fi
 }
 
-# Function to extract JSON values
+# Function to extract JSON values safely
 extract_json_value() {
     local json=$1
     local key=$2
     
     if [ "$USE_JQ" = "true" ]; then
-        echo "$json" | jq -r ".$key"
+        echo "$json" | jq -r ".ApplicationResponse.$key // empty" 2>/dev/null || echo ""
     else
-        # Fallback to grep method
-        echo "$json" | grep -o "\"$key\": \"[^\"]*" | cut -d'"' -f4 | head -n1
+        # Fallback to grep method with better validation
+        echo "$json" | grep -o "\"$key\": \"[^\"]*" | cut -d'"' -f4 | head -n1 || echo ""
     fi
 }
 
@@ -123,22 +143,55 @@ validate_permissions() {
     
     # Test basic Pinpoint permissions
     if ! aws pinpoint get-apps &> /dev/null; then
-        echo "WARNING: Unable to list Pinpoint applications. Please ensure you have the following IAM permissions:"
-        echo "- mobiletargeting:GetApps"
-        echo "- mobiletargeting:CreateApp"
-        echo "- mobiletargeting:DeleteApp"
-        echo "- mobiletargeting:UpdateGcmChannel"
-        echo "- mobiletargeting:UpdateApnsChannel"
-        echo "- mobiletargeting:SendMessages"
-        echo ""
-        echo "Continuing anyway..."
+        echo "WARNING: Unable to list Pinpoint applications." >&2
+        echo "Please ensure you have appropriate IAM permissions for Pinpoint operations." >&2
+        echo "Required permissions:" >&2
+        echo "  - mobiletargeting:GetApps" >&2
+        echo "  - mobiletargeting:CreateApp" >&2
+        echo "  - mobiletargeting:DeleteApp" >&2
+        echo "  - mobiletargeting:UpdateGcmChannel" >&2
+        echo "  - mobiletargeting:UpdateApnsChannel" >&2
+        echo "  - mobiletargeting:SendMessages" >&2
     else
         echo "Basic Pinpoint permissions validated."
     fi
 }
 
+# Function to validate input parameters
+validate_input() {
+    local app_name=$1
+    
+    # Validate app name length and characters
+    if [ ${#app_name} -gt 64 ]; then
+        echo "ERROR: Application name exceeds maximum length of 64 characters" >&2
+        return 1
+    fi
+    
+    if ! [[ "$app_name" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        echo "ERROR: Application name contains invalid characters" >&2
+        return 1
+    fi
+    
+    return 0
+}
+
+# Function to create secure temporary files
+create_temp_file() {
+    local temp_file
+    temp_file=$(mktemp) || {
+        echo "ERROR: Failed to create temporary file" >&2
+        return 1
+    }
+    chmod 600 "$temp_file"
+    TEMP_FILES+=("$temp_file")
+    echo "$temp_file"
+}
+
 # Validate prerequisites
-validate_aws_cli
+if ! validate_aws_cli; then
+    exit 1
+fi
+
 check_json_tools
 validate_permissions
 
@@ -146,33 +199,35 @@ validate_permissions
 RANDOM_SUFFIX=$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | fold -w 8 | head -n1)
 APP_NAME="PushNotificationApp-${RANDOM_SUFFIX}"
 
+# Validate input
+if ! validate_input "$APP_NAME"; then
+    exit 1
+fi
+
 echo "Creating application with name: $APP_NAME"
 
 # Step 1: Create an application
 echo "Executing: aws pinpoint create-app --create-application-request Name=${APP_NAME}"
 CREATE_APP_OUTPUT=$(aws pinpoint create-app --create-application-request "Name=${APP_NAME}" 2>&1)
-check_error "$CREATE_APP_OUTPUT" "create-app"
+
+if ! check_error "$CREATE_APP_OUTPUT" "create-app"; then
+    exit 1
+fi
 
 echo "Application created successfully:"
 echo "$CREATE_APP_OUTPUT"
 
 # Extract the application ID from the output
-if [ "$USE_JQ" = "true" ]; then
-    APP_ID=$(echo "$CREATE_APP_OUTPUT" | jq -r '.ApplicationResponse.Id')
-else
-    APP_ID=$(echo "$CREATE_APP_OUTPUT" | grep -o '"Id": "[^"]*' | cut -d'"' -f4 | head -n1)
-fi
+APP_ID=$(extract_json_value "$CREATE_APP_OUTPUT" "Id")
 
 if [ -z "$APP_ID" ] || [ "$APP_ID" = "null" ]; then
-    echo "ERROR: Failed to extract application ID from output"
-    echo "Output was: $CREATE_APP_OUTPUT"
+    echo "ERROR: Failed to extract application ID from output" >&2
+    echo "Output was: $CREATE_APP_OUTPUT" >&2
     exit 1
 fi
 
 echo "Application ID: $APP_ID"
-
-# Create a resources list to track what we've created
-RESOURCES=("Application: $APP_ID")
+AWS_RESOURCES+=("$APP_ID")
 
 # Step 2: Enable FCM (GCM) channel with a sample API key
 echo ""
@@ -194,7 +249,6 @@ UPDATE_GCM_OUTPUT=$(aws pinpoint update-gcm-channel \
 if check_error "$UPDATE_GCM_OUTPUT" "update-gcm-channel" "true"; then
     echo "FCM channel enabled successfully:"
     echo "$UPDATE_GCM_OUTPUT"
-    RESOURCES+=("GCM Channel for application: $APP_ID")
 else
     echo "As expected, FCM channel update failed with the placeholder API key."
     echo "Error details: $UPDATE_GCM_OUTPUT"
@@ -224,7 +278,6 @@ UPDATE_APNS_OUTPUT=$(aws pinpoint update-apns-channel \
 if check_error "$UPDATE_APNS_OUTPUT" "update-apns-channel" "true"; then
     echo "APNS channel enabled successfully:"
     echo "$UPDATE_APNS_OUTPUT"
-    RESOURCES+=("APNS Channel for application: $APP_ID")
 else
     echo "As expected, APNS channel update failed with placeholder certificates."
     echo "Error details: $UPDATE_APNS_OUTPUT"
@@ -241,9 +294,10 @@ echo "==========================================="
 echo "CREATING MESSAGE FILES"
 echo "==========================================="
 
-# Create FCM message file
+# Create FCM message file securely
+GCM_MESSAGE_FILE=$(create_temp_file)
 echo "Creating FCM message file..."
-cat > gcm-message.json << 'EOF'
+cat > "$GCM_MESSAGE_FILE" << 'EOF'
 {
   "Addresses": {
     "SAMPLE-DEVICE-TOKEN-FCM": {
@@ -267,9 +321,10 @@ cat > gcm-message.json << 'EOF'
 }
 EOF
 
-# Create APNS message file
+# Create APNS message file securely
+APNS_MESSAGE_FILE=$(create_temp_file)
 echo "Creating APNS message file..."
-cat > apns-message.json << 'EOF'
+cat > "$APNS_MESSAGE_FILE" << 'EOF'
 {
   "Addresses": {
     "SAMPLE-DEVICE-TOKEN-APNS": {
@@ -292,8 +347,8 @@ cat > apns-message.json << 'EOF'
 EOF
 
 echo "Message files created:"
-echo "- gcm-message.json (for FCM/Android)"
-echo "- apns-message.json (for APNS/iOS)"
+echo "- FCM message file (for FCM/Android)"
+echo "- APNS message file (for APNS/iOS)"
 echo ""
 echo "Note: These messages use placeholder device tokens and will not actually be delivered."
 echo "To send real messages, you would need to replace the sample device tokens with actual ones."
@@ -305,10 +360,10 @@ echo "DEMONSTRATING MESSAGE SENDING"
 echo "==========================================="
 echo "Attempting to send FCM message (will fail with placeholder token)..."
 
-echo "Executing: aws pinpoint send-messages --application-id $APP_ID --message-request file://gcm-message.json"
+echo "Executing: aws pinpoint send-messages --application-id $APP_ID --message-request file://<gcm-message>"
 SEND_FCM_OUTPUT=$(aws pinpoint send-messages \
     --application-id "$APP_ID" \
-    --message-request file://gcm-message.json 2>&1)
+    --message-request "file://$GCM_MESSAGE_FILE" 2>&1)
 
 if check_error "$SEND_FCM_OUTPUT" "send-messages (FCM)" "true"; then
     echo "FCM message sent successfully:"
@@ -321,10 +376,10 @@ fi
 echo ""
 echo "Attempting to send APNS message (will fail with placeholder token)..."
 
-echo "Executing: aws pinpoint send-messages --application-id $APP_ID --message-request file://apns-message.json"
+echo "Executing: aws pinpoint send-messages --application-id $APP_ID --message-request file://<apns-message>"
 SEND_APNS_OUTPUT=$(aws pinpoint send-messages \
     --application-id "$APP_ID" \
-    --message-request file://apns-message.json 2>&1)
+    --message-request "file://$APNS_MESSAGE_FILE" 2>&1)
 
 if check_error "$SEND_APNS_OUTPUT" "send-messages (APNS)" "true"; then
     echo "APNS message sent successfully:"
@@ -353,60 +408,28 @@ echo ""
 echo "==========================================="
 echo "RESOURCES CREATED"
 echo "==========================================="
-for resource in "${RESOURCES[@]}"; do
-    echo "- $resource"
+echo "AWS Resources:"
+for resource in "${AWS_RESOURCES[@]}"; do
+    echo "- Application: $resource"
 done
 
 echo ""
 echo "Files created:"
-echo "- gcm-message.json"
-echo "- apns-message.json"
-echo "- $LOG_FILE"
+echo "- $LOG_FILE (script log)"
 
-# Cleanup prompt with proper input handling
+# Auto-cleanup information
 echo ""
 echo "==========================================="
-echo "CLEANUP CONFIRMATION"
+echo "CLEANUP INFORMATION"
 echo "==========================================="
 echo "This script created AWS resources that may incur charges."
+echo "AWS resources will be automatically cleaned up on script exit."
+echo ""
+echo "To manually delete resources later, use:"
+echo "  aws pinpoint delete-app --application-id $APP_ID"
 
-if [ "$AUTO_CLEANUP" = "true" ]; then
-    echo "Auto-cleanup enabled. Cleaning up resources..."
-    CLEANUP_CHOICE="y"
-else
-    echo "Do you want to clean up all created resources? (y/n): "
-    read -r CLEANUP_CHOICE
-fi
-
-if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
-    echo ""
-    echo "Cleaning up resources..."
-    
-    echo "Deleting application with ID: $APP_ID"
-    echo "Executing: aws pinpoint delete-app --application-id $APP_ID"
-    DELETE_APP_OUTPUT=$(aws pinpoint delete-app --application-id "$APP_ID" 2>&1)
-    if check_error "$DELETE_APP_OUTPUT" "delete-app" "true"; then
-        echo "Application deleted successfully."
-    else
-        echo "Failed to delete application. You may need to delete it manually:"
-        echo "aws pinpoint delete-app --application-id $APP_ID"
-    fi
-    
-    echo "Deleting message files..."
-    rm -f gcm-message.json apns-message.json
-    
-    echo "Cleanup completed successfully."
-    echo "Log file ($LOG_FILE) has been preserved for reference."
-else
-    echo ""
-    echo "Skipping cleanup. Resources will remain in your AWS account."
-    echo ""
-    echo "To manually delete the application later, run:"
-    echo "aws pinpoint delete-app --application-id $APP_ID"
-    echo ""
-    echo "To delete the message files, run:"
-    echo "rm -f gcm-message.json apns-message.json"
-fi
+# Set flag to delete AWS resources on cleanup
+DELETE_AWS_RESOURCES=true
 
 echo ""
 echo "==========================================="
@@ -420,12 +443,23 @@ echo "4. Demonstrating message sending commands (with placeholder tokens)"
 echo "5. Retrieving application details"
 echo "6. Proper cleanup of resources"
 echo ""
+echo "Security best practices implemented:"
+echo "- Secure temporary file handling with restricted permissions"
+echo "- Input validation for application names"
+echo "- Error handling with proper exit codes"
+echo "- Credential validation before AWS operations"
+echo "- Automatic cleanup on script exit"
+echo "- Secure file destruction for sensitive data"
+echo ""
 echo "For production use:"
 echo "- Replace placeholder API keys with real FCM server keys"
 echo "- Replace placeholder certificates with real APNS certificates"
 echo "- Replace placeholder device tokens with real device tokens"
-echo "- Implement proper error handling for your use case"
-echo "- Consider using AWS IAM roles instead of long-term credentials"
+echo "- Use AWS IAM roles instead of long-term credentials"
+echo "- Implement comprehensive error handling"
+echo "- Store sensitive credentials in AWS Secrets Manager or Parameter Store"
+echo "- Enable CloudTrail for audit logging"
+echo "- Use VPC endpoints for private AWS API access"
 echo ""
 echo "Log file: $LOG_FILE"
 echo "Script completed at: $(date)"
