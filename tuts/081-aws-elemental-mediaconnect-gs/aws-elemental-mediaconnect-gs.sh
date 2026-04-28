@@ -77,7 +77,7 @@ cleanup_resources() {
     
     if [ -n "${FLOW_ARN:-}" ]; then
         # Security: Validate ARN format before using it
-        if [[ ! "$FLOW_ARN" =~ ^arn:aws:mediaconnect:[a-z0-9-]+:[0-9]+:flow:[a-zA-Z0-9-]+$ ]]; then
+        if [[ ! "$FLOW_ARN" =~ ^arn:aws:mediaconnect:[a-z0-9-]+:[0-9]+:flow:[a-zA-Z0-9:-]+$ ]]; then
             echo "WARNING: Invalid Flow ARN format, skipping cleanup: $FLOW_ARN"
             return 1
         fi
@@ -192,14 +192,17 @@ else
 fi
 
 # Extract the flow ARN from the output
-FLOW_ARN=$(extract_json_value "$create_flow_output" "FlowArn")
+FLOW_ARN=$(echo "$create_flow_output" | jq -r '.Flow.FlowArn // empty' 2>/dev/null)
+if [ -z "$FLOW_ARN" ]; then
+    FLOW_ARN=$(echo "$create_flow_output" | grep -o '"FlowArn": "[^"]*' | head -1 | cut -d'"' -f4)
+fi
 if [ -z "$FLOW_ARN" ]; then
     handle_error "Failed to extract flow ARN from output"
 fi
 echo "Flow ARN: $FLOW_ARN"
 
 # Validate flow ARN format
-if [[ ! "$FLOW_ARN" =~ ^arn:aws:mediaconnect:[a-z0-9-]+:[0-9]+:flow:[a-zA-Z0-9-]+$ ]]; then
+if [[ ! "$FLOW_ARN" =~ ^arn:aws:mediaconnect:[a-z0-9-]+:[0-9]+:flow:[a-zA-Z0-9:-]+$ ]]; then
     handle_error "Invalid Flow ARN format: $FLOW_ARN"
 fi
 
@@ -216,7 +219,8 @@ fi
 
 # Extract the output ARN
 output_arn=""
-output_arn=$(extract_json_value "$add_output_output" "OutputArn")
+output_arn=$(echo "$add_output_output" | jq -r ".Output.OutputArn // empty" 2>/dev/null)
+if [ -z "$output_arn" ]; then output_arn=$(echo "$add_output_output" | grep -o '"OutputArn": "[^"]*' | head -1 | cut -d'"' -f4); fi
 if [ -z "$output_arn" ]; then
     echo "WARNING: Failed to extract output ARN from output"
 else
@@ -237,7 +241,10 @@ fi
 
 # Extract the entitlement ARN
 entitlement_arn=""
-entitlement_arn=$(extract_json_value "$grant_entitlement_output" "EntitlementArn")
+entitlement_arn=$(echo "$grant_entitlement_output" | jq -r '.Entitlement.EntitlementArn // empty' 2>/dev/null)
+if [ -z "$entitlement_arn" ]; then
+    entitlement_arn=$(echo "$grant_entitlement_output" | grep -o '"EntitlementArn": "[^"]*' | head -1 | cut -d'"' -f4)
+fi
 if [ -z "$entitlement_arn" ]; then
     echo "WARNING: Failed to extract entitlement ARN from output"
 else
