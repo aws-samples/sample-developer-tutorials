@@ -14,3 +14,7 @@
 ### 2026-04-27 v-ni1 non-interactive
 - Type: functional
 - Made script fully non-interactive for automated testing
+
+### 2026-04-28 note
+- Type: documentation
+- This tutorial cannot run non-interactively. SES sandbox requires real email verification via inbox click. The read prompts that wait for verification are intentional and cannot be auto-answered.
