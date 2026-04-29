@@ -156,15 +156,13 @@ echo "=== Step 1: Creating Amazon Redshift Cluster ==="
 echo "Creating Redshift cluster: $CLUSTER_ID"
 CLUSTER_RESULT=$(aws redshift create-cluster \
   --cluster-identifier "$CLUSTER_ID" \
-  --node-type ra3.4xlarge \
+  --node-type ra3.xlplus \
   --number-of-nodes 2 \
   --master-username "$DB_USER" \
   --master-user-password "$DB_PASSWORD" \
   --db-name "$DB_NAME" \
   --port 5439 \
   --encrypted \
-  --enable-logging \
-  --log-bucket-name "redshift-logs-$(date +%s)" \
   2>&1) || handle_error "Failed to create Redshift cluster"
 
 echo "$CLUSTER_RESULT"

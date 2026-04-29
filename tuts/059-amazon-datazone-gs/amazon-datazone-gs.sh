@@ -296,6 +296,7 @@ echo "Step 3: Creating Environment Profile..."
 echo "Listing available environment blueprints..."
 BLUEPRINTS_RESULT=$(aws datazone list-environment-blueprints \
   --domain-identifier "$DOMAIN_ID" \
+  --managed \
   --region "$REGION")
 
 check_error "$BLUEPRINTS_RESULT" "list-environment-blueprints"

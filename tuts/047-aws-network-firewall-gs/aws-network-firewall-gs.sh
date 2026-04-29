@@ -695,7 +695,7 @@ fi
 
 # Update the internet gateway route table
 echo "Updating internet gateway route table..."
-if ! aws ec2 create-route \
+if ! aws ec2 replace-route \
   --route-table-id "$IGW_ROUTE_TABLE_ID" \
   --destination-cidr-block "$CUSTOMER_SUBNET_CIDR" \
   --vpc-endpoint-id "$FIREWALL_ENDPOINT"; then
@@ -706,7 +706,7 @@ fi
 
 # Update the customer subnet route table
 echo "Updating customer subnet route table..."
-if ! aws ec2 create-route \
+if ! aws ec2 replace-route \
   --route-table-id "$SUBNET_ROUTE_TABLE_ID" \
   --destination-cidr-block "0.0.0.0/0" \
   --vpc-endpoint-id "$FIREWALL_ENDPOINT"; then
