@@ -81,7 +81,7 @@ trap 'handle_error "Script interrupted"' EXIT INT TERM
 validate_aws_credentials
 
 # Generate a random identifier for resource names
-RANDOM_ID=$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | fold -w 8 | head -n 1)
+RANDOM_ID=$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | fold -w 8 | head -n 1 || true)
 BROKER_NAME="mq-broker-${RANDOM_ID}"
 SECRET_NAME="mq-broker-creds-${RANDOM_ID}"
 BROKER_ID=""
@@ -92,7 +92,7 @@ echo "Generating secure password and storing in AWS Secrets Manager..."
 
 # Generate a secure password with special characters, numbers, uppercase and lowercase letters
 # Avoid characters that may cause issues: backslash, quotes
-MQ_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9!@#$%^&*()_+-=' < /dev/urandom | fold -w 20 | head -n 1)
+MQ_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9_+-' < /dev/urandom | fold -w 20 | head -n 1 || true)
 MQ_USERNAME="mqadmin"
 
 # Validate password was generated
@@ -141,7 +141,7 @@ BROKER_RESULT=$(aws mq create-broker \
   --users "Username=$MQ_USERNAME,Password=$MQ_PASSWORD,ConsoleAccess=true" \
   --publicly-accessible \
   --auto-minor-version-upgrade \
-  --storage-type EBS \
+  --storage-type EFS \
   2>&1)
 
 # Check for errors

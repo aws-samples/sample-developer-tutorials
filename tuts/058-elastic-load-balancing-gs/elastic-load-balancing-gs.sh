@@ -206,7 +206,7 @@ if [ ${#INSTANCE_IDS[@]} -eq 0 ]; then
 else
     # Step 7: Register targets with the target group (up to 2 instances)
     echo "Registering targets with the target group..."
-    local target_args=()
+    target_args=()
     for i in "${!INSTANCE_IDS[@]}"; do
         if [ "$i" -lt 2 ]; then
             target_args+=("Id=${INSTANCE_IDS[$i]}")
