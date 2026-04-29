@@ -11,7 +11,7 @@ LOG_FILE="qbusiness-anonymous-app-creation.log"
 echo "Starting script execution at $(date)" > "$LOG_FILE"
 
 # Set region to a supported region for Amazon Q Business
-AWS_REGION="us-east-1"
+AWS_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
 echo "Using AWS region: $AWS_REGION" | tee -a "$LOG_FILE"
 
 # Function to log commands and their outputs
@@ -181,7 +181,7 @@ check_error "$VERIFY_OUTPUT" $? "Failed to verify application creation"
 
 # Check if application status is ACTIVE using jq for safer JSON parsing
 if command -v jq &> /dev/null; then
-    APP_STATUS=$(echo "$VERIFY_OUTPUT" | jq -r '.application.status')
+    APP_STATUS=$(echo "$VERIFY_OUTPUT" | jq -r '.status')
 else
     APP_STATUS=$(echo "$VERIFY_OUTPUT" | grep -o '"status": "[^"]*' | cut -d'"' -f4)
 fi
