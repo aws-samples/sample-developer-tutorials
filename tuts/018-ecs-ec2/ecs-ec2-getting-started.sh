@@ -343,7 +343,7 @@ launch_container_instance() {
     log "Launching ECS container instance..."
     
     # Create user data script
-    cat > ecs-user-data.sh << 'EOF'
+    cat > ecs-user-data.sh << EOF
 #!/bin/bash
 echo ECS_CLUSTER=$CLUSTER_NAME >> /etc/ecs/ecs.config
 EOF
