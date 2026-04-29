@@ -96,11 +96,11 @@ validate_prerequisites() {
         exit 1
     fi
 
-    # Validate AWS CLI version is 2.x or higher
+    # Validate AWS CLI version
     local AWS_CLI_VERSION
     AWS_CLI_VERSION=$(aws --version 2>&1 | cut -d' ' -f1 | cut -d'/' -f2 | cut -d'.' -f1)
-    if [ "$AWS_CLI_VERSION" -lt 2 ]; then
-        echo "ERROR: AWS CLI version 2.x or higher is required" >&2
+    if [ "$AWS_CLI_VERSION" -lt 1 ]; then
+        echo "ERROR: AWS CLI is required" >&2
         exit 1
     fi
 
