@@ -698,10 +698,15 @@ echo "Updating internet gateway route table..."
 if ! aws ec2 replace-route \
   --route-table-id "$IGW_ROUTE_TABLE_ID" \
   --destination-cidr-block "$CUSTOMER_SUBNET_CIDR" \
-  --vpc-endpoint-id "$FIREWALL_ENDPOINT"; then
-  echo "ERROR: Failed to update internet gateway route"
-  cleanup_resources
-  exit 1
+  --vpc-endpoint-id "$FIREWALL_ENDPOINT" 2>/dev/null; then
+  if ! aws ec2 create-route \
+    --route-table-id "$IGW_ROUTE_TABLE_ID" \
+    --destination-cidr-block "$CUSTOMER_SUBNET_CIDR" \
+    --vpc-endpoint-id "$FIREWALL_ENDPOINT"; then
+    echo "ERROR: Failed to update internet gateway route"
+    cleanup_resources
+    exit 1
+  fi
 fi
 
 # Update the customer subnet route table
@@ -709,10 +714,15 @@ echo "Updating customer subnet route table..."
 if ! aws ec2 replace-route \
   --route-table-id "$SUBNET_ROUTE_TABLE_ID" \
   --destination-cidr-block "0.0.0.0/0" \
-  --vpc-endpoint-id "$FIREWALL_ENDPOINT"; then
-  echo "ERROR: Failed to update customer subnet route"
-  cleanup_resources
-  exit 1
+  --vpc-endpoint-id "$FIREWALL_ENDPOINT" 2>/dev/null; then
+  if ! aws ec2 create-route \
+    --route-table-id "$SUBNET_ROUTE_TABLE_ID" \
+    --destination-cidr-block "0.0.0.0/0" \
+    --vpc-endpoint-id "$FIREWALL_ENDPOINT"; then
+    echo "ERROR: Failed to update customer subnet route"
+    cleanup_resources
+    exit 1
+  fi
 fi
 
 echo ""
