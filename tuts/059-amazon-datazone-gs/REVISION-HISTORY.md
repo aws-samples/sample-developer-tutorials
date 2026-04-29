@@ -14,3 +14,7 @@
 ### 2026-04-29 note
 - Type: documentation
 - CreateEnvironmentProfile requires IAM Identity Center integration with DataZone. The domain owner IAM user alone cannot create environment profiles without SSO configured. This is a service prereq, not a script bug.
+
+### 2026-04-29 note
+- Type: documentation
+- CreateEnvironmentProfile requires the calling principal to be a DataZone project member via Identity Center. DataZone uses its own authorization model separate from IAM. Needs IC user mapped to DataZone domain.
