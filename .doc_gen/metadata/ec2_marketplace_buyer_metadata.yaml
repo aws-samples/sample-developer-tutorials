@@ -1,0 +1,20 @@
+ec2_GettingStarted_030:
+  title: Get started with Marketplace Buyer using the CLI
+  title_abbrev: Get started with Marketplace Buyer
+  synopsis_list:
+    - Use ec2 AuthorizeSecurityGroupIngress
+    - Use ec2 CreateKeyPair
+    - Use ec2 CreateSecurityGroup
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/030-marketplace-buyer-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/030-marketplace-buyer-gs/marketplace-buyer-getting-started.sh
+  services:
+    ec2: {AuthorizeSecurityGroupIngress, CreateKeyPair, CreateSecurityGroup, DeleteKeyPair, DeleteSecurityGroup, DescribeImages, DescribeInstances, RunInstances, TerminateInstances, Wait}
