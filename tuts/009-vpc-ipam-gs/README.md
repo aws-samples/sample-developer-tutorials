@@ -26,7 +26,7 @@ This tutorial includes a CloudFormation template that creates the same resources
 ### Deploy with CloudFormation
 
 ```bash
-./deploy.sh 009-vpc-ipam-gs
+./cfn/deploy.sh 009-vpc-ipam-gs
 ```
 
 ### Run the interactive steps
@@ -40,5 +40,5 @@ bash tuts/009-vpc-ipam-gs/vpc-ipam-gs-cfn.sh
 ### Clean up
 
 ```bash
-./cleanup.sh 009-vpc-ipam-gs
+./cfn/cleanup.sh 009-vpc-ipam-gs
 ```

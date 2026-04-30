@@ -60,7 +60,7 @@ echo "=============================================="
 echo "AWS REGION SELECTION"
 echo "=============================================="
 echo "Enter the AWS region to use (e.g., us-east-1, us-west-2):"
-read -r AWS_REGION
+AWS_REGION="${AWS_REGION:-us-east-1}"
 
 if [ -z "$AWS_REGION" ]; then
     handle_error "Region cannot be empty"
@@ -94,7 +94,7 @@ echo "Available directory IDs:"
 echo "$DIRECTORY_IDS"
 echo ""
 echo "Enter the directory ID you want to use:"
-read -r DIRECTORY_ID
+DIRECTORY_ID=$(echo "$DIRECTORY_IDS" | head -1)
 
 # Validate directory ID
 if ! echo "$DIRECTORY_IDS" | grep -q "$DIRECTORY_ID"; then
@@ -208,7 +208,7 @@ done <<< "$BUNDLES_OUTPUT"
 # Prompt for selection
 echo ""
 echo "Enter the number of the bundle you want to use (1-$((COUNT-1))):"
-read -r BUNDLE_SELECTION
+BUNDLE_SELECTION="1"
 
 # Validate selection
 if ! [[ "$BUNDLE_SELECTION" =~ ^[0-9]+$ ]] || [ "$BUNDLE_SELECTION" -lt 1 ] || [ "$BUNDLE_SELECTION" -ge "$COUNT" ]; then
@@ -227,7 +227,7 @@ echo "=============================================="
 echo "USER INFORMATION"
 echo "=============================================="
 echo "Enter the username for the WorkSpace:"
-read -r USERNAME
+USERNAME="testuser-$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)"
 
 echo "NOTE: The user must already exist in the directory for the WorkSpace creation to succeed."
 echo "If you're using Simple AD or AWS Managed Microsoft AD, the user must be created using Active Directory tools."
@@ -235,13 +235,13 @@ echo "If you're using AD Connector, the user must exist in your on-premises Acti
 echo ""
 
 echo "Enter the user's first name:"
-read -r FIRST_NAME
+FIRST_NAME="Test"
 
 echo "Enter the user's last name:"
-read -r LAST_NAME
+LAST_NAME="User"
 
 echo "Enter the user's email address:"
-read -r EMAIL
+EMAIL="user-$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)@example.com"
 
 # Step 5: Choose running mode
 echo ""
@@ -251,7 +251,7 @@ echo "=============================================="
 echo "Select running mode:"
 echo "1. AlwaysOn (billed monthly)"
 echo "2. AutoStop (billed hourly)"
-read -r RUNNING_MODE_CHOICE
+RUNNING_MODE_CHOICE="1"
 
 if [ "$RUNNING_MODE_CHOICE" = "1" ]; then
     RUNNING_MODE="ALWAYS_ON"
@@ -269,7 +269,7 @@ echo "=============================================="
 echo "TAGS (OPTIONAL)"
 echo "=============================================="
 echo "Would you like to add tags to your WorkSpace? (y/n):"
-read -r ADD_TAGS
+ADD_TAGS="n"
 
 TAGS_JSON=""
 if [ "$ADD_TAGS" = "y" ] || [ "$ADD_TAGS" = "Y" ]; then
@@ -308,7 +308,10 @@ WORKSPACE_JSON="{\"DirectoryId\":\"$DIRECTORY_ID\",\"UserName\":\"$USERNAME\",\"
 
 # Add tags if specified
 if [ -n "$TAGS_JSON" ]; then
-    WORKSPACE_JSON="$WORKSPACE_JSON,\"Tags\":$TAGS_JSON"
+    USER_TAGS=$(echo "$TAGS_JSON" | sed 's/^\[//;s/\]$//')
+    WORKSPACE_JSON="$WORKSPACE_JSON,\"Tags\":[$USER_TAGS,{\"Key\":\"project\",\"Value\":\"doc-smith\"},{\"Key\":\"tutorial\",\"Value\":\"035-workspaces-personal\"}]"
+else
+    WORKSPACE_JSON="$WORKSPACE_JSON,\"Tags\":[{\"Key\":\"project\",\"Value\":\"doc-smith\"},{\"Key\":\"tutorial\",\"Value\":\"035-workspaces-personal\"}]"
 fi
 
 # Close the JSON object
@@ -406,7 +409,7 @@ done
 
 echo ""
 echo "Do you want to clean up all created resources? (y/n):"
-read -r CLEANUP_CHOICE
+CLEANUP_CHOICE="y"
 
 if [ "$CLEANUP_CHOICE" = "y" ] || [ "$CLEANUP_CHOICE" = "Y" ]; then
     echo ""

@@ -1,15 +1,26 @@
 #!/bin/bash
-# Empty and delete the shared tutorial S3 bucket, then delete the CloudFormation stack.
-# Usage: ./cfn/cleanup-bucket.sh
+# Clean up the shared tutorial S3 bucket and/or CloudFormation stack.
+# Usage: ./cleanup-prereqs-bucket.sh [--stack-only]
+#   --stack-only: delete the CFN stack but keep the bucket
 set -eo pipefail
 
 STACK_NAME="tutorial-prereqs-bucket"
+STACK_ONLY=false
+[ "$1" = "--stack-only" ] && STACK_ONLY=true
 
 BUCKET_NAME=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
     --query 'Stacks[0].Outputs[?OutputKey==`BucketName`].OutputValue' --output text 2>/dev/null)
 
 if [ -z "$BUCKET_NAME" ] || [ "$BUCKET_NAME" = "None" ]; then
     echo "No bucket stack found."
+    exit 0
+fi
+
+if [ "$STACK_ONLY" = "true" ]; then
+    echo "Deleting stack only (keeping bucket: $BUCKET_NAME)"
+    aws cloudformation delete-stack --stack-name "$STACK_NAME"
+    aws cloudformation wait stack-delete-complete --stack-name "$STACK_NAME"
+    echo "Done. Stack deleted, bucket retained."
     exit 0
 fi
 

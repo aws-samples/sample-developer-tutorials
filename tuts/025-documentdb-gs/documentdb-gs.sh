@@ -8,7 +8,7 @@ set -eE
 ###############################################################################
 # Configuration
 ###############################################################################
-SUFFIX=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
+SUFFIX=$(LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 8)
 CLUSTER_ID="docdb-gs-${SUFFIX}"
 INSTANCE_ID="${CLUSTER_ID}-inst"
 SUBNET_GROUP_NAME="docdb-subnet-${SUFFIX}"
@@ -21,6 +21,7 @@ WAIT_TIMEOUT=900
 
 TEMP_DIR=$(mktemp -d)
 LOG_FILE="${TEMP_DIR}/documentdb-gs.log"
+trap 'rm -rf "$TEMP_DIR"' EXIT
 
 CREATED_RESOURCES=()
 
@@ -63,7 +64,6 @@ handle_error() {
         echo "Attempting cleanup..."
         cleanup_resources
     fi
-    rm -rf "$TEMP_DIR"
     exit 1
 }
 
@@ -199,12 +199,12 @@ cleanup_resources() {
             --db-subnet-group-name "$SUBNET_GROUP_NAME" 2>&1 || echo "WARNING: Failed to delete subnet group."
     fi
 
-    # Delete secret
+    # Delete secret with scheduled deletion instead of immediate deletion
     if printf '%s\n' "${CREATED_RESOURCES[@]}" | grep -q "secret:"; then
-        echo "Deleting secret '${SECRET_NAME}'..."
+        echo "Deleting secret '${SECRET_NAME}' (scheduled for 7 days)..."
         aws secretsmanager delete-secret \
             --secret-id "$SECRET_NAME" \
-            --force-delete-without-recovery 2>&1 || echo "WARNING: Failed to delete secret."
+            --recovery-window-in-days 7 2>&1 || echo "WARNING: Failed to delete secret."
     fi
 
     echo ""
@@ -219,14 +219,24 @@ echo "Step 1: Create master password in Secrets Manager"
 echo "==========================================="
 echo ""
 
-# Generate a safe password (no / @ " or spaces)
-MASTER_PASSWORD=$(cat /dev/urandom | tr -dc 'A-Za-z0-9!#$%^&*()_+=-' | fold -w 20 | head -n 1)
+# Generate a strong password using openssl for better randomness
+# Meets DocumentDB requirements: 8-100 chars, alphanumeric + special chars
+MASTER_PASSWORD=$(openssl rand -base64 32 | tr -d '/' | cut -c1-20)
+
+# Securely store password in temporary file with restricted permissions
+TEMP_PASS_FILE=$(mktemp)
+chmod 600 "$TEMP_PASS_FILE"
+echo -n "$MASTER_PASSWORD" > "$TEMP_PASS_FILE"
+trap "rm -f '$TEMP_PASS_FILE'; rm -rf '$TEMP_DIR'" EXIT
 
 SECRET_OUTPUT=$(aws secretsmanager create-secret \
     --name "$SECRET_NAME" \
     --description "DocumentDB master password for ${CLUSTER_ID}" \
-    --secret-string "$MASTER_PASSWORD" \
+    --secret-string file://"$TEMP_PASS_FILE" \
     --output text --query "ARN" 2>&1)
+
+# Securely clear password from memory
+MASTER_PASSWORD=""
 
 if echo "$SECRET_OUTPUT" | grep -iq "error"; then
     echo "ERROR creating secret: $SECRET_OUTPUT"
@@ -331,6 +341,9 @@ echo "Step 4: Create DocumentDB cluster"
 echo "==========================================="
 echo ""
 
+# Read password securely from file for cluster creation
+MASTER_PASSWORD=$(cat "$TEMP_PASS_FILE")
+
 CLUSTER_OUTPUT=$(aws docdb create-db-cluster \
     --db-cluster-identifier "$CLUSTER_ID" \
     --engine docdb \
@@ -339,8 +352,13 @@ CLUSTER_OUTPUT=$(aws docdb create-db-cluster \
     --master-user-password "$MASTER_PASSWORD" \
     --db-subnet-group-name "$SUBNET_GROUP_NAME" \
     --storage-encrypted \
+    --kms-key-id "alias/aws/docdb" \
     --no-deletion-protection \
+    --enable-cloudwatch-logs-exports '["audit","error","general","slowquery"]' \
     --query "DBCluster.DBClusterIdentifier" --output text 2>&1)
+
+# Clear password immediately after use
+MASTER_PASSWORD=""
 
 if echo "$CLUSTER_OUTPUT" | grep -iq "error"; then
     echo "ERROR creating cluster: $CLUSTER_OUTPUT"
@@ -414,38 +432,45 @@ echo "Step 7: Add security group ingress rule"
 echo "==========================================="
 echo ""
 
-# Get the user's public IP
-MY_IP=$(curl -s https://checkip.amazonaws.com 2>&1)
+# Get the user's public IP with timeout and error handling
+MY_IP=$(timeout 5 curl -s --max-time 5 https://checkip.amazonaws.com 2>/dev/null || true)
 
-if echo "$MY_IP" | grep -iq "error\|could not\|failed"; then
-    echo "ERROR: Could not determine public IP address."
-    exit 1
-fi
-
-# Trim whitespace
-MY_IP=$(echo "$MY_IP" | tr -d '[:space:]')
-
-echo "Your public IP: $MY_IP"
-
-SG_RULE_OUTPUT=$(aws ec2 authorize-security-group-ingress \
-    --group-id "$SG_ID" \
-    --protocol tcp \
-    --port "$DOCDB_PORT" \
-    --cidr "${MY_IP}/32" 2>&1)
-
-if echo "$SG_RULE_OUTPUT" | grep -iq "error"; then
-    # Ignore if rule already exists
-    if echo "$SG_RULE_OUTPUT" | grep -iq "Duplicate"; then
-        echo "Ingress rule already exists."
-    else
-        echo "ERROR adding ingress rule: $SG_RULE_OUTPUT"
-        exit 1
-    fi
+if [ -z "$MY_IP" ] || echo "$MY_IP" | grep -iq "error\|could not\|failed"; then
+    echo "WARNING: Could not determine public IP address. Skipping security group rule."
+    echo "You must manually add an ingress rule for your IP to security group $SG_ID"
+    MY_IP=""
 else
-    echo "Ingress rule added: TCP ${DOCDB_PORT} from ${MY_IP}/32"
+    # Trim whitespace
+    MY_IP=$(echo "$MY_IP" | tr -d '[:space:]')
+    
+    # Validate IP format (basic check)
+    if ! echo "$MY_IP" | grep -qE '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'; then
+        echo "WARNING: Invalid IP address format: $MY_IP. Skipping security group rule."
+        MY_IP=""
+    else
+        echo "Your public IP: $MY_IP"
+        
+        SG_RULE_OUTPUT=$(aws ec2 authorize-security-group-ingress \
+            --group-id "$SG_ID" \
+            --protocol tcp \
+            --port "$DOCDB_PORT" \
+            --cidr "${MY_IP}/32" 2>&1)
+        
+        if echo "$SG_RULE_OUTPUT" | grep -iq "error"; then
+            # Ignore if rule already exists
+            if echo "$SG_RULE_OUTPUT" | grep -iq "Duplicate"; then
+                echo "Ingress rule already exists."
+            else
+                echo "ERROR adding ingress rule: $SG_RULE_OUTPUT"
+                exit 1
+            fi
+        else
+            echo "Ingress rule added: TCP ${DOCDB_PORT} from ${MY_IP}/32"
+            CREATED_RESOURCES+=("sg-rule:${SG_ID}:${MY_IP}")
+        fi
+    fi
 fi
 
-CREATED_RESOURCES+=("sg-rule:${SG_ID}:${MY_IP}")
 echo ""
 
 ###############################################################################
@@ -457,13 +482,27 @@ echo "==========================================="
 echo ""
 
 CA_CERT_PATH="${TEMP_DIR}/global-bundle.pem"
-curl -s -o "$CA_CERT_PATH" https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem 2>&1
+CA_CERT_URL="https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem"
 
-if [ ! -s "$CA_CERT_PATH" ]; then
-    echo "WARNING: Failed to download CA certificate."
+if timeout 10 curl -s --max-time 10 -o "$CA_CERT_PATH" "$CA_CERT_URL" 2>&1; then
+    if [ -s "$CA_CERT_PATH" ]; then
+        # Verify it's a valid PEM file and check file permissions
+        if grep -q "BEGIN CERTIFICATE" "$CA_CERT_PATH"; then
+            chmod 644 "$CA_CERT_PATH"
+            echo "CA certificate downloaded to: $CA_CERT_PATH"
+        else
+            echo "WARNING: Downloaded file is not a valid PEM certificate."
+            CA_CERT_PATH=""
+        fi
+    else
+        echo "WARNING: Failed to download CA certificate (empty file)."
+        CA_CERT_PATH=""
+    fi
 else
-    echo "CA certificate downloaded to: $CA_CERT_PATH"
+    echo "WARNING: Failed to download CA certificate (timeout or network error)."
+    CA_CERT_PATH=""
 fi
+
 echo ""
 
 ###############################################################################
@@ -478,10 +517,16 @@ echo "Port             : $DOCDB_PORT"
 echo "Master username  : $MASTER_USER"
 echo "Secret name      : $SECRET_NAME (contains password)"
 echo "Security group   : $SG_ID"
-echo "CA certificate   : $CA_CERT_PATH"
+if [ -n "$CA_CERT_PATH" ]; then
+    echo "CA certificate   : $CA_CERT_PATH"
+fi
 echo ""
 echo "To connect with mongosh:"
-echo "  mongosh --tls --host ${CLUSTER_ENDPOINT} --tlsCAFile ${CA_CERT_PATH} \\"
+if [ -n "$CA_CERT_PATH" ]; then
+    echo "  mongosh --tls --host ${CLUSTER_ENDPOINT} --tlsCAFile ${CA_CERT_PATH} \\"
+else
+    echo "  mongosh --tls --host ${CLUSTER_ENDPOINT} \\"
+fi
 echo "    --retryWrites false --username ${MASTER_USER} --password \$(aws secretsmanager get-secret-value --secret-id ${SECRET_NAME} --query SecretString --output text)"
 echo ""
 
@@ -498,32 +543,9 @@ for r in "${CREATED_RESOURCES[@]}"; do
     echo "  - $r"
 done
 echo ""
-echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+echo "Automatically cleaning up all created resources..."
+echo ""
 
-if [ "$CLEANUP_CHOICE" = "y" ] || [ "$CLEANUP_CHOICE" = "Y" ]; then
-    cleanup_resources
-else
-    echo ""
-    echo "Resources were NOT deleted. To clean up manually, run:"
-    echo ""
-    echo "  # Revoke security group ingress rule"
-    echo "  aws ec2 revoke-security-group-ingress --group-id ${SG_ID} --protocol tcp --port ${DOCDB_PORT} --cidr ${MY_IP}/32"
-    echo ""
-    echo "  # Delete instance (wait for it to finish before deleting cluster)"
-    echo "  aws docdb delete-db-instance --db-instance-identifier ${INSTANCE_ID}"
-    echo "  aws docdb wait db-instance-deleted --db-instance-identifier ${INSTANCE_ID}"
-    echo ""
-    echo "  # Delete cluster"
-    echo "  aws docdb delete-db-cluster --db-cluster-identifier ${CLUSTER_ID} --skip-final-snapshot"
-    echo ""
-    echo "  # Delete subnet group (after cluster is deleted)"
-    echo "  aws docdb delete-db-subnet-group --db-subnet-group-name ${SUBNET_GROUP_NAME}"
-    echo ""
-    echo "  # Delete secret"
-    echo "  aws secretsmanager delete-secret --secret-id ${SECRET_NAME} --force-delete-without-recovery"
-    echo ""
-fi
+cleanup_resources
 
-rm -rf "$TEMP_DIR"
 echo "Done."
