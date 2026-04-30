@@ -10,19 +10,16 @@
 #
 # Usage: ./aws-end-user-messaging-gs.sh [--auto-cleanup]
 
-set -euo pipefail
+set -uo pipefail
 
 # Security: Set secure umask for created files
 umask 0077
 
-# Set up logging with secure file permissions
-LOG_DIR="${XDG_STATE_HOME:-.}/aws-eump-logs"
+# Set up logging
+LOG_DIR="./aws-eump-logs"
 mkdir -p "$LOG_DIR"
-chmod 700 "$LOG_DIR"
-
 LOG_FILE="$LOG_DIR/aws-end-user-messaging-push-script-$(date +%Y%m%d-%H%M%S).log"
 exec > >(tee -a "$LOG_FILE") 2>&1
-chmod 600 "$LOG_FILE"
 
 echo "Starting AWS End User Messaging Push setup script..."
 echo "Logging to $LOG_FILE"
@@ -38,7 +35,7 @@ cleanup() {
     echo "Cleaning up temporary resources..."
     
     # Remove temporary files securely
-    for temp_file in "${TEMP_FILES[@]}"; do
+    for temp_file in "${TEMP_FILES[@]+"${TEMP_FILES[@]}"}"; do
         if [ -f "$temp_file" ]; then
             shred -vfz -n 3 "$temp_file" 2>/dev/null || rm -f "$temp_file"
         fi
@@ -142,7 +139,7 @@ validate_permissions() {
     echo "Validating IAM permissions..."
     
     # Test basic Pinpoint permissions
-    if ! aws pinpoint get-apps &> /dev/null; then
+    if ! aws pinpoint get-apps > /dev/null 2>&1; then
         echo "WARNING: Unable to list Pinpoint applications." >&2
         echo "Please ensure you have appropriate IAM permissions for Pinpoint operations." >&2
         echo "Required permissions:" >&2

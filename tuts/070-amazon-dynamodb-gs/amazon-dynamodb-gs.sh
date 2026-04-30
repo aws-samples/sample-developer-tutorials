@@ -16,8 +16,9 @@ LOG_DIR="${XDG_STATE_HOME:-.}/dynamodb-tutorial-logs"
 mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/dynamodb-tutorial-$(date +%Y%m%d-%H%M%S).log"
 chmod 700 "$LOG_DIR"
-exec > >(tee -a "$LOG_FILE") 2>&1
+touch "$LOG_FILE"
 chmod 600 "$LOG_FILE"
+exec > >(tee -a "$LOG_FILE") 2>&1
 
 echo "Starting DynamoDB Getting Started Tutorial at $(date)"
 echo "Logging to $LOG_FILE"
