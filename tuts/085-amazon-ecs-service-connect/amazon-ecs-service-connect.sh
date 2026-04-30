@@ -570,7 +570,7 @@ main() {
     echo "CLEANUP CONFIRMATION"
     echo "==========================================="
     echo "Do you want to clean up all created resources? (y/n): "
-    read -r CLEANUP_CHOICE
+    CLEANUP_CHOICE="y"
     
     if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
         cleanup_resources

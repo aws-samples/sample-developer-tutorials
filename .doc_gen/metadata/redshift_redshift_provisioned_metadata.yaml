@@ -1,0 +1,23 @@
+redshift_GettingStarted_039:
+  title: Getting started with Amazon Redshift provisioned clusters
+  title_abbrev: Getting started with Amazon Redshift provisioned clusters
+  synopsis_list:
+    - Create a Redshift cluster
+    - Create an IAM role for S3 access
+    - Create tables and load data
+    - Run example queries
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/039-redshift-provisioned
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/039-redshift-provisioned/redshift-provisioned.sh
+  services:
+    iam: {CreateRole, DeleteRole, DeleteRolePolicy, GetRole, PutRolePolicy}
+    redshift: {CreateCluster, DeleteCluster, DescribeClusters, ModifyClusterIamRoles, Wait}

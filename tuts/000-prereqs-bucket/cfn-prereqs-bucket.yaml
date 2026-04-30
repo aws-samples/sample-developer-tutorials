@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Shared S3 bucket reference for tutorials. The bucket is created and deleted
+  by setup-bucket.sh and cleanup-bucket.sh. This stack just exports the name
+  so other tutorial stacks can import it.
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: Name of the bucket created by setup-bucket.sh
+
+Resources:
+  Placeholder:
+    Type: AWS::CloudFormation::WaitConditionHandle
+
+Outputs:
+  BucketName:
+    Description: Name of the shared tutorial bucket
+    Value: !Ref BucketName
+    Export:
+      Name: !Sub '${AWS::StackName}-BucketName'
+  BucketArn:
+    Description: ARN of the shared tutorial bucket
+    Value: !Sub 'arn:aws:s3:::${BucketName}'
+    Export:
+      Name: !Sub '${AWS::StackName}-BucketArn'

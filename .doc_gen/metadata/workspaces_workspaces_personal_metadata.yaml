@@ -1,0 +1,22 @@
+workspaces_GettingStarted_035:
+  title: Creating and managing Amazon WorkSpaces Personal
+  title_abbrev: Creating and managing Amazon WorkSpaces Personal
+  synopsis_list:
+    - Verify WorkSpaces availability in your region
+    - List available WorkSpaces bundles
+    - Create a WorkSpace
+    - Check the status of your WorkSpace
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/035-workspaces-personal
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/035-workspaces-personal/workspaces-personal.sh
+  services:
+    workspaces: {CreateWorkspaces, DeregisterWorkspaceDirectory, DescribeWorkspaceBundles, DescribeWorkspaceDirectories, DescribeWorkspaces, RegisterWorkspaceDirectory, TerminateWorkspaces}
