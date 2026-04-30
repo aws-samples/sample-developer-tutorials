@@ -1,0 +1,22 @@
+ec2_GettingStarted_020:
+  title: Creating and managing Amazon EBS volumes
+  title_abbrev: Creating and managing Amazon EBS volumes
+  synopsis_list:
+    - Create an EBS volume
+    - Check volume status
+    - Create an EC2 instance (optional)
+    - Attach a volume to an EC2 instance
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/020-ebs-gs-volumes
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/020-ebs-gs-volumes/ebs-gs-volumes.sh
+  services:
+    ec2: {AttachVolume, AuthorizeSecurityGroupIngress, CreateSecurityGroup, CreateVolume, DeleteSecurityGroup, DeleteVolume, DescribeAvailabilityZones, DescribeImages, DescribeInstanceTypeOfferings, DescribeInstances, DescribeSubnets, DescribeVolumes, DescribeVpcs, DetachVolume, RunInstances, TerminateInstances, Wait}

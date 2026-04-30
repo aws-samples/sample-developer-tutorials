@@ -1,0 +1,20 @@
+support_GettingStarted_062:
+  title: Getting started with Support
+  title_abbrev: Getting started with Support
+  synopsis_list:
+    - Check available services and severity levels
+    - Create a support case
+    - Add communications to a case
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/062-aws-support-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/062-aws-support-gs/aws-support-gs.sh
+  services:
+    support: {AddCommunicationToCase, CreateCase, DescribeCases, DescribeCommunications, DescribeServices, DescribeSeverityLevels, ResolveCase}
