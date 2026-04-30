@@ -1,0 +1,15 @@
+#!/bin/bash
+WORK_DIR=$(mktemp -d); exec > >(tee -a "$WORK_DIR/tut.log") 2>&1
+REGION=${AWS_DEFAULT_REGION:-${AWS_REGION:-$(aws configure get region 2>/dev/null))}; [ -z "$REGION" ] && echo "ERROR: No region" && exit 1; export AWS_DEFAULT_REGION="$REGION"; echo "Region: $REGION"
+echo "Step 1: Listing EBS volume types"
+echo "  gp3: General Purpose SSD (default)"
+echo "  gp2: Previous gen General Purpose SSD"
+echo "  io2: Provisioned IOPS SSD"
+echo "  st1: Throughput Optimized HDD"
+echo "  sc1: Cold HDD"
+echo "Step 2: Listing your volumes by type"
+aws ec2 describe-volumes --query "Volumes[].{Id:VolumeId,Type:VolumeType,Size:Size,State:State,IOPS:Iops}" --output table 2>/dev/null || echo "  No volumes"
+echo "Step 3: Describing volume modifications"
+aws ec2 describe-volumes-modifications --query "VolumesModifications[:5].{Id:VolumeId,Status:ModificationState,OrigType:OriginalVolumeType,TargetType:TargetVolumeType}" --output table 2>/dev/null || echo "  No modifications"
+echo ""; echo "Tutorial complete. No resources created — read-only."
+rm -rf "$WORK_DIR"
