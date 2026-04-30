@@ -1,0 +1,26 @@
+iot_GettingStarted_079:
+  title: Getting Started with IoT Device Defender 
+  title_abbrev: Getting Started with IoT Device Defender 
+  synopsis_list:
+    - Create Required IAM Roles
+    - Enable IoT Device Defender Audit Checks
+    - Run an On-Demand Audit
+    - Create a Mitigation Action
+    - Apply Mitigation Actions to Findings
+    - Set Up SNS Notifications (Optional)
+    - Enable IoT Logging
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/079-aws-iot-device-defender-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/079-aws-iot-device-defender-gs/aws-iot-device-defender-gs.sh
+  services:
+    iam: {AttachRolePolicy, CreateRole, DeleteRole, DeleteRolePolicy, DetachRolePolicy, GetRole, ListRolePolicies, PutRolePolicy}
+    iot: {CreateMitigationAction, DeleteAccountAuditConfiguration, DeleteMitigationAction, DescribeAccountAuditConfiguration, DescribeAuditTask, GetLoggingOptions, GetV2LoggingOptions, ListAuditFindings, ListAuditMitigationActionsTasks, ListMitigationActions, SetLoggingOptions, SetV2LoggingOptions, StartAuditMitigationActionsTask, StartOnDemandAuditTask, UpdateAccountAuditConfiguration}
+    sns: {CreateTopic, DeleteTopic, ListTopics}

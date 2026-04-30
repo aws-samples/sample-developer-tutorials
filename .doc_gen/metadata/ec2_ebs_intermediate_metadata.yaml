@@ -1,0 +1,21 @@
+ec2_GettingStarted_022:
+  title: Working with Amazon EBS encryption, snapshots, and volume initialization
+  title_abbrev: Working with Amazon EBS encryption, snapshots, and volume initialization
+  synopsis_list:
+    - Enable Amazon EBS encryption by default
+    - Create an EBS snapshot
+    - Create and initialize a volume from a snapshot
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/022-ebs-intermediate
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/022-ebs-intermediate/ebs-intermediate.sh
+  services:
+    ec2: {CreateSnapshot, CreateVolume, DeleteSnapshot, DeleteVolume, DescribeAvailabilityZones, DescribeVolumes, DetachVolume, DisableEbsEncryptionByDefault, EnableEbsEncryptionByDefault, GetEbsDefaultKmsKeyId, GetEbsEncryptionByDefault, Wait}

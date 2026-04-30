@@ -45,8 +45,7 @@ cleanup() {
     log "- Key Pair: $KEY_NAME (File: $KEY_FILE)"
   fi
   
-  read -p "Do you want to delete these resources? (y/n): " -n 1 -r
-  echo
+  REPLY=y
   
   if [[ $REPLY =~ ^[Yy]$ ]]; then
     log "Starting cleanup..."
@@ -263,7 +262,7 @@ log "Instance public IP: $PUBLIC_IP"
 log "To connect to your instance, run: ssh -i $KEY_FILE ec2-user@$PUBLIC_IP"
 
 # Pause to allow user to connect if desired
-read -p "Press Enter to continue to the next step (stopping and starting the instance)..."
+sleep 2
 
 # Step 6: Stop and Start the Instance
 log "Stopping instance $INSTANCE_ID..."
@@ -334,7 +333,7 @@ log "Associated Elastic IP with instance. Association ID: $ASSOCIATION_ID"
 log "To connect to your instance using the Elastic IP, run: ssh -i $KEY_FILE ec2-user@$ELASTIC_IP"
 
 # Pause to allow user to connect if desired
-read -p "Press Enter to continue to the next step (testing Elastic IP persistence)..."
+sleep 2
 
 # Step 8: Test the Elastic IP by Stopping and Starting the Instance
 log "Stopping instance $INSTANCE_ID to test Elastic IP persistence..."
