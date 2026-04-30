@@ -1,0 +1,25 @@
+#!/bin/bash
+# pre-push hook: block push if tutorial files changed without REVISION-HISTORY.md update
+# Install: cp hooks/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+
+REMOTE="$1"
+RANGE=$(git merge-base HEAD origin/main)..HEAD
+
+# Find tutorial directories with changes (excluding REVISION-HISTORY itself)
+CHANGED_TUTS=$(git diff --name-only "$RANGE" -- 'tuts/' | grep -v REVISION-HISTORY | sed 's|tuts/\([^/]*\)/.*|\1|' | sort -u)
+
+MISSING=""
+for tut in $CHANGED_TUTS; do
+    if ! git diff --name-only "$RANGE" -- "tuts/$tut/REVISION-HISTORY.md" | grep -q .; then
+        MISSING="$MISSING  tuts/$tut/REVISION-HISTORY.md\n"
+    fi
+done
+
+if [ -n "$MISSING" ]; then
+    echo ""
+    echo "ERROR: Tutorial files changed without updating REVISION-HISTORY.md:"
+    echo -e "$MISSING"
+    echo "Update the revision history before pushing (AGENTS.md rule 7)."
+    echo "To bypass: git push --no-verify"
+    exit 1
+fi

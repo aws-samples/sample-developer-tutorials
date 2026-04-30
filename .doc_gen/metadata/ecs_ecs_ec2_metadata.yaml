@@ -1,0 +1,24 @@
+ecs_GettingStarted_018:
+  title: Creating an Amazon ECS service for the EC2 launch type
+  title_abbrev: Creating an Amazon ECS service for the EC2 launch type
+  synopsis_list:
+    - Create an ECS cluster
+    - Create and monitor a service
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/018-ecs-ec2
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/018-ecs-ec2/ecs-ec2-getting-started.sh
+  services:
+    ec2: {AuthorizeSecurityGroupIngress, CreateKeyPair, CreateSecurityGroup, DeleteKeyPair, DeleteSecurityGroup, DescribeInstances, DescribeSubnets, DescribeVpcs, RunInstances, TerminateInstances, Wait}
+    ecs: {CreateCluster, CreateService, DeleteCluster, DeleteService, DeregisterTaskDefinition, DescribeContainerInstances, DescribeServices, DescribeTasks, ListContainerInstances, ListServices, ListTasks, RegisterTaskDefinition, StopTask, UpdateService, Wait}
+    iam: {AddRoleToInstanceProfile, AttachRolePolicy, CreateInstanceProfile, CreateRole, GetRole, Wait}
+    ssm: {GetParameters}
+    sts: {GetCallerIdentity}

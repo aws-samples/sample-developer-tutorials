@@ -1,0 +1,26 @@
+redshift_GettingStarted_038:
+  title: Get started with Redshift Serverless using the CLI
+  title_abbrev: Get started with Redshift Serverless
+  synopsis_list:
+    - Use secrets-manager CreateSecret
+    - Use secrets-manager DeleteSecret
+    - Use secrets-manager GetSecretValue
+    - Use redshift CreateNamespace
+    - Use redshift CreateWorkgroup
+    - Use redshift DeleteNamespace
+    - Use iam CreateRole
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/038-redshift-serverless
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/038-redshift-serverless/redshift-serverless.sh
+  services:
+    iam: {CreateRole, DeleteRole, DeleteRolePolicy, GetRole, PutRolePolicy}
+    redshift: {CreateNamespace, CreateWorkgroup, DeleteNamespace, DeleteWorkgroup, GetNamespace, GetWorkgroup, UpdateNamespace}
+    secrets-manager: {CreateSecret, DeleteSecret, GetSecretValue}

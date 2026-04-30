@@ -1,0 +1,21 @@
+s3_GettingStarted_074:
+  title: Getting started with Amazon Textract
+  title_abbrev: Getting started with Amazon Textract
+  synopsis_list:
+    - Create an S3 bucket
+    - Upload a document to S3
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/074-amazon-textract-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/074-amazon-textract-gs/amazon-textract-getting-started.sh
+  services:
+    s3: {Cp, Mb, Rb, Rm}
+    textract: {AnalyzeDocument, Help}

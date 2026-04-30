@@ -1,0 +1,71 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Transit Gateway getting started - TGW with two VPCs.
+
+Resources:
+  VPC1:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-vpc1'
+        - Key: tutorial
+          Value: !Ref AWS::StackName
+
+  VPC2:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.1.0.0/16
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-vpc2'
+        - Key: tutorial
+          Value: !Ref AWS::StackName
+
+  Subnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC1
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+
+  Subnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC2
+      CidrBlock: 10.1.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+
+  TGW:
+    Type: AWS::EC2::TransitGateway
+    Properties:
+      Description: Tutorial transit gateway
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-tgw'
+        - Key: tutorial
+          Value: !Ref AWS::StackName
+
+  TGWAttach1:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Properties:
+      TransitGatewayId: !Ref TGW
+      VpcId: !Ref VPC1
+      SubnetIds:
+        - !Ref Subnet1
+
+  TGWAttach2:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Properties:
+      TransitGatewayId: !Ref TGW
+      VpcId: !Ref VPC2
+      SubnetIds:
+        - !Ref Subnet2
+
+Outputs:
+  TransitGatewayId:
+    Value: !Ref TGW
+  VPC1Id:
+    Value: !Ref VPC1
+  VPC2Id:
+    Value: !Ref VPC2
