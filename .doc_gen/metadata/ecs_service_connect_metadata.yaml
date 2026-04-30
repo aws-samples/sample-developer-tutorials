@@ -1,0 +1,29 @@
+ecs_ServiceConnect_085:
+  title: Configure Amazon ECS Service Connect
+  title_abbrev: Configure Amazon ECS Service Connect
+  synopsis_list:
+    - Create the VPC infrastructure
+    - Set up logging
+    - Create the ECS cluster
+    - Configure IAM roles
+    - Create the service with Service Connect
+    - Verify the deployment
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/085-amazon-ecs-service-connect
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/085-amazon-ecs-service-connect/amazon-ecs-service-connect.sh
+  services:
+    cloudwatch-logs: {CreateLogGroup, DeleteLogGroup}
+    ec2: {AuthorizeSecurityGroupIngress, CreateSecurityGroup, DeleteSecurityGroup, DescribeSubnets, DescribeVpcs, Wait}
+    ecs: {CreateCluster, CreateService, DeleteCluster, DeleteService, DeregisterTaskDefinition, DescribeClusters, DescribeServices, DescribeTasks, ListTaskDefinitions, ListTasks, RegisterTaskDefinition, UpdateService, Wait}
+    iam: {AttachRolePolicy, CreateRole, DeleteRole, DetachRolePolicy, GetRole}
+    servicediscovery: {DeleteNamespace, DeleteService, ListNamespaces, ListServices}
+    sts: {GetCallerIdentity}

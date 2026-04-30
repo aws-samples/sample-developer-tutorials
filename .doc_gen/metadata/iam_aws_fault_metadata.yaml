@@ -1,0 +1,27 @@
+iam_GettingStarted_069:
+  title: Run CPU stress tests on EC2 instances using FIS
+  title_abbrev: Run CPU stress tests on EC2 instances using FIS
+  synopsis_list:
+    - Create IAM roles
+    - Create a CloudWatch alarm
+    - Create an experiment template
+    - Run the experiment
+    - Verify the results
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/069-aws-fault-injection-service-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/069-aws-fault-injection-service-gs/aws-fault-injection-service-getting-started.sh
+  services:
+    cloudwatch: {DeleteAlarms, DescribeAlarms, GetMetricData, PutMetricAlarm}
+    ec2: {DescribeImages, MonitorInstances, RunInstances, TerminateInstances, Wait}
+    fis: {CreateExperimentTemplate, DeleteExperimentTemplate, GetExperiment, StartExperiment, StopExperiment}
+    iam: {AddRoleToInstanceProfile, AttachRolePolicy, CreateInstanceProfile, CreateRole, DeleteInstanceProfile, DeleteRole, DeleteRolePolicy, DetachRolePolicy, GetRole, PutRolePolicy, RemoveRoleFromInstanceProfile}
+    sts: {GetCallerIdentity}

@@ -556,8 +556,8 @@ else
   fi
 fi
 
-# Query 2: Find events in the 99.9 percentile in terms of all time gross sales
-echo "Running query: Find events in the 99.9 percentile in terms of all time gross sales..."
+# Query 2: Find events in the 99.9 percentile in terms of all time total sales
+echo "Running query: Find events in the 99.9 percentile in terms of all time total sales..."
 QUERY2_OUTPUT=$(aws redshift-data execute-statement \
   --database "$DB_NAME" \
   --workgroup-name "$WORKGROUP_NAME" \

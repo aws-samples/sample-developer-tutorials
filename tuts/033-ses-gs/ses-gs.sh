@@ -68,7 +68,8 @@ echo ""
 
 # Get email address to verify
 echo "Please enter an email address that you own and can access:"
-read -r EMAIL_ADDRESS
+EMAIL_ADDRESS="user-$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)@example.com"
+echo "$EMAIL_ADDRESS"
 
 # Verify email identity
 echo "Verifying email address: $EMAIL_ADDRESS" | tee -a "$LOG_FILE"
@@ -80,7 +81,7 @@ echo "A verification email has been sent to $EMAIL_ADDRESS."
 echo "Please check your inbox and click the verification link before continuing."
 echo ""
 echo "Press Enter after you've verified your email address..."
-read -r
+sleep 1
 
 # Check verification status
 echo "Checking verification status..." | tee -a "$LOG_FILE"
@@ -101,11 +102,13 @@ fi
 # Ask if user wants to verify a domain
 echo ""
 echo "Do you want to verify a domain for sending emails? (y/n):"
-read -r VERIFY_DOMAIN
+VERIFY_DOMAIN="y"
+echo "$VERIFY_DOMAIN"
 
 if [[ "$VERIFY_DOMAIN" =~ ^[Yy] ]]; then
     echo "Please enter the domain name you want to verify:"
-    read -r DOMAIN_NAME
+    DOMAIN_NAME="test-$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1).example.com"
+    echo "$DOMAIN_NAME"
     
     # Verify domain identity
     echo "Verifying domain: $DOMAIN_NAME" | tee -a "$LOG_FILE"
@@ -178,7 +181,8 @@ echo ""
 
 # Ask if user wants to send a test email
 echo "Do you want to send a test email? (y/n):"
-read -r SEND_TEST
+SEND_TEST="y"
+echo "$SEND_TEST"
 
 if [[ "$SEND_TEST" =~ ^[Yy] ]]; then
     echo ""
@@ -193,13 +197,15 @@ if [[ "$SEND_TEST" =~ ^[Yy] ]]; then
     echo "2. Verify another email address to use as recipient"
     echo ""
     echo "Enter your choice (1 or 2):"
-    read -r RECIPIENT_CHOICE
+    RECIPIENT_CHOICE="1"
+    echo "$RECIPIENT_CHOICE"
     
     if [[ "$RECIPIENT_CHOICE" == "1" ]]; then
         RECIPIENT_EMAIL="$EMAIL_ADDRESS"
     else
         echo "Please enter the recipient email address you want to verify:"
-        read -r RECIPIENT_EMAIL
+        RECIPIENT_EMAIL="user-$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)@example.com"
+        echo "$RECIPIENT_EMAIL"
         
         # Verify recipient email identity if different from sender
         if [[ "$RECIPIENT_EMAIL" != "$EMAIL_ADDRESS" ]]; then
@@ -212,7 +218,7 @@ if [[ "$SEND_TEST" =~ ^[Yy] ]]; then
             echo "Please check the inbox and click the verification link before continuing."
             echo ""
             echo "Press Enter after you've verified the recipient email address..."
-            read -r
+            sleep 1
             
             # Check recipient verification status
             OUTPUT=$(log_cmd "aws ses get-identity-verification-attributes --identities \"$RECIPIENT_EMAIL\"")
@@ -263,7 +269,8 @@ echo "============================================="
 echo "CLEANUP CONFIRMATION"
 echo "============================================="
 echo "Do you want to clean up all created resources? (y/n):"
-read -r CLEANUP_CHOICE
+CLEANUP_CHOICE="y"
+echo "$CLEANUP_CHOICE"
 
 if [[ "$CLEANUP_CHOICE" =~ ^[Yy] ]]; then
     cleanup_resources
