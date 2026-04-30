@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  S3 getting started. Uses the shared tutorial bucket from the prereq stack.
+  Run the CLI script to practice S3 operations on the bucket.
+
+Parameters:
+  PrereqStackName:
+    Type: String
+    Default: tutorial-prereqs-bucket
+
+Resources:
+  BucketReadyCondition:
+    Type: AWS::CloudFormation::WaitConditionHandle
+
+Outputs:
+  BucketName:
+    Description: Use this bucket with the CLI tutorial
+    Value: !ImportValue
+      Fn::Sub: '${PrereqStackName}-BucketName'
