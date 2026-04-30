@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.13)
+project(tutorial-cloudfront)
+find_package(AWSSDK REQUIRED COMPONENTS cloudfront)
+add_executable(scenario getting_started_scenario.cpp cloudfront_wrapper.cpp)
+target_link_libraries(scenario ${AWSSDK_LINK_LIBRARIES})

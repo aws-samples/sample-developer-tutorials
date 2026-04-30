@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.13)
+project(tutorial-servicediscovery)
+find_package(AWSSDK REQUIRED COMPONENTS servicediscovery)
+add_executable(scenario getting_started_scenario.cpp servicediscovery_wrapper.cpp)
+target_link_libraries(scenario ${AWSSDK_LINK_LIBRARIES})

@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.13)
+project(tutorial-batch)
+find_package(AWSSDK REQUIRED COMPONENTS batch)
+add_executable(scenario getting_started_scenario.cpp batch_wrapper.cpp)
+target_link_libraries(scenario ${AWSSDK_LINK_LIBRARIES})
