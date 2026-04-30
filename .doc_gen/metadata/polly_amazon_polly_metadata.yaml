@@ -1,0 +1,18 @@
+polly_GettingStarted_082:
+  title: Getting started with Amazon Polly
+  title_abbrev: Getting started with Amazon Polly
+  synopsis_list:
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/082-amazon-polly-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/082-amazon-polly-gs/amazon-polly-getting-started.sh
+  services:
+    polly: {DeleteLexicon, DescribeVoices, GetLexicon, Help, ListLexicons, PutLexicon, SynthesizeSpeech}
