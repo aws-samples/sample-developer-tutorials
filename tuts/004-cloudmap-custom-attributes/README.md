@@ -38,7 +38,7 @@ This tutorial includes a CloudFormation template that creates the same resources
 ### Deploy with CloudFormation
 
 ```bash
-./deploy.sh 004-cloudmap-custom-attributes
+./cfn/deploy.sh 004-cloudmap-custom-attributes
 ```
 
 ### Run the interactive steps
@@ -52,5 +52,5 @@ bash tuts/004-cloudmap-custom-attributes/cloudmap-custom-attributes-cfn.sh
 ### Clean up
 
 ```bash
-./cleanup.sh 004-cloudmap-custom-attributes
+./cfn/cleanup.sh 004-cloudmap-custom-attributes
 ```

@@ -32,7 +32,7 @@ This tutorial includes a CloudFormation template that creates the same resources
 ### Deploy with CloudFormation
 
 ```bash
-./deploy.sh 012-transitgateway-gettingstarted
+./cfn/deploy.sh 012-transitgateway-gettingstarted
 ```
 
 ### Run the interactive steps
@@ -46,5 +46,5 @@ bash tuts/012-transitgateway-gettingstarted/transitgateway-gettingstarted-cfn.sh
 ### Clean up
 
 ```bash
-./cleanup.sh 012-transitgateway-gettingstarted
+./cfn/cleanup.sh 012-transitgateway-gettingstarted
 ```

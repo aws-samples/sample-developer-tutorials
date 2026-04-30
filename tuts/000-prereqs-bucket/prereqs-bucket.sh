@@ -21,24 +21,28 @@ if [ "$STATUS" = "CREATE_COMPLETE" ] || [ "$STATUS" = "UPDATE_COMPLETE" ]; then
 fi
 
 echo "Creating bucket: $BUCKET_NAME"
-if [ "$REGION" = "us-east-1" ]; then
-    aws s3api create-bucket --bucket "$BUCKET_NAME"
+if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
+    echo "Bucket already exists: $BUCKET_NAME"
 else
-    aws s3api create-bucket --bucket "$BUCKET_NAME" \
-        --create-bucket-configuration LocationConstraint="$REGION"
+    if [ "$REGION" = "us-east-1" ]; then
+        aws s3api create-bucket --bucket "$BUCKET_NAME"
+    else
+        aws s3api create-bucket --bucket "$BUCKET_NAME" \
+            --create-bucket-configuration LocationConstraint="$REGION"
+    fi
+
+    aws s3api put-bucket-encryption --bucket "$BUCKET_NAME" \
+        --server-side-encryption-configuration \
+        '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+
+    aws s3api put-public-access-block --bucket "$BUCKET_NAME" \
+        --public-access-block-configuration \
+        'BlockPublicAcls=true,BlockPublicPolicy=true,IgnorePublicAcls=true,RestrictPublicBuckets=true'
 fi
-
-aws s3api put-bucket-encryption --bucket "$BUCKET_NAME" \
-    --server-side-encryption-configuration \
-    '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
-
-aws s3api put-public-access-block --bucket "$BUCKET_NAME" \
-    --public-access-block-configuration \
-    'BlockPublicAcls=true,BlockPublicPolicy=true,IgnorePublicAcls=true,RestrictPublicBuckets=true'
 
 echo "Registering bucket with CloudFormation stack: $STACK_NAME"
 aws cloudformation deploy \
-    --template-file "$SCRIPT_DIR/prereq-bucket.yaml" \
+    --template-file "$SCRIPT_DIR/cfn-prereqs-bucket.yaml" \
     --stack-name "$STACK_NAME" \
     --parameter-overrides "BucketName=$BUCKET_NAME"
 
