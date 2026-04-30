@@ -4,8 +4,15 @@
 # This script creates a Web ACL with a string match rule and AWS Managed Rules,
 # associates it with a CloudFront distribution, and then cleans up all resources.
 
-# Set up logging
+set -euo pipefail
+
+# Security: Restrict file permissions
+umask 077
+
+# Set up logging with secure file handling
 LOG_FILE="waf-tutorial.log"
+touch "$LOG_FILE"
+chmod 600 "$LOG_FILE"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 echo "==================================================="
@@ -18,67 +25,93 @@ echo ""
 # Maximum number of retries for operations
 MAX_RETRIES=3
 
-# Function to handle errors
+# Function to handle errors securely
 handle_error() {
-    echo "ERROR: $1"
-    echo "Check the log file for details: $LOG_FILE"
+    local error_msg="$1"
+    echo "ERROR: $error_msg" >&2
+    echo "Check the log file for details: $LOG_FILE" >&2
     cleanup_resources
     exit 1
 }
 
-# Function to check command success
-check_command() {
-    if echo "$1" | grep -i "error" > /dev/null; then
-        handle_error "$2: $1"
+# Function to validate AWS CLI JSON output
+validate_json() {
+    local json_string="$1"
+    if ! echo "$json_string" | jq empty 2>/dev/null; then
+        return 1
     fi
+    return 0
 }
 
-# Function to clean up resources
+# Function to safely extract JSON values
+extract_json_value() {
+    local json_string="$1"
+    local key_path="$2"
+    
+    if ! validate_json "$json_string"; then
+        return 1
+    fi
+    
+    echo "$json_string" | jq -r "$key_path" 2>/dev/null || return 1
+}
+
+# Function to clean up resources securely
 cleanup_resources() {
     echo ""
     echo "==================================================="
     echo "CLEANING UP RESOURCES"
     echo "==================================================="
     
-    if [ -n "$DISTRIBUTION_ID" ] && [ -n "$WEB_ACL_ARN" ]; then
+    if [ -n "${DISTRIBUTION_ID:-}" ] && [ -n "${WEB_ACL_ARN:-}" ]; then
         echo "Disassociating Web ACL from CloudFront distribution..."
-        DISASSOCIATE_RESULT=$(aws wafv2 disassociate-web-acl \
-            --resource-arn "arn:aws:cloudfront::$(aws sts get-caller-identity --query Account --output text):distribution/$DISTRIBUTION_ID" \
-            --region us-east-1 2>&1)
+        local account_id
+        account_id=$(aws sts get-caller-identity --query Account --output text 2>/dev/null) || account_id=""
         
-        if echo "$DISASSOCIATE_RESULT" | grep -i "error" > /dev/null; then
-            echo "Warning: Failed to disassociate Web ACL: $DISASSOCIATE_RESULT"
+        if [ -z "$account_id" ]; then
+            echo "Warning: Could not retrieve AWS account ID"
+            return
+        fi
+        
+        local disassociate_result
+        disassociate_result=$(aws wafv2 disassociate-web-acl \
+            --resource-arn "arn:aws:cloudfront::${account_id}:distribution/${DISTRIBUTION_ID}" \
+            --region us-east-1 2>&1) || true
+        
+        if echo "$disassociate_result" | grep -qi "error"; then
+            echo "Warning: Failed to disassociate Web ACL: $disassociate_result"
         else
             echo "Web ACL disassociated successfully."
         fi
     fi
     
-    if [ -n "$WEB_ACL_ID" ] && [ -n "$WEB_ACL_NAME" ]; then
+    if [ -n "${WEB_ACL_ID:-}" ] && [ -n "${WEB_ACL_NAME:-}" ]; then
         echo "Deleting Web ACL..."
         
-        # Get the latest lock token before deletion
-        GET_RESULT=$(aws wafv2 get-web-acl \
+        local get_result
+        get_result=$(aws wafv2 get-web-acl \
             --name "$WEB_ACL_NAME" \
             --scope CLOUDFRONT \
             --id "$WEB_ACL_ID" \
-            --region us-east-1 2>&1)
+            --region us-east-1 2>&1) || true
         
-        if echo "$GET_RESULT" | grep -i "error" > /dev/null; then
-            echo "Warning: Failed to get Web ACL for deletion: $GET_RESULT"
+        if echo "$get_result" | grep -qi "error"; then
+            echo "Warning: Failed to get Web ACL for deletion: $get_result"
             echo "You may need to manually delete the Web ACL using the AWS Console."
         else
-            LATEST_TOKEN=$(echo "$GET_RESULT" | grep -o '"LockToken": "[^"]*' | cut -d'"' -f4)
+            local latest_token
+            latest_token=$(extract_json_value "$get_result" '.WebACL.LockToken' 2>/dev/null) || latest_token=""
             
-            if [ -n "$LATEST_TOKEN" ]; then
-                DELETE_RESULT=$(aws wafv2 delete-web-acl \
+            if [ -n "$latest_token" ]; then
+                local delete_result
+                delete_result=$(aws wafv2 delete-web-acl \
                     --name "$WEB_ACL_NAME" \
                     --scope CLOUDFRONT \
                     --id "$WEB_ACL_ID" \
-                    --lock-token "$LATEST_TOKEN" \
-                    --region us-east-1 2>&1)
+                    --lock-token "$latest_token" \
+                    --region us-east-1 2>&1) || true
                 
-                if echo "$DELETE_RESULT" | grep -i "error" > /dev/null; then
-                    echo "Warning: Failed to delete Web ACL: $DELETE_RESULT"
+                if echo "$delete_result" | grep -qi "error"; then
+                    echo "Warning: Failed to delete Web ACL: $delete_result"
                     echo "You may need to manually delete the Web ACL using the AWS Console."
                 else
                     echo "Web ACL deleted successfully."
@@ -92,8 +125,11 @@ cleanup_resources() {
     echo "Cleanup process completed."
 }
 
-# Generate a random identifier for resource names
-RANDOM_ID=$(openssl rand -hex 4)
+# Security: Trap EXIT to ensure cleanup on any exit
+trap cleanup_resources EXIT
+
+# Generate a random identifier for resource names using secure method
+RANDOM_ID=$(openssl rand -hex 4) || handle_error "Failed to generate random ID"
 WEB_ACL_NAME="MyWebACL-${RANDOM_ID}"
 METRIC_NAME="MyWebACLMetrics-${RANDOM_ID}"
 
@@ -105,30 +141,25 @@ echo "==================================================="
 echo "STEP 1: Creating Web ACL"
 echo "==================================================="
 
-CREATE_RESULT=$(aws wafv2 create-web-acl \
+local create_result
+create_result=$(aws wafv2 create-web-acl \
     --name "$WEB_ACL_NAME" \
     --scope "CLOUDFRONT" \
     --default-action Allow={} \
     --visibility-config "SampledRequestsEnabled=true,CloudWatchMetricsEnabled=true,MetricName=$METRIC_NAME" \
-    --region us-east-1 2>&1)
+    --region us-east-1 2>&1) || handle_error "Failed to create Web ACL"
 
-check_command "$CREATE_RESULT" "Failed to create Web ACL"
-
-# Extract Web ACL ID, ARN, and Lock Token from the Summary object
-WEB_ACL_ID=$(echo "$CREATE_RESULT" | grep -o '"Id": "[^"]*' | cut -d'"' -f4)
-WEB_ACL_ARN=$(echo "$CREATE_RESULT" | grep -o '"ARN": "[^"]*' | cut -d'"' -f4)
-LOCK_TOKEN=$(echo "$CREATE_RESULT" | grep -o '"LockToken": "[^"]*' | cut -d'"' -f4)
-
-if [ -z "$WEB_ACL_ID" ]; then
-    handle_error "Failed to extract Web ACL ID"
+if ! validate_json "$create_result"; then
+    handle_error "Invalid JSON response from create-web-acl"
 fi
 
-if [ -z "$LOCK_TOKEN" ]; then
-    handle_error "Failed to extract Lock Token"
-fi
+# Extract Web ACL ID, ARN, and Lock Token from the response
+WEB_ACL_ID=$(extract_json_value "$create_result" '.Summary.Id') || handle_error "Failed to extract Web ACL ID"
+WEB_ACL_ARN=$(extract_json_value "$create_result" '.Summary.ARN') || handle_error "Failed to extract Web ACL ARN"
+LOCK_TOKEN=$(extract_json_value "$create_result" '.Summary.LockToken') || handle_error "Failed to extract Lock Token"
 
 echo "Web ACL created successfully with ID: $WEB_ACL_ID"
-echo "Lock Token: $LOCK_TOKEN"
+echo "Lock Token: [REDACTED]"
 
 # Step 2: Add a String Match Rule
 echo ""
@@ -136,19 +167,19 @@ echo "==================================================="
 echo "STEP 2: Adding String Match Rule"
 echo "==================================================="
 
-# Try to update with retries
 for ((i=1; i<=MAX_RETRIES; i++)); do
     echo "Attempt $i to add string match rule..."
     
     # Get the latest lock token before updating
-    GET_RESULT=$(aws wafv2 get-web-acl \
+    local get_result
+    get_result=$(aws wafv2 get-web-acl \
         --name "$WEB_ACL_NAME" \
         --scope CLOUDFRONT \
         --id "$WEB_ACL_ID" \
-        --region us-east-1 2>&1)
+        --region us-east-1 2>&1) || true
     
-    if echo "$GET_RESULT" | grep -i "error" > /dev/null; then
-        echo "Warning: Failed to get Web ACL for update: $GET_RESULT"
+    if echo "$get_result" | grep -qi "error"; then
+        echo "Warning: Failed to get Web ACL for update: $get_result"
         if [ "$i" -eq "$MAX_RETRIES" ]; then
             handle_error "Failed to get Web ACL after $MAX_RETRIES attempts"
         fi
@@ -156,9 +187,19 @@ for ((i=1; i<=MAX_RETRIES; i++)); do
         continue
     fi
     
-    LATEST_TOKEN=$(echo "$GET_RESULT" | grep -o '"LockToken": "[^"]*' | cut -d'"' -f4)
+    if ! validate_json "$get_result"; then
+        echo "Warning: Invalid JSON response from get-web-acl"
+        if [ "$i" -eq "$MAX_RETRIES" ]; then
+            handle_error "Invalid JSON response after $MAX_RETRIES attempts"
+        fi
+        sleep 2
+        continue
+    fi
     
-    if [ -z "$LATEST_TOKEN" ]; then
+    local latest_token
+    latest_token=$(extract_json_value "$get_result" '.WebACL.LockToken' 2>/dev/null) || true
+    
+    if [ -z "$latest_token" ]; then
         echo "Warning: Could not extract lock token for update"
         if [ "$i" -eq "$MAX_RETRIES" ]; then
             handle_error "Failed to extract lock token after $MAX_RETRIES attempts"
@@ -167,13 +208,12 @@ for ((i=1; i<=MAX_RETRIES; i++)); do
         continue
     fi
     
-    echo "Using lock token: $LATEST_TOKEN"
-    
-    UPDATE_RESULT=$(aws wafv2 update-web-acl \
+    local update_result
+    update_result=$(aws wafv2 update-web-acl \
         --name "$WEB_ACL_NAME" \
         --scope "CLOUDFRONT" \
         --id "$WEB_ACL_ID" \
-        --lock-token "$LATEST_TOKEN" \
+        --lock-token "$latest_token" \
         --default-action Allow={} \
         --rules '[{
             "Name": "UserAgentRule",
@@ -205,19 +245,18 @@ for ((i=1; i<=MAX_RETRIES; i++)); do
             }
         }]' \
         --visibility-config "SampledRequestsEnabled=true,CloudWatchMetricsEnabled=true,MetricName=$METRIC_NAME" \
-        --region us-east-1 2>&1)
+        --region us-east-1 2>&1) || true
     
-    if echo "$UPDATE_RESULT" | grep -i "WAFOptimisticLockException" > /dev/null; then
+    if echo "$update_result" | grep -qi "WAFOptimisticLockException"; then
         echo "Optimistic lock exception encountered. Will retry with new lock token."
         if [ "$i" -eq "$MAX_RETRIES" ]; then
-            handle_error "Failed to add string match rule after $MAX_RETRIES attempts: $UPDATE_RESULT"
+            handle_error "Failed to add string match rule after $MAX_RETRIES attempts"
         fi
         sleep 2
         continue
-    elif echo "$UPDATE_RESULT" | grep -i "error" > /dev/null; then
-        handle_error "Failed to add string match rule: $UPDATE_RESULT"
+    elif echo "$update_result" | grep -qi "error"; then
+        handle_error "Failed to add string match rule: $update_result"
     else
-        # Success
         echo "String match rule added successfully."
         break
     fi
@@ -229,19 +268,19 @@ echo "==================================================="
 echo "STEP 3: Adding AWS Managed Rules"
 echo "==================================================="
 
-# Try to update with retries
 for ((i=1; i<=MAX_RETRIES; i++)); do
     echo "Attempt $i to add AWS Managed Rules..."
     
     # Get the latest lock token before updating
-    GET_RESULT=$(aws wafv2 get-web-acl \
+    local get_result
+    get_result=$(aws wafv2 get-web-acl \
         --name "$WEB_ACL_NAME" \
         --scope CLOUDFRONT \
         --id "$WEB_ACL_ID" \
-        --region us-east-1 2>&1)
+        --region us-east-1 2>&1) || true
     
-    if echo "$GET_RESULT" | grep -i "error" > /dev/null; then
-        echo "Warning: Failed to get Web ACL for update: $GET_RESULT"
+    if echo "$get_result" | grep -qi "error"; then
+        echo "Warning: Failed to get Web ACL for update: $get_result"
         if [ "$i" -eq "$MAX_RETRIES" ]; then
             handle_error "Failed to get Web ACL after $MAX_RETRIES attempts"
         fi
@@ -249,9 +288,19 @@ for ((i=1; i<=MAX_RETRIES; i++)); do
         continue
     fi
     
-    LATEST_TOKEN=$(echo "$GET_RESULT" | grep -o '"LockToken": "[^"]*' | cut -d'"' -f4)
+    if ! validate_json "$get_result"; then
+        echo "Warning: Invalid JSON response from get-web-acl"
+        if [ "$i" -eq "$MAX_RETRIES" ]; then
+            handle_error "Invalid JSON response after $MAX_RETRIES attempts"
+        fi
+        sleep 2
+        continue
+    fi
     
-    if [ -z "$LATEST_TOKEN" ]; then
+    local latest_token
+    latest_token=$(extract_json_value "$get_result" '.WebACL.LockToken' 2>/dev/null) || true
+    
+    if [ -z "$latest_token" ]; then
         echo "Warning: Could not extract lock token for update"
         if [ "$i" -eq "$MAX_RETRIES" ]; then
             handle_error "Failed to extract lock token after $MAX_RETRIES attempts"
@@ -260,13 +309,12 @@ for ((i=1; i<=MAX_RETRIES; i++)); do
         continue
     fi
     
-    echo "Using lock token: $LATEST_TOKEN"
-    
-    UPDATE_RESULT=$(aws wafv2 update-web-acl \
+    local update_result
+    update_result=$(aws wafv2 update-web-acl \
         --name "$WEB_ACL_NAME" \
         --scope "CLOUDFRONT" \
         --id "$WEB_ACL_ID" \
-        --lock-token "$LATEST_TOKEN" \
+        --lock-token "$latest_token" \
         --default-action Allow={} \
         --rules '[{
             "Name": "UserAgentRule",
@@ -317,19 +365,18 @@ for ((i=1; i<=MAX_RETRIES; i++)); do
             }
         }]' \
         --visibility-config "SampledRequestsEnabled=true,CloudWatchMetricsEnabled=true,MetricName=$METRIC_NAME" \
-        --region us-east-1 2>&1)
+        --region us-east-1 2>&1) || true
     
-    if echo "$UPDATE_RESULT" | grep -i "WAFOptimisticLockException" > /dev/null; then
+    if echo "$update_result" | grep -qi "WAFOptimisticLockException"; then
         echo "Optimistic lock exception encountered. Will retry with new lock token."
         if [ "$i" -eq "$MAX_RETRIES" ]; then
-            handle_error "Failed to add AWS Managed Rules after $MAX_RETRIES attempts: $UPDATE_RESULT"
+            handle_error "Failed to add AWS Managed Rules after $MAX_RETRIES attempts"
         fi
         sleep 2
         continue
-    elif echo "$UPDATE_RESULT" | grep -i "error" > /dev/null; then
-        handle_error "Failed to add AWS Managed Rules: $UPDATE_RESULT"
+    elif echo "$update_result" | grep -qi "error"; then
+        handle_error "Failed to add AWS Managed Rules: $update_result"
     else
-        # Success
         echo "AWS Managed Rules added successfully."
         break
     fi
@@ -341,37 +388,53 @@ echo "==================================================="
 echo "STEP 4: Listing CloudFront Distributions"
 echo "==================================================="
 
-CF_RESULT=$(aws cloudfront list-distributions --query "DistributionList.Items[*].{Id:Id,DomainName:DomainName}" --output table 2>&1)
-if echo "$CF_RESULT" | grep -i "error" > /dev/null; then
-    echo "Warning: Failed to list CloudFront distributions: $CF_RESULT"
-    echo "Continuing without CloudFront association."
-else
-    echo "$CF_RESULT"
+local cf_result
+cf_result=$(aws cloudfront list-distributions --query "DistributionList.Items[*].{Id:Id,DomainName:DomainName}" --output table 2>&1) || cf_result=""
 
-    # Ask user to select a CloudFront distribution
+if echo "$cf_result" | grep -qi "error"; then
+    echo "Warning: Failed to list CloudFront distributions: $cf_result"
+    echo "Continuing without CloudFront association."
+    DISTRIBUTION_ID=""
+else
+    echo "$cf_result"
+
+    # Auto-select first CloudFront distribution if available
     echo ""
     echo "==================================================="
     echo "STEP 5: Associate Web ACL with CloudFront Distribution"
     echo "==================================================="
-    echo "Enter the ID of the CloudFront distribution to associate with the Web ACL:"
-    echo "(If you don't have a CloudFront distribution, press Enter to skip this step)"
-    read -r DISTRIBUTION_ID
-
-    if [ -n "$DISTRIBUTION_ID" ]; then
-        ASSOCIATE_RESULT=$(aws wafv2 associate-web-acl \
-            --web-acl-arn "$WEB_ACL_ARN" \
-            --resource-arn "arn:aws:cloudfront::$(aws sts get-caller-identity --query Account --output text):distribution/$DISTRIBUTION_ID" \
-            --region us-east-1 2>&1)
+    
+    local first_dist
+    first_dist=$(aws cloudfront list-distributions --query "DistributionList.Items[0].Id" --output text 2>&1) || first_dist=""
+    
+    if [ -n "$first_dist" ] && [ "$first_dist" != "None" ] && ! echo "$first_dist" | grep -qi "error"; then
+        DISTRIBUTION_ID="$first_dist"
+        echo "Using CloudFront distribution: $DISTRIBUTION_ID"
         
-        if echo "$ASSOCIATE_RESULT" | grep -i "error" > /dev/null; then
-            echo "Warning: Failed to associate Web ACL with CloudFront distribution: $ASSOCIATE_RESULT"
-            echo "Continuing without CloudFront association."
+        local account_id
+        account_id=$(aws sts get-caller-identity --query Account --output text 2>/dev/null) || account_id=""
+        
+        if [ -z "$account_id" ]; then
+            echo "Warning: Could not retrieve AWS account ID for association"
             DISTRIBUTION_ID=""
         else
-            echo "Web ACL associated with CloudFront distribution successfully."
+            local associate_result
+            associate_result=$(aws wafv2 associate-web-acl \
+                --web-acl-arn "$WEB_ACL_ARN" \
+                --resource-arn "arn:aws:cloudfront::${account_id}:distribution/${DISTRIBUTION_ID}" \
+                --region us-east-1 2>&1) || true
+            
+            if echo "$associate_result" | grep -qi "error"; then
+                echo "Warning: Failed to associate Web ACL with CloudFront distribution: $associate_result"
+                echo "Continuing without CloudFront association."
+                DISTRIBUTION_ID=""
+            else
+                echo "Web ACL associated with CloudFront distribution successfully."
+            fi
         fi
     else
-        echo "Skipping association with CloudFront distribution."
+        echo "No CloudFront distributions available. Skipping association."
+        DISTRIBUTION_ID=""
     fi
 fi
 
@@ -383,32 +446,16 @@ echo "==================================================="
 echo "Web ACL Name: $WEB_ACL_NAME"
 echo "Web ACL ID: $WEB_ACL_ID"
 echo "Web ACL ARN: $WEB_ACL_ARN"
-if [ -n "$DISTRIBUTION_ID" ]; then
+if [ -n "${DISTRIBUTION_ID:-}" ]; then
     echo "Associated CloudFront Distribution: $DISTRIBUTION_ID"
 fi
 echo ""
 
-# Ask user if they want to clean up resources
+# Auto-confirm cleanup
 echo "==================================================="
 echo "CLEANUP CONFIRMATION"
 echo "==================================================="
-echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
-
-if [[ "$CLEANUP_CHOICE" =~ ^[Yy] ]]; then
-    cleanup_resources
-else
-    echo ""
-    echo "Resources have NOT been cleaned up. You can manually clean them up later."
-    echo "To clean up resources manually, run the following commands:"
-    if [ -n "$DISTRIBUTION_ID" ]; then
-        echo "aws wafv2 disassociate-web-acl --resource-arn \"arn:aws:cloudfront::$(aws sts get-caller-identity --query Account --output text):distribution/$DISTRIBUTION_ID\" --region us-east-1"
-    fi
-    echo "aws wafv2 delete-web-acl --name \"$WEB_ACL_NAME\" --scope CLOUDFRONT --id \"$WEB_ACL_ID\" --lock-token \"<get-latest-token>\" --region us-east-1"
-    echo ""
-    echo "To get the latest lock token, run:"
-    echo "aws wafv2 get-web-acl --name \"$WEB_ACL_NAME\" --scope CLOUDFRONT --id \"$WEB_ACL_ID\" --region us-east-1"
-fi
+echo "Proceeding with automatic cleanup of all created resources..."
 
 echo ""
 echo "==================================================="

@@ -1,0 +1,28 @@
+config_service_GettingStarted_053:
+  title: Getting started with Config
+  title_abbrev: Getting started with Config
+  synopsis_list:
+    - Create an Amazon S3 bucket
+    - Create an Amazon SNS topic
+    - Create an IAM role for Config
+    - Set up the Config configuration recorder
+    - Set up the Config delivery channel
+    - Start the configuration recorder
+    - Verify the Config setup
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/053-aws-config-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/053-aws-config-gs/aws-config-gs.sh
+  services:
+    config-service: {DeleteConfigurationRecorder, DeleteDeliveryChannel, DescribeConfigurationRecorderStatus, DescribeConfigurationRecorders, DescribeDeliveryChannels, PutConfigurationRecorder, PutDeliveryChannel, StartConfigurationRecorder, StopConfigurationRecorder}
+    iam: {AttachRolePolicy, CreateRole, DeleteRole, DeleteRolePolicy, DetachRolePolicy, PutRolePolicy}
+    s3: {CreateBucket, DeleteBucket, PutPublicAccessBlock, Rm}
+    sns: {CreateTopic, DeleteTopic}
+    sts: {GetCallerIdentity}
