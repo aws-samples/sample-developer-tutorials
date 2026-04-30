@@ -4,7 +4,7 @@
 # This script creates a Valkey serverless cache, configures security groups,
 # and demonstrates how to connect to and use the cache.
 
-set -euo pipefail
+set -uo pipefail
 
 # Set up logging
 LOG_FILE="elasticache_tutorial_$(date +%Y%m%d_%H%M%S).log"
@@ -117,7 +117,8 @@ echo ""
 echo "Step 2: Creating Valkey serverless cache..."
 if ! CREATE_RESULT=$(aws elasticache create-serverless-cache \
   --serverless-cache-name "$CACHE_NAME" \
-  --engine valkey 2>&1); then
+  --engine valkey \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=amazon-elasticache-gs 2>&1); then
     handle_error "Failed to create serverless cache: $CREATE_RESULT"
 fi
 

@@ -233,6 +233,7 @@ SECRET_OUTPUT=$(aws secretsmanager create-secret \
     --name "$SECRET_NAME" \
     --description "DocumentDB master password for ${CLUSTER_ID}" \
     --secret-string file://"$TEMP_PASS_FILE" \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=documentdb-gs \
     --output text --query "ARN" 2>&1)
 
 # Securely clear password from memory
@@ -322,6 +323,7 @@ SUBNET_GROUP_OUTPUT=$(aws docdb create-db-subnet-group \
     --db-subnet-group-name "$SUBNET_GROUP_NAME" \
     --db-subnet-group-description "Subnet group for DocumentDB getting started" \
     --subnet-ids $SUBNET_IDS \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=documentdb-gs \
     --query "DBSubnetGroup.DBSubnetGroupName" --output text 2>&1)
 
 if echo "$SUBNET_GROUP_OUTPUT" | grep -iq "error"; then
@@ -355,6 +357,7 @@ CLUSTER_OUTPUT=$(aws docdb create-db-cluster \
     --kms-key-id "alias/aws/docdb" \
     --no-deletion-protection \
     --enable-cloudwatch-logs-exports '["audit","error","general","slowquery"]' \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=documentdb-gs \
     --query "DBCluster.DBClusterIdentifier" --output text 2>&1)
 
 # Clear password immediately after use
@@ -385,6 +388,7 @@ INSTANCE_OUTPUT=$(aws docdb create-db-instance \
     --db-instance-class "$INSTANCE_CLASS" \
     --db-cluster-identifier "$CLUSTER_ID" \
     --engine docdb \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=documentdb-gs \
     --query "DBInstance.DBInstanceIdentifier" --output text 2>&1)
 
 if echo "$INSTANCE_OUTPUT" | grep -iq "error"; then

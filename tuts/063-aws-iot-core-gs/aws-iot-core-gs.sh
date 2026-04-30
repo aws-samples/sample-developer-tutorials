@@ -135,13 +135,16 @@ cat > iot-policy.json << EOF
 EOF
 
 echo "Creating IoT policy: $POLICY_NAME..." | tee -a $LOG_FILE
-log_cmd "aws iot create-policy --policy-name $POLICY_NAME --policy-document file://iot-policy.json"
+log_cmd "aws iot create-policy --policy-name $POLICY_NAME --policy-document file://iot-policy.json --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-iot-core-gs"
 check_error $?
 
 # Create IoT thing
 echo "Creating IoT thing: $THING_NAME..." | tee -a $LOG_FILE
 log_cmd "aws iot create-thing --thing-name $THING_NAME"
 check_error $?
+
+THING_ARN=$(aws iot describe-thing --thing-name "$THING_NAME" --query 'thingArn' --output text)
+aws iot tag-resource --resource-arn "$THING_ARN" --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-iot-core-gs
 
 # Create directory for certificates
 echo "Creating certificates directory..." | tee -a $LOG_FILE
@@ -265,7 +268,7 @@ cat > shared-sub-policy.json << EOF
 }
 EOF
 
-log_cmd "aws iot create-policy --policy-name $SHARED_POLICY_NAME --policy-document file://shared-sub-policy.json"
+log_cmd "aws iot create-policy --policy-name $SHARED_POLICY_NAME --policy-document file://shared-sub-policy.json --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-iot-core-gs"
 check_error $?
 
 log_cmd "aws iot attach-policy --policy-name $SHARED_POLICY_NAME --target $CERTIFICATE_ARN"

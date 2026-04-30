@@ -101,6 +101,7 @@ log "Creating AWS Cloud Map namespace: $NAMESPACE_NAME"
 OPERATION_RESULT=$(aws servicediscovery create-public-dns-namespace \
     --name "$NAMESPACE_NAME" \
     --creator-request-id "cloudmap-tutorial-$CREATOR_REQUEST_ID" \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=cloudmap-service-discovery \
     --region "$REGION")
 
 OPERATION_ID=$(echo "$OPERATION_RESULT" | jq -r '.OperationId')
@@ -133,6 +134,7 @@ PUBLIC_SERVICE_RESULT=$(aws servicediscovery create-service \
     --name "public-service" \
     --namespace-id "$NAMESPACE_ID" \
     --dns-config "RoutingPolicy=MULTIVALUE,DnsRecords=[{Type=A,TTL=300}]" \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=cloudmap-service-discovery \
     --region "$REGION")
 
 PUBLIC_SERVICE_ID=$(echo "$PUBLIC_SERVICE_RESULT" | jq -r '.Service.Id')
@@ -143,6 +145,7 @@ BACKEND_SERVICE_RESULT=$(aws servicediscovery create-service \
     --name "backend-service" \
     --namespace-id "$NAMESPACE_ID" \
     --type "HTTP" \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=cloudmap-service-discovery \
     --region "$REGION")
 
 BACKEND_SERVICE_ID=$(echo "$BACKEND_SERVICE_RESULT" | jq -r '.Service.Id')

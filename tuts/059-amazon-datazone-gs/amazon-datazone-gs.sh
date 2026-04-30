@@ -188,6 +188,8 @@ EOF
     # Create the role
     ROLE_CREATE=$(aws iam create-role --role-name "$ROLE_NAME" --assume-role-policy-document file://trust-policy.json)
     check_error "$ROLE_CREATE" "create-role"
+    aws iam tag-role --role-name "$ROLE_NAME" \
+      --tags Key=project,Value=doc-smith Key=tutorial,Value=amazon-datazone-gs
     
     # FIX: Enhanced IAM role permissions for DataZone domain execution
     # Attach necessary policies with more comprehensive permissions
@@ -232,6 +234,7 @@ DOMAIN_RESULT=$(aws datazone create-domain \
   --name "$DOMAIN_NAME" \
   --description "My first DataZone domain" \
   --domain-execution-role "arn:aws:iam::$ACCOUNT_ID:role/$ROLE_NAME" \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=amazon-datazone-gs \
   --region "$REGION")
 
 check_error "$DOMAIN_RESULT" "create-domain"
@@ -444,6 +447,8 @@ EOF
     # Create the role
     GLUE_ROLE_CREATE=$(aws iam create-role --role-name "$GLUE_ROLE_NAME" --assume-role-policy-document file://glue-trust-policy.json)
     check_error "$GLUE_ROLE_CREATE" "create-glue-role"
+    aws iam tag-role --role-name "$GLUE_ROLE_NAME" \
+      --tags Key=project,Value=doc-smith Key=tutorial,Value=amazon-datazone-gs
     
     # Create policy document
     cat > glue-policy.json << EOF

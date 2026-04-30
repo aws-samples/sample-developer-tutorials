@@ -149,6 +149,9 @@ if [ "$BUCKET_IS_SHARED" = "false" ]; then
     fi
     check_command "$BUCKET_RESULT"
     echo "S3 bucket created: $S3_BUCKET_NAME"
+    
+    aws s3api put-bucket-tagging --bucket "$S3_BUCKET_NAME" --tagging 'TagSet=[{Key=project,Value=doc-smith},{Key=tutorial,Value=aws-config-gs}]'
+    echo "Tags applied to S3 bucket"
 else
     echo "Using shared bucket: $S3_BUCKET_NAME (skipping creation)"
 fi
@@ -162,7 +165,7 @@ echo "Public access blocked for bucket"
 # Step 2: Create an SNS topic
 TOPIC_NAME="config-topic-${RANDOM_ID}"
 echo "Creating SNS topic: $TOPIC_NAME"
-SNS_RESULT=$(aws sns create-topic --name "$TOPIC_NAME")
+SNS_RESULT=$(aws sns create-topic --name "$TOPIC_NAME" --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-config-gs)
 check_command "$SNS_RESULT"
 SNS_TOPIC_ARN=$(echo "$SNS_RESULT" | grep -o 'arn:aws:sns:[^"]*')
 echo "SNS topic created: $SNS_TOPIC_ARN"
@@ -193,6 +196,9 @@ ROLE_RESULT=$(aws iam create-role --role-name "$ROLE_NAME" --assume-role-policy-
 check_command "$ROLE_RESULT"
 ROLE_ARN=$(echo "$ROLE_RESULT" | grep -o 'arn:aws:iam::[^"]*' | head -1)
 echo "IAM role created: $ROLE_ARN"
+
+aws iam tag-role --role-name "$ROLE_NAME" --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-config-gs
+echo "Tags applied to IAM role"
 
 echo "Attaching AWS managed policy to role..."
 ATTACH_RESULT=$(aws iam attach-role-policy --role-name "$ROLE_NAME" --policy-arn "$MANAGED_POLICY_ARN")
@@ -283,6 +289,11 @@ RECORDER_RESULT=$(aws configservice put-configuration-recorder --configuration-r
 check_command "$RECORDER_RESULT"
 echo "Configuration recorder set up"
 
+if [ "$CREATED_NEW_CONFIG_RECORDER" = "true" ]; then
+    aws configservice tag-resource --resource-arn "arn:aws:config:${AWS_REGION}:${ACCOUNT_ID}:config-recorder/${CONFIG_RECORDER_NAME}" --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-config-gs
+    echo "Tags applied to configuration recorder"
+fi
+
 # Step 5: Check if delivery channel already exists
 DELIVERY_CHANNEL_NAME="default"
 CREATED_NEW_DELIVERY_CHANNEL="false"
@@ -332,6 +343,9 @@ EOF
     CHANNEL_RESULT=$(aws configservice put-delivery-channel --delivery-channel file://deliveryChannel.json)
     check_command "$CHANNEL_RESULT"
     echo "Delivery channel created"
+    
+    aws configservice tag-resource --resource-arn "arn:aws:config:${AWS_REGION}:${ACCOUNT_ID}:delivery-channel/${DELIVERY_CHANNEL_NAME}" --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-config-gs
+    echo "Tags applied to delivery channel"
 fi
 
 # Step 6: Start the configuration recorder

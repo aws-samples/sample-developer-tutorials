@@ -311,6 +311,8 @@ EOF
     
     execute_command "aws iam create-role --role-name ecsTaskExecutionRole --assume-role-policy-document file://trust-policy.json" "Create ECS task execution role"
     
+    aws iam tag-role --role-name ecsTaskExecutionRole --tags Key=project,Value=doc-smith Key=tutorial,Value=amazon-ecs-fargate-linux
+    
     execute_command "aws iam attach-role-policy --role-name ecsTaskExecutionRole --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy" "Attach ECS task execution policy"
     
     # Clean up temporary file securely
@@ -325,7 +327,7 @@ echo "==========================================="
 echo "STEP 2: CREATE ECS CLUSTER"
 echo "==========================================="
 
-CLUSTER_OUTPUT=$(execute_command "aws ecs create-cluster --cluster-name '$CLUSTER_NAME'" "Create ECS cluster")
+CLUSTER_OUTPUT=$(execute_command "aws ecs create-cluster --cluster-name '$CLUSTER_NAME' --tags key=project,value=doc-smith key=tutorial,value=amazon-ecs-fargate-linux" "Create ECS cluster")
 check_for_aws_errors "$CLUSTER_OUTPUT" "Create ECS cluster"
 
 CREATED_RESOURCES+=("ECS Cluster: $CLUSTER_NAME")
@@ -413,7 +415,7 @@ echo "Using default VPC: $VPC_ID"
 # Create security group with restricted access
 # Note: This allows HTTP access from anywhere for demo purposes
 # In production, restrict source to specific IP ranges or security groups
-SECURITY_GROUP_OUTPUT=$(execute_command "aws ec2 create-security-group --group-name '$SECURITY_GROUP_NAME' --description 'Security group for ECS Fargate tutorial - HTTP access' --vpc-id '$VPC_ID'" "Create security group")
+SECURITY_GROUP_OUTPUT=$(execute_command "aws ec2 create-security-group --group-name '$SECURITY_GROUP_NAME' --description 'Security group for ECS Fargate tutorial - HTTP access' --vpc-id '$VPC_ID' --tag-specifications 'ResourceType=security-group,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=amazon-ecs-fargate-linux}]'" "Create security group")
 check_for_aws_errors "$SECURITY_GROUP_OUTPUT" "Create security group"
 
 SECURITY_GROUP_ID=$(echo "$SECURITY_GROUP_OUTPUT" | grep -o '"GroupId": "[^"]*"' | head -1 | cut -d'"' -f4)
@@ -461,7 +463,7 @@ echo "STEP 5: CREATE ECS SERVICE"
 echo "==========================================="
 
 # Create the service with proper JSON formatting for network configuration
-SERVICE_CMD="aws ecs create-service --cluster '$CLUSTER_NAME' --service-name '$SERVICE_NAME' --task-definition '$TASK_FAMILY' --desired-count 1 --launch-type FARGATE --network-configuration '{\"awsvpcConfiguration\":{\"subnets\":[\"$(echo "$SUBNET_IDS_COMMA" | sed 's/,/","/g')\"],\"securityGroups\":[\"$SECURITY_GROUP_ID\"],\"assignPublicIp\":\"ENABLED\"}}'"
+SERVICE_CMD="aws ecs create-service --cluster '$CLUSTER_NAME' --service-name '$SERVICE_NAME' --task-definition '$TASK_FAMILY' --desired-count 1 --launch-type FARGATE --network-configuration '{\"awsvpcConfiguration\":{\"subnets\":[\"$(echo "$SUBNET_IDS_COMMA" | sed 's/,/","/g')\"],\"securityGroups\":[\"$SECURITY_GROUP_ID\"],\"assignPublicIp\":\"ENABLED\"}}' --tags key=project,value=doc-smith key=tutorial,value=amazon-ecs-fargate-linux"
 
 echo "Service creation command: $SERVICE_CMD"
 

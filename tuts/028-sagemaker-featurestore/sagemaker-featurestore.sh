@@ -121,6 +121,10 @@ create_sagemaker_role() {
     echo "Role created successfully" >&2
     CREATED_RESOURCES+=("IAMRole:$role_name")
     
+    # Tag the role
+    echo "Tagging IAM role..." >&2
+    aws iam tag-role --role-name "$role_name" --tags Key=project,Value=doc-smith Key=tutorial,Value=sagemaker-featurestore 2>&1
+    
     # Attach necessary policies
     echo "Attaching policies to role..." >&2
     
@@ -235,6 +239,10 @@ fi
 echo "$BUCKET_RESULT"
 CREATED_RESOURCES+=("S3Bucket:$S3_BUCKET_NAME")
 
+# Tag the S3 bucket
+echo "Tagging S3 bucket: $S3_BUCKET_NAME"
+aws s3api put-bucket-tagging --bucket "$S3_BUCKET_NAME" --tagging 'TagSet=[{Key=project,Value=doc-smith},{Key=tutorial,Value=sagemaker-featurestore}]' 2>&1
+
 # Block public access to the bucket
 BLOCK_RESULT=$(aws s3api put-public-access-block \
     --bucket "$S3_BUCKET_NAME" \
@@ -275,7 +283,8 @@ CUSTOMERS_RESPONSE=$(aws sagemaker create-feature-group \
         },
         "DisableGlueTableCreation": false
     }' \
-    --role-arn "$ROLE_ARN" 2>&1)
+    --role-arn "$ROLE_ARN" \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=sagemaker-featurestore 2>&1)
 
 if echo "$CUSTOMERS_RESPONSE" | grep -i "error" > /dev/null; then
     echo "Failed to create customers feature group: $CUSTOMERS_RESPONSE"
@@ -310,7 +319,8 @@ ORDERS_RESPONSE=$(aws sagemaker create-feature-group \
         },
         "DisableGlueTableCreation": false
     }' \
-    --role-arn "$ROLE_ARN" 2>&1)
+    --role-arn "$ROLE_ARN" \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=sagemaker-featurestore 2>&1)
 
 if echo "$ORDERS_RESPONSE" | grep -i "error" > /dev/null; then
     echo "Failed to create orders feature group: $ORDERS_RESPONSE"

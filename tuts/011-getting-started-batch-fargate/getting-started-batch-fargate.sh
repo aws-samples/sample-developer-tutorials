@@ -364,6 +364,7 @@ EOFPOLICY
     aws iam create-role \
         --role-name "${ROLE_NAME}" \
         --assume-role-policy-document "file://${TRUST_POLICY_FILE}"
+    aws iam tag-role --role-name "${ROLE_NAME}" --tags Key=project,Value=doc-smith Key=tutorial,Value=getting-started-batch-fargate
     CREATED_RESOURCES+=("IAM_ROLE:${ROLE_NAME}")
     
     # Attach policy
@@ -384,6 +385,7 @@ EOFPOLICY
         --compute-environment-name "${COMPUTE_ENV_NAME}" \
         --type MANAGED \
         --state ENABLED \
+        --tags project=doc-smith,tutorial=getting-started-batch-fargate \
         --compute-resources "{
             \"type\": \"FARGATE\",
             \"maxvCpus\": 256,
@@ -405,6 +407,7 @@ EOFPOLICY
         --job-queue-name "${JOB_QUEUE_NAME}" \
         --state ENABLED \
         --priority 900 \
+        --tags project=doc-smith,tutorial=getting-started-batch-fargate \
         --compute-environment-order "order=1,computeEnvironment=${COMPUTE_ENV_NAME}"
     CREATED_RESOURCES+=("JOB_QUEUE:${JOB_QUEUE_NAME}")
     

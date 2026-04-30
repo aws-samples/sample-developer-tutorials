@@ -114,6 +114,8 @@ create_iam_role() {
         return 1
     fi
     
+    aws iam tag-role --role-name "$ROLE_NAME" --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-iot-device-defender-gs 2>&1 || true
+    
     # For IoT logging role, create an inline policy instead of using a managed policy
     if [[ "$ROLE_NAME" == "AWSIoTLoggingRole" ]]; then
         local LOGGING_POLICY
@@ -377,6 +379,9 @@ fi
 echo "Audit task started with ID: $TASK_ID"
 CREATED_RESOURCES+=("Audit Task: $TASK_ID")
 
+# Tag the audit task via IoT service
+aws iot tag-resource --resource-arn "arn:aws:iot:$(aws configure get region):${ACCOUNT_ID}:audittask/${TASK_ID}" --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-iot-device-defender-gs 2>&1 || true
+
 # Wait for the audit task to complete
 echo "Waiting for audit task to complete (this may take a few minutes)..."
 TASK_STATUS="IN_PROGRESS"
@@ -486,6 +491,7 @@ if validate_json "$MITIGATION_RESULT"; then
     MITIGATION_ACTION_ARN=$(extract_json_value "$MITIGATION_RESULT" "actionArn")
     if [ -n "$MITIGATION_ACTION_ARN" ]; then
         echo "Mitigation Action ARN: $MITIGATION_ACTION_ARN"
+        aws iot tag-resource --resource-arn "$MITIGATION_ACTION_ARN" --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-iot-device-defender-gs 2>&1 || true
     fi
 else
     echo "WARNING: Could not validate mitigation action response, but action may have been created"
@@ -565,7 +571,7 @@ if [ -n "$TOPIC_ARN" ]; then
     echo "Topic ARN: $TOPIC_ARN"
 else
     echo "Creating SNS topic for notifications..."
-    SNS_RESULT=$(aws sns create-topic --name "IoTDDNotifications" --output json 2>&1) || true
+    SNS_RESULT=$(aws sns create-topic --name "IoTDDNotifications" --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-iot-device-defender-gs --output json 2>&1) || true
 
     if ! check_error "$SNS_RESULT"; then
         echo "WARNING: Failed to create SNS topic, continuing..."

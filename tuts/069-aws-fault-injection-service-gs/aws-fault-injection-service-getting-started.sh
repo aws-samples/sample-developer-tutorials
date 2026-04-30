@@ -117,6 +117,7 @@ FIS_ROLE_OUTPUT=$(aws iam create-role \
   --role-name "$FIS_ROLE_NAME" \
   --assume-role-policy-document file://fis-trust-policy.json)
 check_error "$FIS_ROLE_OUTPUT" "aws iam create-role"
+aws iam tag-role --role-name "$FIS_ROLE_NAME" --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-fault-injection-service-gs
 CREATED_RESOURCES+=("IAM Role: $FIS_ROLE_NAME")
 
 # Create policy document for SSM actions
@@ -169,6 +170,7 @@ EC2_ROLE_OUTPUT=$(aws iam create-role \
   --role-name "$EC2_ROLE_NAME" \
   --assume-role-policy-document file://ec2-trust-policy.json)
 check_error "$EC2_ROLE_OUTPUT" "aws iam create-role"
+aws iam tag-role --role-name "$EC2_ROLE_NAME" --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-fault-injection-service-gs
 CREATED_RESOURCES+=("IAM Role: $EC2_ROLE_NAME")
 
 # Attach SSM policy to the EC2 role
@@ -214,7 +216,7 @@ INSTANCE_OUTPUT=$(aws ec2 run-instances \
   --image-id "$AMI_ID" \
   --instance-type t2.micro \
   --iam-instance-profile Name="$INSTANCE_PROFILE_NAME" \
-  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=FIS-Test-Instance}]')
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=FIS-Test-Instance},{Key=project,Value=doc-smith},{Key=tutorial,Value=aws-fault-injection-service-gs}]')
 check_error "$INSTANCE_OUTPUT" "aws ec2 run-instances"
 
 # Get instance ID
@@ -350,7 +352,9 @@ cat > experiment-template.json << EOF
   ],
   "roleArn": "$ROLE_ARN",
   "tags": {
-    "Name": "FIS-CPU-Stress-Experiment"
+    "Name": "FIS-CPU-Stress-Experiment",
+    "project": "doc-smith",
+    "tutorial": "aws-fault-injection-service-gs"
   }
 }
 EOF

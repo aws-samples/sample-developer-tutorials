@@ -18,6 +18,10 @@ SERVICE_NAME="nginx-service-$(openssl rand -hex 4)"
 KEY_PAIR_NAME="ecs-tutorial-key-$(openssl rand -hex 4)"
 SECURITY_GROUP_NAME="ecs-tutorial-sg-$(openssl rand -hex 4)"
 
+# Tags
+PROJECT_TAG="doc-smith"
+TUTORIAL_TAG="ecs-ec2"
+
 # Get current AWS region dynamically
 AWS_REGION=$(aws configure get region || echo "us-east-1")
 
@@ -207,7 +211,7 @@ check_prerequisites() {
 create_cluster() {
     log "Creating ECS cluster: $CLUSTER_NAME"
     
-    CLUSTER_ARN=$(aws ecs create-cluster --cluster-name "$CLUSTER_NAME" --query 'cluster.clusterArn' --output text)
+    CLUSTER_ARN=$(aws ecs create-cluster --cluster-name "$CLUSTER_NAME" --tags key=project,value=$PROJECT_TAG key=tutorial,value=$TUTORIAL_TAG --query 'cluster.clusterArn' --output text)
     
     if [[ -z "$CLUSTER_ARN" ]]; then
         log "ERROR: Failed to create cluster"
@@ -230,6 +234,8 @@ create_key_pair() {
     
     log "Created key pair: $KEY_PAIR_NAME"
     CREATED_RESOURCES+=("EC2 Key Pair: $KEY_PAIR_NAME")
+    
+    aws ec2 create-tags --resources "$KEY_PAIR_NAME" --tags Key=project,Value=$PROJECT_TAG Key=tutorial,Value=$TUTORIAL_TAG 2>>"$LOG_FILE" || log "WARNING: Failed to tag key pair"
 }
 
 # Function to create security group
@@ -240,6 +246,7 @@ create_security_group() {
         --group-name "$SECURITY_GROUP_NAME" \
         --description "ECS tutorial security group" \
         --vpc-id "$DEFAULT_VPC" \
+        --tag-specifications "ResourceType=security-group,Tags=[{Key=project,Value=$PROJECT_TAG},{Key=tutorial,Value=$TUTORIAL_TAG}]" \
         --query 'GroupId' --output text)
     
     if [[ -z "$SECURITY_GROUP_ID" ]]; then
@@ -312,6 +319,8 @@ EOF
             --role-name ecsInstanceRole \
             --assume-role-policy-document file://ecs-instance-trust-policy.json
         
+        aws iam tag-role --role-name ecsInstanceRole --tags Key=project,Value=$PROJECT_TAG Key=tutorial,Value=$TUTORIAL_TAG
+        
         # Attach managed policy
         aws iam attach-role-policy \
             --role-name ecsInstanceRole \
@@ -363,7 +372,7 @@ EOF
         --subnet-id "$DEFAULT_SUBNET" \
         --iam-instance-profile Name=ecsInstanceRole \
         --user-data file://ecs-user-data.sh \
-        --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=ecs-tutorial-instance}]" \
+        --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=ecs-tutorial-instance},{Key=project,Value=$PROJECT_TAG},{Key=tutorial,Value=$TUTORIAL_TAG}]" \
         --monitoring Enabled=false \
         --metadata-options HttpTokens=required,HttpPutResponseHopLimit=1 \
         --query 'Instances[0].InstanceId' --output text)
@@ -441,13 +450,25 @@ register_task_definition() {
         }
     ],
     "requiresCompatibilities": ["EC2"],
-    "networkMode": "bridge"
+    "networkMode": "bridge",
+    "tags": [
+        {
+            "key": "project",
+            "value": "PROJECT_TAG_PLACEHOLDER"
+        },
+        {
+            "key": "tutorial",
+            "value": "TUTORIAL_TAG_PLACEHOLDER"
+        }
+    ]
 }
 EOF
     
     # Replace placeholders securely
     sed -i "s|TASK_FAMILY_PLACEHOLDER|$TASK_FAMILY|g" task-definition.json
     sed -i "s|REGION_PLACEHOLDER|$AWS_REGION|g" task-definition.json
+    sed -i "s|PROJECT_TAG_PLACEHOLDER|$PROJECT_TAG|g" task-definition.json
+    sed -i "s|TUTORIAL_TAG_PLACEHOLDER|$TUTORIAL_TAG|g" task-definition.json
     
     # FIXED: Validate JSON before registration
     if ! jq empty task-definition.json 2>/dev/null; then
@@ -482,6 +503,7 @@ create_service() {
         --service-name "$SERVICE_NAME" \
         --task-definition "$TASK_FAMILY" \
         --desired-count 1 \
+        --tags key=project,value=$PROJECT_TAG key=tutorial,value=$TUTORIAL_TAG \
         --query 'service.serviceArn' --output text)
     
     if [[ -z "$SERVICE_ARN" ]]; then

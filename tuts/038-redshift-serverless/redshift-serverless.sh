@@ -85,7 +85,8 @@ create_secret() {
   local secret_output=$(aws secretsmanager create-secret \
     --name "$secret_name" \
     --description "$description" \
-    --secret-string "{\"username\":\"$username\",\"password\":\"$password\"}" 2>&1)
+    --secret-string "{\"username\":\"$username\",\"password\":\"$password\"}" \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=redshift-serverless 2>&1)
   
   if echo "$secret_output" | grep -i "error\|exception\|fail" > /dev/null; then
     echo "ERROR: Failed to create secret: $secret_output"
@@ -304,6 +305,8 @@ echo "Creating IAM role $ROLE_NAME..."
 ROLE_OUTPUT=$(aws iam create-role --role-name "$ROLE_NAME" --assume-role-policy-document file://redshift-trust-policy.json 2>&1)
 echo "$ROLE_OUTPUT"
 check_error "$ROLE_OUTPUT" "aws iam create-role"
+aws iam tag-role --role-name "$ROLE_NAME" \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=redshift-serverless
 CREATED_RESOURCES+=("IAM Role: $ROLE_NAME")
 
 # Attach S3 policy to the role
@@ -322,7 +325,8 @@ NAMESPACE_OUTPUT=$(aws redshift-serverless create-namespace \
   --namespace-name "$NAMESPACE_NAME" \
   --admin-username "$ADMIN_USERNAME" \
   --admin-user-password "$ADMIN_PASSWORD" \
-  --db-name "$DB_NAME" 2>&1)
+  --db-name "$DB_NAME" \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=redshift-serverless 2>&1)
 echo "$NAMESPACE_OUTPUT"
 check_error "$NAMESPACE_OUTPUT" "aws redshift-serverless create-namespace"
 CREATED_RESOURCES+=("Redshift Serverless Namespace: $NAMESPACE_NAME")
@@ -343,7 +347,8 @@ echo "Creating Redshift Serverless workgroup $WORKGROUP_NAME..."
 WORKGROUP_OUTPUT=$(aws redshift-serverless create-workgroup \
   --workgroup-name "$WORKGROUP_NAME" \
   --namespace-name "$NAMESPACE_NAME" \
-  --base-capacity 8 2>&1)
+  --base-capacity 8 \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=redshift-serverless 2>&1)
 echo "$WORKGROUP_OUTPUT"
 check_error "$WORKGROUP_OUTPUT" "aws redshift-serverless create-workgroup"
 CREATED_RESOURCES+=("Redshift Serverless Workgroup: $WORKGROUP_NAME")

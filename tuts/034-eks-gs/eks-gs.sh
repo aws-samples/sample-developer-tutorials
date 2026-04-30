@@ -153,7 +153,8 @@ echo "Creating CloudFormation stack: $STACK_NAME"
 # Create the CloudFormation stack
 CF_CREATE_OUTPUT=$(aws cloudformation create-stack \
   --stack-name "$STACK_NAME" \
-  --template-url https://s3.us-west-2.amazonaws.com/amazon-eks/cloudformation/2020-10-29/amazon-eks-vpc-private-subnets.yaml)
+  --template-url https://s3.us-west-2.amazonaws.com/amazon-eks/cloudformation/2020-10-29/amazon-eks-vpc-private-subnets.yaml \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=eks-gs)
 check_command "$CF_CREATE_OUTPUT"
 CREATED_RESOURCES+=("CloudFormation Stack: $STACK_NAME")
 
@@ -190,6 +191,8 @@ CLUSTER_ROLE_OUTPUT=$(aws iam create-role \
   --role-name "$CLUSTER_ROLE_NAME" \
   --assume-role-policy-document file://"eks-cluster-role-trust-policy.json")
 check_command "$CLUSTER_ROLE_OUTPUT"
+aws iam tag-role --role-name "$CLUSTER_ROLE_NAME" \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=eks-gs
 CREATED_RESOURCES+=("IAM Role: $CLUSTER_ROLE_NAME")
 
 # Attach policy to cluster role
@@ -222,6 +225,8 @@ NODE_ROLE_OUTPUT=$(aws iam create-role \
   --role-name "$NODE_ROLE_NAME" \
   --assume-role-policy-document file://"node-role-trust-policy.json")
 check_command "$NODE_ROLE_OUTPUT"
+aws iam tag-role --role-name "$NODE_ROLE_NAME" \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=eks-gs
 CREATED_RESOURCES+=("IAM Role: $NODE_ROLE_NAME")
 
 # Attach policies to node role
@@ -283,7 +288,8 @@ echo "Creating EKS cluster (this will take 10-15 minutes)..."
 CREATE_CLUSTER_OUTPUT=$(aws eks create-cluster \
   --name "$CLUSTER_NAME" \
   --role-arn "$CLUSTER_ROLE_ARN" \
-  --resources-vpc-config subnetIds="$SUBNET_IDS",securityGroupIds="$SECURITY_GROUP_ID")
+  --resources-vpc-config subnetIds="$SUBNET_IDS",securityGroupIds="$SECURITY_GROUP_ID" \
+  --tags Key=project,Value=doc-smith,Key=tutorial,Value=eks-gs)
 check_command "$CREATE_CLUSTER_OUTPUT"
 CREATED_RESOURCES+=("EKS Cluster: $CLUSTER_NAME")
 
@@ -335,7 +341,8 @@ CREATE_NODEGROUP_OUTPUT=$(aws eks create-nodegroup \
   --cluster-name "$CLUSTER_NAME" \
   --nodegroup-name "$NODEGROUP_NAME" \
   --node-role "$NODE_ROLE_ARN" \
-  --subnets "${SUBNET_IDS_ARRAY[@]}")
+  --subnets "${SUBNET_IDS_ARRAY[@]}" \
+  --tags Key=project,Value=doc-smith,Key=tutorial,Value=eks-gs)
 check_command "$CREATE_NODEGROUP_OUTPUT"
 CREATED_RESOURCES+=("EKS Node Group: $NODEGROUP_NAME")
 

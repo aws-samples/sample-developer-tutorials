@@ -256,6 +256,7 @@ INSTANCE_OUTPUT=$(aws ec2 run-instances \
   --count 1 \
   --region "$AWS_REGION" \
   --monitoring Enabled=false \
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=marketplace-buyer-gs}]' \
   --output json) || {
     echo "ERROR: Failed to launch instance" >&2
     exit 1

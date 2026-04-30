@@ -176,6 +176,11 @@ fi
 echo "Successfully created Amazon Connect instance with ID: $INSTANCE_ID" | tee -a "$LOG_FILE"
 echo "Instance ARN: $INSTANCE_ARN" | tee -a "$LOG_FILE"
 
+# Tag the instance
+aws connect tag-resource --resource-arn "$INSTANCE_ARN" \
+    --tags project=doc-smith,tutorial=connect-gs \
+    --region "$AWS_REGION"
+
 # Wait for the instance to be fully created and active
 if ! wait_for_instance "$INSTANCE_ID"; then
     echo "ERROR: Instance did not become fully active within the timeout period" | tee -a "$LOG_FILE"

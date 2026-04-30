@@ -166,71 +166,91 @@ echo "Setting up VPC peering connection..."
 # Validate AWS CLI
 validate_aws_cli
 
-# Check VPC quota — need room for up to 2 new VPCs
-VPC_COUNT=$(aws ec2 describe-vpcs --region "$AWS_REGION" --query 'length(Vpcs)' --output text 2>/dev/null || echo 99)
-VPC_LIMIT=5
-VPCS_NEEDED=2
+# Check for existing VPCs
+echo "Checking for existing VPCs..."
+EXISTING_VPCS=$(aws ec2 describe-vpcs --region "$AWS_REGION" --query 'Vpcs[?State==`available`].[VpcId,CidrBlock]' --output text 2>/dev/null || echo "")
 
-# Check if prereq stack provides a VPC we can use as VPC1
-PREREQ_VPC_ID=""
-PREREQ_STACK=$(aws cloudformation describe-stacks --region "$AWS_REGION" --stack-name tutorial-prereqs-vpc-public --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "")
-if [[ "$PREREQ_STACK" == "CREATE_COMPLETE" || "$PREREQ_STACK" == "UPDATE_COMPLETE" ]]; then
-    PREREQ_VPC_ID=$(aws cloudformation describe-stacks --region "$AWS_REGION" --stack-name tutorial-prereqs-vpc-public --query 'Stacks[0].Outputs[?OutputKey==`VpcId`].OutputValue' --output text 2>/dev/null || echo "")
-    if [ -n "$PREREQ_VPC_ID" ]; then
-        echo "Found prereq stack VPC: $PREREQ_VPC_ID (10.0.0.0/16)"
-        VPCS_NEEDED=1
+if [ -z "$EXISTING_VPCS" ]; then
+    echo "No existing VPCs found. Creating new VPCs..."
+    CREATE_VPCS=true
+else
+    echo "Found existing VPCs:"
+    echo "$EXISTING_VPCS"
+    echo ""
+    echo "Using existing VPCs..."
+    CREATE_VPCS=false
+    # Get the first two available VPCs
+    VPC1_INFO=$(echo "$EXISTING_VPCS" | head -n 1)
+    VPC2_INFO=$(echo "$EXISTING_VPCS" | head -n 2 | tail -n 1)
+    
+    if [ -z "$VPC2_INFO" ]; then
+        echo "Only one VPC found. Creating a second VPC..."
+        VPC1_ID=$(echo "$VPC1_INFO" | awk '{print $1}')
+        VPC1_CIDR=$(echo "$VPC1_INFO" | awk '{print $2}')
+        
+        # Sanitize extracted values
+        VPC1_ID=$(sanitize_var "$VPC1_ID") || check_error 1 "Invalid VPC1_ID format"
+        VPC1_CIDR=$(sanitize_var "$VPC1_CIDR") || check_error 1 "Invalid VPC1_CIDR format"
+        
+        validate_cidr "$VPC1_CIDR" || check_error 1 "Invalid VPC1 CIDR"
+        CREATE_VPC2_ONLY=true
+    else
+        VPC1_ID=$(echo "$VPC1_INFO" | awk '{print $1}')
+        VPC1_CIDR=$(echo "$VPC1_INFO" | awk '{print $2}')
+        VPC2_ID=$(echo "$VPC2_INFO" | awk '{print $1}')
+        VPC2_CIDR=$(echo "$VPC2_INFO" | awk '{print $2}')
+        
+        # Sanitize extracted values
+        VPC1_ID=$(sanitize_var "$VPC1_ID") || check_error 1 "Invalid VPC1_ID format"
+        VPC1_CIDR=$(sanitize_var "$VPC1_CIDR") || check_error 1 "Invalid VPC1_CIDR format"
+        VPC2_ID=$(sanitize_var "$VPC2_ID") || check_error 1 "Invalid VPC2_ID format"
+        VPC2_CIDR=$(sanitize_var "$VPC2_CIDR") || check_error 1 "Invalid VPC2_CIDR format"
+        
+        validate_cidr "$VPC1_CIDR" || check_error 1 "Invalid VPC1 CIDR"
+        validate_cidr "$VPC2_CIDR" || check_error 1 "Invalid VPC2 CIDR"
+        CREATE_VPC2_ONLY=false
     fi
 fi
 
-AVAILABLE=$((VPC_LIMIT - VPC_COUNT))
-if [ "$AVAILABLE" -lt "$VPCS_NEEDED" ]; then
-    echo "ERROR: Need $VPCS_NEEDED VPC slots but only $AVAILABLE available ($VPC_COUNT/$VPC_LIMIT used in $AWS_REGION)."
-    echo "Free up VPCs or run in a different region: AWS_REGION=<region> bash $0"
-    exit 1
-fi
-
-# Set up VPCs
-if [ -n "$PREREQ_VPC_ID" ]; then
-    # Use prereq VPC as VPC1, create VPC2
-    VPC1_ID="$PREREQ_VPC_ID"
-    VPC1_CIDR="10.0.0.0/16"
-    echo "Using prereq stack VPC as VPC1: $VPC1_ID ($VPC1_CIDR)"
-
-    echo "Creating VPC2..."
-    VPC2_ID=$(log_cmd "aws ec2 create-vpc --region '$AWS_REGION' --cidr-block 10.2.0.0/16 --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=VPC2-Peering-Demo}]' --query 'Vpc.VpcId' --output text")
-    check_error $? "Failed to create VPC2"
-    VPC2_ID=$(sanitize_var "$VPC2_ID") || check_error 1 "Invalid VPC2_ID returned"
-    VPC2_CIDR="10.2.0.0/16"
-    CREATED_RESOURCES+=("VPC2: $VPC2_ID")
-    CLEANUP_COMMANDS+=("aws ec2 delete-vpc --region '$AWS_REGION' --vpc-id '$VPC2_ID'")
-    echo "VPC2 created with ID: $VPC2_ID"
-
-    echo "Waiting for VPC2 to be available..."
-    log_cmd "aws ec2 wait vpc-available --region '$AWS_REGION' --vpc-ids '$VPC2_ID'"
-    check_error $? "Timeout waiting for VPC2 to become available"
-else
-    # Create both VPCs
+# Create VPCs if needed
+if [ "$CREATE_VPCS" = true ]; then
     echo "Creating VPC1..."
-    VPC1_ID=$(log_cmd "aws ec2 create-vpc --region '$AWS_REGION' --cidr-block 10.1.0.0/16 --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=VPC1-Peering-Demo}]' --query 'Vpc.VpcId' --output text")
+    VPC1_ID=$(log_cmd "aws ec2 create-vpc --region '$AWS_REGION' --cidr-block 10.1.0.0/16 --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=VPC1-Peering-Demo},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-peering}]' --query 'Vpc.VpcId' --output text")
     check_error $? "Failed to create VPC1"
     VPC1_ID=$(sanitize_var "$VPC1_ID") || check_error 1 "Invalid VPC1_ID returned"
     VPC1_CIDR="10.1.0.0/16"
     CREATED_RESOURCES+=("VPC1: $VPC1_ID")
     CLEANUP_COMMANDS+=("aws ec2 delete-vpc --region '$AWS_REGION' --vpc-id '$VPC1_ID'")
     echo "VPC1 created with ID: $VPC1_ID"
-
+    
     echo "Creating VPC2..."
-    VPC2_ID=$(log_cmd "aws ec2 create-vpc --region '$AWS_REGION' --cidr-block 10.2.0.0/16 --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=VPC2-Peering-Demo}]' --query 'Vpc.VpcId' --output text")
+    VPC2_ID=$(log_cmd "aws ec2 create-vpc --region '$AWS_REGION' --cidr-block 10.2.0.0/16 --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=VPC2-Peering-Demo},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-peering}]' --query 'Vpc.VpcId' --output text")
     check_error $? "Failed to create VPC2"
     VPC2_ID=$(sanitize_var "$VPC2_ID") || check_error 1 "Invalid VPC2_ID returned"
     VPC2_CIDR="10.2.0.0/16"
     CREATED_RESOURCES+=("VPC2: $VPC2_ID")
     CLEANUP_COMMANDS+=("aws ec2 delete-vpc --region '$AWS_REGION' --vpc-id '$VPC2_ID'")
     echo "VPC2 created with ID: $VPC2_ID"
-
+    
+    # Wait for VPCs to be available
     echo "Waiting for VPCs to be available..."
     log_cmd "aws ec2 wait vpc-available --region '$AWS_REGION' --vpc-ids '$VPC1_ID' '$VPC2_ID'"
     check_error $? "Timeout waiting for VPCs to become available"
+    
+elif [ "$CREATE_VPC2_ONLY" = true ]; then
+    echo "Creating VPC2..."
+    VPC2_ID=$(log_cmd "aws ec2 create-vpc --region '$AWS_REGION' --cidr-block 10.2.0.0/16 --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=VPC2-Peering-Demo},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-peering}]' --query 'Vpc.VpcId' --output text")
+    check_error $? "Failed to create VPC2"
+    VPC2_ID=$(sanitize_var "$VPC2_ID") || check_error 1 "Invalid VPC2_ID returned"
+    VPC2_CIDR="10.2.0.0/16"
+    CREATED_RESOURCES+=("VPC2: $VPC2_ID")
+    CLEANUP_COMMANDS+=("aws ec2 delete-vpc --region '$AWS_REGION' --vpc-id '$VPC2_ID'")
+    echo "VPC2 created with ID: $VPC2_ID"
+    
+    # Wait for VPC2 to be available
+    echo "Waiting for VPC2 to be available..."
+    log_cmd "aws ec2 wait vpc-available --region '$AWS_REGION' --vpc-ids '$VPC2_ID'"
+    check_error $? "Timeout waiting for VPC2 to become available"
 fi
 
 echo "Using the following VPCs:"
@@ -243,9 +263,8 @@ log_cmd "aws ec2 describe-vpcs --region '$AWS_REGION' --vpc-ids '$VPC1_ID' '$VPC
 check_error $? "Failed to verify VPCs"
 
 # Determine subnet CIDR blocks based on VPC CIDR blocks
-# Use .100.0/24 to avoid overlap with prereq stack subnets (.1-.4)
-VPC1_SUBNET_CIDR=$(echo "$VPC1_CIDR" | sed 's/0\.0\/16/100.0\/24/')
-VPC2_SUBNET_CIDR=$(echo "$VPC2_CIDR" | sed 's/0\.0\/16/100.0\/24/')
+VPC1_SUBNET_CIDR=$(echo "$VPC1_CIDR" | sed 's/0\.0\/16/1.0\/24/')
+VPC2_SUBNET_CIDR=$(echo "$VPC2_CIDR" | sed 's/0\.0\/16/1.0\/24/')
 
 # Sanitize subnet CIDR blocks
 VPC1_SUBNET_CIDR=$(sanitize_var "$VPC1_SUBNET_CIDR") || check_error 1 "Invalid VPC1_SUBNET_CIDR format"
@@ -256,7 +275,7 @@ validate_cidr "$VPC2_SUBNET_CIDR" || check_error 1 "Invalid subnet CIDR for VPC2
 
 # Create subnets in both VPCs
 echo "Creating subnet in VPC1..."
-SUBNET1_ID=$(log_cmd "aws ec2 create-subnet --region '$AWS_REGION' --vpc-id '$VPC1_ID' --cidr-block '$VPC1_SUBNET_CIDR' --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=VPC1-Peering-Subnet}]' --query 'Subnet.SubnetId' --output text")
+SUBNET1_ID=$(log_cmd "aws ec2 create-subnet --region '$AWS_REGION' --vpc-id '$VPC1_ID' --cidr-block '$VPC1_SUBNET_CIDR' --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=VPC1-Peering-Subnet},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-peering}]' --query 'Subnet.SubnetId' --output text")
 check_error $? "Failed to create subnet in VPC1"
 SUBNET1_ID=$(sanitize_var "$SUBNET1_ID") || check_error 1 "Invalid SUBNET1_ID returned"
 CREATED_RESOURCES+=("Subnet in VPC1: $SUBNET1_ID")
@@ -264,7 +283,7 @@ CLEANUP_COMMANDS+=("aws ec2 delete-subnet --region '$AWS_REGION' --subnet-id '$S
 echo "Subnet created in VPC1 with ID: $SUBNET1_ID (CIDR: $VPC1_SUBNET_CIDR)"
 
 echo "Creating subnet in VPC2..."
-SUBNET2_ID=$(log_cmd "aws ec2 create-subnet --region '$AWS_REGION' --vpc-id '$VPC2_ID' --cidr-block '$VPC2_SUBNET_CIDR' --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=VPC2-Peering-Subnet}]' --query 'Subnet.SubnetId' --output text")
+SUBNET2_ID=$(log_cmd "aws ec2 create-subnet --region '$AWS_REGION' --vpc-id '$VPC2_ID' --cidr-block '$VPC2_SUBNET_CIDR' --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=VPC2-Peering-Subnet},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-peering}]' --query 'Subnet.SubnetId' --output text")
 check_error $? "Failed to create subnet in VPC2"
 SUBNET2_ID=$(sanitize_var "$SUBNET2_ID") || check_error 1 "Invalid SUBNET2_ID returned"
 CREATED_RESOURCES+=("Subnet in VPC2: $SUBNET2_ID")
@@ -273,7 +292,7 @@ echo "Subnet created in VPC2 with ID: $SUBNET2_ID (CIDR: $VPC2_SUBNET_CIDR)"
 
 # Create a VPC peering connection
 echo "Creating VPC peering connection..."
-PEERING_ID=$(log_cmd "aws ec2 create-vpc-peering-connection --region '$AWS_REGION' --vpc-id '$VPC1_ID' --peer-vpc-id '$VPC2_ID' --tag-specifications 'ResourceType=vpc-peering-connection,Tags=[{Key=Name,Value=VPC1-VPC2-Peering}]' --query 'VpcPeeringConnection.VpcPeeringConnectionId' --output text")
+PEERING_ID=$(log_cmd "aws ec2 create-vpc-peering-connection --region '$AWS_REGION' --vpc-id '$VPC1_ID' --peer-vpc-id '$VPC2_ID' --tag-specifications 'ResourceType=vpc-peering-connection,Tags=[{Key=Name,Value=VPC1-VPC2-Peering},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-peering}]' --query 'VpcPeeringConnection.VpcPeeringConnectionId' --output text")
 check_error $? "Failed to create VPC peering connection"
 PEERING_ID=$(sanitize_var "$PEERING_ID") || check_error 1 "Invalid PEERING_ID returned"
 CREATED_RESOURCES+=("VPC Peering Connection: $PEERING_ID")
@@ -293,7 +312,7 @@ check_error $? "Timeout waiting for peering connection to become active"
 
 # Create a route table for VPC1
 echo "Creating route table for VPC1..."
-RTB1_ID=$(log_cmd "aws ec2 create-route-table --region '$AWS_REGION' --vpc-id '$VPC1_ID' --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=VPC1-RouteTable}]' --query 'RouteTable.RouteTableId' --output text")
+RTB1_ID=$(log_cmd "aws ec2 create-route-table --region '$AWS_REGION' --vpc-id '$VPC1_ID' --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=VPC1-RouteTable},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-peering}]' --query 'RouteTable.RouteTableId' --output text")
 check_error $? "Failed to create route table for VPC1"
 RTB1_ID=$(sanitize_var "$RTB1_ID") || check_error 1 "Invalid RTB1_ID returned"
 CREATED_RESOURCES+=("Route Table for VPC1: $RTB1_ID")
@@ -317,7 +336,7 @@ echo "Route table associated with subnet in VPC1"
 
 # Create a route table for VPC2
 echo "Creating route table for VPC2..."
-RTB2_ID=$(log_cmd "aws ec2 create-route-table --region '$AWS_REGION' --vpc-id '$VPC2_ID' --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=VPC2-RouteTable}]' --query 'RouteTable.RouteTableId' --output text")
+RTB2_ID=$(log_cmd "aws ec2 create-route-table --region '$AWS_REGION' --vpc-id '$VPC2_ID' --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=VPC2-RouteTable},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-peering}]' --query 'RouteTable.RouteTableId' --output text")
 check_error $? "Failed to create route table for VPC2"
 RTB2_ID=$(sanitize_var "$RTB2_ID") || check_error 1 "Invalid RTB2_ID returned"
 CREATED_RESOURCES+=("Route Table for VPC2: $RTB2_ID")
@@ -363,7 +382,7 @@ echo "Route Table 2 ID: $RTB2_ID"
 echo "Route Table 2 Association ID: $RTB2_ASSOC_ID"
 echo ""
 echo "Created resources:"
-for resource in "${CREATED_RESOURCES[@]+"${CREATED_RESOURCES[@]}"}"; do
+for resource in "${CREATED_RESOURCES[@]}"; do
     echo "- $resource"
 done
 echo "=============================================="

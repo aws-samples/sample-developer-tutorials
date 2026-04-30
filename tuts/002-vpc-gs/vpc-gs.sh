@@ -115,7 +115,7 @@ fi
 
 # Create VPC
 echo "Creating VPC with CIDR block 10.0.0.0/16..."
-VPC_ID=$(aws ec2 create-vpc --cidr-block 10.0.0.0/16 --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=MyVPC}]' --query 'Vpc.VpcId' --output text)
+VPC_ID=$(aws ec2 create-vpc --cidr-block 10.0.0.0/16 --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=MyVPC},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-gs}]' --query 'Vpc.VpcId' --output text)
 
 if [ -z "$VPC_ID" ]; then
   handle_error "Failed to create VPC"
@@ -146,7 +146,7 @@ PUBLIC_SUBNET_AZ1=$(aws ec2 create-subnet \
   --vpc-id "$VPC_ID" \
   --cidr-block 10.0.0.0/24 \
   --availability-zone "$AZ1" \
-  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=Public-Subnet-AZ1}]' \
+  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=Public-Subnet-AZ1},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-gs}]' \
   --query 'Subnet.SubnetId' \
   --output text)
 
@@ -162,7 +162,7 @@ PUBLIC_SUBNET_AZ2=$(aws ec2 create-subnet \
   --vpc-id "$VPC_ID" \
   --cidr-block 10.0.1.0/24 \
   --availability-zone "$AZ2" \
-  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=Public-Subnet-AZ2}]' \
+  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=Public-Subnet-AZ2},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-gs}]' \
   --query 'Subnet.SubnetId' \
   --output text)
 
@@ -179,7 +179,7 @@ PRIVATE_SUBNET_AZ1=$(aws ec2 create-subnet \
   --vpc-id "$VPC_ID" \
   --cidr-block 10.0.2.0/24 \
   --availability-zone "$AZ1" \
-  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=Private-Subnet-AZ1}]' \
+  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=Private-Subnet-AZ1},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-gs}]' \
   --query 'Subnet.SubnetId' \
   --output text)
 
@@ -195,7 +195,7 @@ PRIVATE_SUBNET_AZ2=$(aws ec2 create-subnet \
   --vpc-id "$VPC_ID" \
   --cidr-block 10.0.3.0/24 \
   --availability-zone "$AZ2" \
-  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=Private-Subnet-AZ2}]' \
+  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=Private-Subnet-AZ2},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-gs}]' \
   --query 'Subnet.SubnetId' \
   --output text)
 
@@ -209,7 +209,7 @@ echo "Private subnet created in $AZ2 with ID: $PRIVATE_SUBNET_AZ2"
 # Create Internet Gateway
 echo "Creating Internet Gateway..."
 IGW_ID=$(aws ec2 create-internet-gateway \
-  --tag-specifications 'ResourceType=internet-gateway,Tags=[{Key=Name,Value=MyIGW}]' \
+  --tag-specifications 'ResourceType=internet-gateway,Tags=[{Key=Name,Value=MyIGW},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-gs}]' \
   --query 'InternetGateway.InternetGatewayId' \
   --output text)
 
@@ -228,7 +228,7 @@ aws ec2 attach-internet-gateway --internet-gateway-id "$IGW_ID" --vpc-id "$VPC_I
 echo "Creating public route table..."
 PUBLIC_RT=$(aws ec2 create-route-table \
   --vpc-id "$VPC_ID" \
-  --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=Public-RT}]' \
+  --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=Public-RT},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-gs}]' \
   --query 'RouteTable.RouteTableId' \
   --output text)
 
@@ -266,7 +266,7 @@ CREATED_RESOURCES+=("ROUTE_TABLE_ASSOCIATION:$PUBLIC_RT_ASSOC_2")
 echo "Creating private route table..."
 PRIVATE_RT=$(aws ec2 create-route-table \
   --vpc-id "$VPC_ID" \
-  --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=Private-RT}]' \
+  --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=Private-RT},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-gs}]' \
   --query 'RouteTable.RouteTableId' \
   --output text)
 
@@ -298,7 +298,7 @@ CREATED_RESOURCES+=("ROUTE_TABLE_ASSOCIATION:$PRIVATE_RT_ASSOC_2")
 
 # Allocate Elastic IP for NAT Gateway
 echo "Allocating Elastic IP for NAT Gateway..."
-EIP_ALLOC=$(aws ec2 allocate-address --domain vpc --query 'AllocationId' --output text)
+EIP_ALLOC=$(aws ec2 allocate-address --domain vpc --tag-specifications 'ResourceType=elastic-ip,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-gs}]' --query 'AllocationId' --output text)
 
 if [ -z "$EIP_ALLOC" ]; then
   handle_error "Failed to allocate Elastic IP"
@@ -312,7 +312,7 @@ echo "Creating NAT Gateway in public subnet in $AZ1..."
 NAT_GW=$(aws ec2 create-nat-gateway \
   --subnet-id "$PUBLIC_SUBNET_AZ1" \
   --allocation-id "$EIP_ALLOC" \
-  --tag-specifications 'ResourceType=natgateway,Tags=[{Key=Name,Value=MyNATGateway}]' \
+  --tag-specifications 'ResourceType=natgateway,Tags=[{Key=Name,Value=MyNATGateway},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-gs}]' \
   --query 'NatGateway.NatGatewayId' \
   --output text)
 
@@ -344,6 +344,7 @@ WEB_SG=$(aws ec2 create-security-group \
   --group-name "WebServerSG-$(date +%s)" \
   --description "Security group for web servers" \
   --vpc-id "$VPC_ID" \
+  --tag-specifications 'ResourceType=security-group,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-gs}]' \
   --query 'GroupId' \
   --output text)
 
@@ -370,6 +371,7 @@ DB_SG=$(aws ec2 create-security-group \
   --group-name "DBServerSG-$(date +%s)" \
   --description "Security group for database servers" \
   --vpc-id "$VPC_ID" \
+  --tag-specifications 'ResourceType=security-group,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-gs}]' \
   --query 'GroupId' \
   --output text)
 
@@ -428,7 +430,7 @@ echo "Deploying EC2 instances..."
 # Create key pair for SSH access
 KEY_NAME="vpc-tutorial-key-$(date +%s)"
 echo "Creating key pair $KEY_NAME..."
-aws ec2 create-key-pair --key-name "$KEY_NAME" --query 'KeyMaterial' --output text > "${KEY_NAME}.pem" || handle_error "Failed to create key pair"
+aws ec2 create-key-pair --key-name "$KEY_NAME" --tag-specifications 'ResourceType=key-pair,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-gs}]' --query 'KeyMaterial' --output text > "${KEY_NAME}.pem" || handle_error "Failed to create key pair"
 chmod 400 "${KEY_NAME}.pem"
 echo "Key pair saved to ${KEY_NAME}.pem"
 CREATED_RESOURCES+=("KEY_PAIR:$KEY_NAME")
@@ -456,7 +458,7 @@ WEB_INSTANCE=$(aws ec2 run-instances \
     systemctl start httpd
     systemctl enable httpd
     echo "<h1>Hello from $(hostname -f) in the public subnet</h1>" > /var/www/html/index.html' \
-  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=WebServer}]' \
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=WebServer},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-gs}]' \
   --query 'Instances[0].InstanceId' \
   --output text) || handle_error "Failed to launch web server"
 echo "Web server instance created with ID: $WEB_INSTANCE"
@@ -486,7 +488,7 @@ DB_INSTANCE=$(aws ec2 run-instances \
     yum install -y mariadb-server
     systemctl start mariadb
     systemctl enable mariadb' \
-  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=DBServer}]' \
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=DBServer},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-gs}]' \
   --query 'Instances[0].InstanceId' \
   --output text) || handle_error "Failed to launch database server"
 echo "Database server instance created with ID: $DB_INSTANCE"

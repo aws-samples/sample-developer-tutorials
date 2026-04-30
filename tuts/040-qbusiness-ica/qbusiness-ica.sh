@@ -246,6 +246,8 @@ echo "Creating IAM role: $ROLE_NAME" | tee -a "$LOG_FILE"
 ROLE_RESULT=$(log_cmd "aws iam create-role --role-name \"$ROLE_NAME\" --assume-role-policy-document file://qbusiness-trust-policy.json --query 'Role.Arn' --output text")
 check_error $?
 ROLE_ARN="$ROLE_RESULT"
+aws iam tag-role --role-name "$ROLE_NAME" \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=qbusiness-ica
 CREATED_RESOURCES+=("IAM Role: $ROLE_ARN")
 
 # Create and attach the policy to the role
@@ -316,6 +318,7 @@ APP_RESULT=$(log_cmd "aws qbusiness create-application --region $AWS_REGION \
   --role-arn \"$ROLE_ARN\" \
   --description \"Amazon Q Business application created via script\" \
   --attachments-configuration '{\"attachmentsControlMode\":\"ENABLED\"}' \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=qbusiness-ica \
   --query 'applicationId' --output text")
 check_error $?
 APP_ID="$APP_RESULT"

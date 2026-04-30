@@ -64,7 +64,8 @@ log "Starting AWS Payment Cryptography tutorial"
 log "Step 1: Creating a card verification key (CVK)"
 if ! KEY_OUTPUT=$(aws payment-cryptography create-key \
   --exportable \
-  --key-attributes KeyAlgorithm=TDES_2KEY,KeyUsage=TR31_C0_CARD_VERIFICATION_KEY,KeyClass=SYMMETRIC_KEY,KeyModesOfUse='{Generate=true,Verify=true}' 2>&1); then
+  --key-attributes KeyAlgorithm=TDES_2KEY,KeyUsage=TR31_C0_CARD_VERIFICATION_KEY,KeyClass=SYMMETRIC_KEY,KeyModesOfUse='{Generate=true,Verify=true}' \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-payment-cryptography-gs 2>&1); then
     handle_error "Failed to create key"
 fi
 

@@ -447,6 +447,7 @@ STATELESS_RULE_GROUP_ARN=$(aws network-firewall create-rule-group \
   --capacity 10 \
   --rule-group '{"RulesSource": {"StatelessRulesAndCustomActions": {"StatelessRules": [{"RuleDefinition": {"MatchAttributes": {"Sources": [{"AddressDefinition": "192.0.2.0/24"}], "Destinations": [], "SourcePorts": [], "DestinationPorts": [], "Protocols": []}, "Actions": ["aws:drop"]}, "Priority": 10}]}}}' \
   --description "Stateless rule group example" \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-network-firewall-gs \
   --query 'RuleGroupResponse.RuleGroupArn' \
   --output text)
 
@@ -467,6 +468,7 @@ STATEFUL_RULE_GROUP_ARN=$(aws network-firewall create-rule-group \
   --capacity 10 \
   --rule-group '{"RulesSource": {"RulesString": "drop tls $HOME_NET any -> $EXTERNAL_NET any (ssl_state:client_hello; tls.sni; content:\"evil.com\"; startswith; nocase; endswith; msg:\"matching TLS denylisted FQDNs\"; priority:1; flow:to_server, established; sid:1; rev:1;)"}}' \
   --description "Stateful rule group example" \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-network-firewall-gs \
   --query 'RuleGroupResponse.RuleGroupArn' \
   --output text)
 
@@ -512,6 +514,7 @@ FIREWALL_POLICY_ARN=$(aws network-firewall create-firewall-policy \
     ]
   }' \
   --description "Firewall policy example" \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-network-firewall-gs \
   --query 'FirewallPolicyResponse.FirewallPolicyArn' \
   --output text)
 
@@ -565,7 +568,8 @@ FIREWALL_OUTPUT=$(aws network-firewall create-firewall \
   --firewall-name "$FIREWALL_NAME" \
   --firewall-policy-arn "$FIREWALL_POLICY_ARN" \
   --vpc-id "$VPC_ID" \
-  --subnet-mappings "SubnetId=$SUBNET_ID")
+  --subnet-mappings "SubnetId=$SUBNET_ID" \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-network-firewall-gs)
 
 check_error "$FIREWALL_OUTPUT" "Create firewall"
 echo "$FIREWALL_OUTPUT"
@@ -662,7 +666,7 @@ echo "(auto-confirmed)"
 
 # Create a route table for the firewall endpoint
 echo "Creating route table for firewall endpoint..."
-FIREWALL_ROUTE_TABLE_ID=$(aws ec2 create-route-table --vpc-id "$VPC_ID" --query 'RouteTable.RouteTableId' --output text)
+FIREWALL_ROUTE_TABLE_ID=$(aws ec2 create-route-table --vpc-id "$VPC_ID" --tag-specifications 'ResourceType=route-table,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=aws-network-firewall-gs}]' --query 'RouteTable.RouteTableId' --output text)
 
 if [ $? -ne 0 ] || [ -z "$FIREWALL_ROUTE_TABLE_ID" ]; then
   echo "ERROR: Failed to create firewall route table"

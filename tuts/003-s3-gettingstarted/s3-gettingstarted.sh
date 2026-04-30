@@ -169,6 +169,23 @@ if [ "$BUCKET_IS_SHARED" = "false" ]; then
     fi
     CREATED_RESOURCES+=("s3:bucket:${BUCKET_NAME}")
     echo "Bucket created."
+    
+    if ! aws s3api put-bucket-tagging \
+        --bucket "$BUCKET_NAME" \
+        --tagging '{
+            "TagSet": [
+                {
+                    "Key": "project",
+                    "Value": "doc-smith"
+                },
+                {
+                    "Key": "tutorial",
+                    "Value": "s3-gettingstarted"
+                }
+            ]
+        }' >/dev/null 2>&1; then
+        echo "WARNING: Failed to tag bucket"
+    fi
 fi
 echo ""
 
@@ -317,12 +334,29 @@ LOG_TARGET_BUCKET="${BUCKET_NAME}-logs"
 if [ "$BUCKET_IS_SHARED" = "false" ]; then
     REGION=$(get_region)
     if [ "$REGION" = "us-east-1" ]; then
-        aws s3api create-bucket --bucket "$LOG_TARGET_BUCKET" 2>/dev/null || true
+        aws s3api create-bucket --bucket "$LOG_TARGET_BUCKET" >/dev/null 2>&1 || true
     else
         aws s3api create-bucket \
             --bucket "$LOG_TARGET_BUCKET" \
             --region "$REGION" \
-            --create-bucket-configuration LocationConstraint="$REGION" 2>/dev/null || true
+            --create-bucket-configuration LocationConstraint="$REGION" >/dev/null 2>&1 || true
+    fi
+    
+    if ! aws s3api put-bucket-tagging \
+        --bucket "$LOG_TARGET_BUCKET" \
+        --tagging '{
+            "TagSet": [
+                {
+                    "Key": "project",
+                    "Value": "doc-smith"
+                },
+                {
+                    "Key": "tutorial",
+                    "Value": "s3-gettingstarted"
+                }
+            ]
+        }' >/dev/null 2>&1; then
+        echo "WARNING: Failed to tag log bucket"
     fi
     
     aws s3api put-bucket-acl --bucket "$LOG_TARGET_BUCKET" --acl log-delivery-write 2>/dev/null || true
@@ -354,6 +388,14 @@ if ! aws s3api put-bucket-tagging \
     --bucket "$BUCKET_NAME" \
     --tagging '{
         "TagSet": [
+            {
+                "Key": "project",
+                "Value": "doc-smith"
+            },
+            {
+                "Key": "tutorial",
+                "Value": "s3-gettingstarted"
+            },
             {
                 "Key": "Environment",
                 "Value": "Tutorial"

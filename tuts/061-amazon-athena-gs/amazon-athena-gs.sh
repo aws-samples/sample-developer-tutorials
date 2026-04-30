@@ -129,6 +129,10 @@ if [ "$BUCKET_IS_SHARED" = false ]; then
         handle_error "Failed to create S3 bucket: $CREATE_BUCKET_RESULT"
     fi
     
+    aws s3api put-bucket-tagging \
+        --bucket "$S3_BUCKET" \
+        --tagging 'TagSet=[{Key=project,Value=doc-smith},{Key=tutorial,Value=amazon-athena-gs}]'
+    
     # Security: Enable S3 bucket encryption with KMS validation
     echo "Enabling default encryption on S3 bucket..."
     if ! aws s3api put-bucket-encryption \

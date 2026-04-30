@@ -122,7 +122,8 @@ aws lightsail create-instances \
   --availability-zone "$AVAILABILITY_ZONE" \
   --blueprint-id amazon_linux_2023 \
   --bundle-id nano_3_0 \
-  --region "$AWS_REGION"
+  --region "$AWS_REGION" \
+  --tags key=project,value=doc-smith key=tutorial,value=lightsail-gs
 check_status "Failed to create Lightsail instance"
 track_resource "instance" "$INSTANCE_NAME"
 
@@ -180,7 +181,8 @@ aws lightsail create-disk \
   --disk-name "$DISK_NAME" \
   --availability-zone "$AVAILABILITY_ZONE" \
   --size-in-gb 8 \
-  --region "$AWS_REGION"
+  --region "$AWS_REGION" \
+  --tags key=project,value=doc-smith key=tutorial,value=lightsail-gs
 check_status "Failed to create disk"
 track_resource "disk" "$DISK_NAME"
 
@@ -223,7 +225,8 @@ echo "Step 6: Creating snapshot of the instance: $SNAPSHOT_NAME"
 aws lightsail create-instance-snapshot \
   --instance-name "$INSTANCE_NAME" \
   --instance-snapshot-name "$SNAPSHOT_NAME" \
-  --region "$AWS_REGION"
+  --region "$AWS_REGION" \
+  --tags key=project,value=doc-smith key=tutorial,value=lightsail-gs
 check_status "Failed to create instance snapshot"
 track_resource "instance_snapshot" "$SNAPSHOT_NAME"
 

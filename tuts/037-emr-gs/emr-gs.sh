@@ -96,6 +96,10 @@ echo "Using bucket name: $BUCKET_NAME"
 echo "Creating S3 bucket: $BUCKET_NAME"
 aws s3 mb "s3://$BUCKET_NAME" --region "${AWS_REGION:-us-east-1}" || handle_error "Failed to create S3 bucket"
 
+# Tag the bucket
+aws s3api put-bucket-tagging --bucket "$BUCKET_NAME" \
+    --tagging 'TagSet=[{Key=project,Value=doc-smith},{Key=tutorial,Value=emr-gs}]'
+
 # Enable bucket versioning for safety
 aws s3api put-bucket-versioning --bucket "$BUCKET_NAME" --versioning-configuration Status=Enabled || true
 
@@ -204,7 +208,9 @@ if [ -z "$KEY_PAIRS" ]; then
     echo "No EC2 key pairs found. Creating a new key pair..."
     KEY_NAME="emr-tutorial-key-${RANDOM_ID}"
     KEY_NAME_FILE="${KEY_NAME}.pem"
-    aws ec2 create-key-pair --key-name "$KEY_NAME" --query "KeyMaterial" --output text > "$KEY_NAME_FILE"
+    aws ec2 create-key-pair --key-name "$KEY_NAME" \
+        --tag-specifications 'ResourceType=key-pair,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=emr-gs}]' \
+        --query "KeyMaterial" --output text > "$KEY_NAME_FILE"
     chmod 400 "$KEY_NAME_FILE"
     echo "Created new key pair: $KEY_NAME"
 else
@@ -225,6 +231,7 @@ CLUSTER_RESPONSE=$(aws emr create-cluster \
   --use-default-roles \
   --log-uri "s3://$BUCKET_NAME/logs/" \
   --ebs-root-volume-size 100 \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=emr-gs \
   --security-configuration "EMR-Tutorial-SecurityConfig" 2>/dev/null || true)
 
 # Check for errors in the response

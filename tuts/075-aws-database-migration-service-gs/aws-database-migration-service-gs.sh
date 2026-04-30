@@ -278,7 +278,6 @@ cleanup_resources() {
         aws rds delete-db-parameter-group --db-parameter-group-name "$DB_PARAM_GROUP_POSTGRES"
     fi
     
-    # FIX: Added cleanup for DB subnet group
     if [ -n "$DB_SUBNET_GROUP" ]; then
         echo "Deleting DB subnet group..."
         aws rds delete-db-subnet-group --db-subnet-group-name "$DB_SUBNET_GROUP"
@@ -341,7 +340,7 @@ DB_PASSWORD=$(generate_password)
 # Store password in AWS Secrets Manager
 echo "Creating secret for database password..."
 SECRET_NAME="dms-tutorial-db-password-$RANDOM_ID"
-SECRET_ARN=$(aws secretsmanager create-secret --name "$SECRET_NAME" --secret-string "$DB_PASSWORD" --query 'ARN' --output text)
+SECRET_ARN=$(aws secretsmanager create-secret --name "$SECRET_NAME" --secret-string "$DB_PASSWORD" --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-database-migration-service-gs --query 'ARN' --output text)
 check_status
 
 echo "Database password stored in Secrets Manager with ARN: $SECRET_ARN"
@@ -497,7 +496,7 @@ fi
 
 if [ "$USING_EXISTING_VPC" = false ]; then
     echo "Creating new VPC..."
-    VPC_ID=$(aws ec2 create-vpc --cidr-block 10.0.1.0/24 --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=DMSVPC}]' --query 'Vpc.VpcId' --output text)
+    VPC_ID=$(aws ec2 create-vpc --cidr-block 10.0.1.0/24 --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=DMSVPC},{Key=project,Value=doc-smith},{Key=tutorial,Value=aws-database-migration-service-gs}]' --query 'Vpc.VpcId' --output text)
     check_status
     echo "VPC created with ID: $VPC_ID"
 
@@ -506,24 +505,24 @@ if [ "$USING_EXISTING_VPC" = false ]; then
     check_status
 
     echo "Creating subnets..."
-    PUBLIC_SUBNET_1_ID=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block 10.0.1.0/26 --availability-zone "$AZ1" --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=DMSVPC-public-subnet-1}]' --query 'Subnet.SubnetId' --output text)
+    PUBLIC_SUBNET_1_ID=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block 10.0.1.0/26 --availability-zone "$AZ1" --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=DMSVPC-public-subnet-1},{Key=project,Value=doc-smith},{Key=tutorial,Value=aws-database-migration-service-gs}]' --query 'Subnet.SubnetId' --output text)
     check_status
     echo "Public subnet 1 created with ID: $PUBLIC_SUBNET_1_ID"
 
-    PUBLIC_SUBNET_2_ID=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block 10.0.1.64/26 --availability-zone "$AZ2" --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=DMSVPC-public-subnet-2}]' --query 'Subnet.SubnetId' --output text)
+    PUBLIC_SUBNET_2_ID=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block 10.0.1.64/26 --availability-zone "$AZ2" --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=DMSVPC-public-subnet-2},{Key=project,Value=doc-smith},{Key=tutorial,Value=aws-database-migration-service-gs}]' --query 'Subnet.SubnetId' --output text)
     check_status
     echo "Public subnet 2 created with ID: $PUBLIC_SUBNET_2_ID"
 
-    PRIVATE_SUBNET_1_ID=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block 10.0.1.128/26 --availability-zone "$AZ1" --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=DMSVPC-private-subnet-1}]' --query 'Subnet.SubnetId' --output text)
+    PRIVATE_SUBNET_1_ID=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block 10.0.1.128/26 --availability-zone "$AZ1" --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=DMSVPC-private-subnet-1},{Key=project,Value=doc-smith},{Key=tutorial,Value=aws-database-migration-service-gs}]' --query 'Subnet.SubnetId' --output text)
     check_status
     echo "Private subnet 1 created with ID: $PRIVATE_SUBNET_1_ID"
 
-    PRIVATE_SUBNET_2_ID=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block 10.0.1.192/26 --availability-zone "$AZ2" --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=DMSVPC-private-subnet-2}]' --query 'Subnet.SubnetId' --output text)
+    PRIVATE_SUBNET_2_ID=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block 10.0.1.192/26 --availability-zone "$AZ2" --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=DMSVPC-private-subnet-2},{Key=project,Value=doc-smith},{Key=tutorial,Value=aws-database-migration-service-gs}]' --query 'Subnet.SubnetId' --output text)
     check_status
     echo "Private subnet 2 created with ID: $PRIVATE_SUBNET_2_ID"
 
     echo "Creating internet gateway..."
-    IGW_ID=$(aws ec2 create-internet-gateway --tag-specifications 'ResourceType=internet-gateway,Tags=[{Key=Name,Value=DMSVPC-igw}]' --query 'InternetGateway.InternetGatewayId' --output text)
+    IGW_ID=$(aws ec2 create-internet-gateway --tag-specifications 'ResourceType=internet-gateway,Tags=[{Key=Name,Value=DMSVPC-igw},{Key=project,Value=doc-smith},{Key=tutorial,Value=aws-database-migration-service-gs}]' --query 'InternetGateway.InternetGatewayId' --output text)
     check_status
     echo "Internet gateway created with ID: $IGW_ID"
 
@@ -532,7 +531,7 @@ if [ "$USING_EXISTING_VPC" = false ]; then
     check_status
 
     echo "Creating route table..."
-    PUBLIC_RT_ID=$(aws ec2 create-route-table --vpc-id "$VPC_ID" --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=DMSVPC-public-rt}]' --query 'RouteTable.RouteTableId' --output text)
+    PUBLIC_RT_ID=$(aws ec2 create-route-table --vpc-id "$VPC_ID" --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=DMSVPC-public-rt},{Key=project,Value=doc-smith},{Key=tutorial,Value=aws-database-migration-service-gs}]' --query 'RouteTable.RouteTableId' --output text)
     check_status
     echo "Route table created with ID: $PUBLIC_RT_ID"
 
@@ -569,7 +568,8 @@ echo "Creating MariaDB parameter group: $DB_PARAM_GROUP_MARIADB"
 aws rds create-db-parameter-group \
     --db-parameter-group-name "$DB_PARAM_GROUP_MARIADB" \
     --db-parameter-group-family mariadb10.6 \
-    --description "Group for specifying binary log settings for replication"
+    --description "Group for specifying binary log settings for replication" \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-database-migration-service-gs
 check_status
 
 echo "Modifying MariaDB parameters..."
@@ -584,7 +584,8 @@ echo "Creating PostgreSQL parameter group: $DB_PARAM_GROUP_POSTGRES"
 aws rds create-db-parameter-group \
     --db-parameter-group-name "$DB_PARAM_GROUP_POSTGRES" \
     --db-parameter-group-family postgres16 \
-    --description "Group for specifying role setting for replication"
+    --description "Group for specifying role setting for replication" \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-database-migration-service-gs
 check_status
 
 echo "Modifying PostgreSQL parameters..."
@@ -593,13 +594,13 @@ aws rds modify-db-parameter-group \
     --parameters "ParameterName=session_replication_role,ParameterValue=replica,ApplyMethod=immediate"
 check_status
 
-# FIX: Create a custom DB subnet group instead of using the default one
 echo "Creating DB subnet group..."
 DB_SUBNET_GROUP="dms-db-subnet-group-$RANDOM_ID"
 aws rds create-db-subnet-group \
     --db-subnet-group-name "$DB_SUBNET_GROUP" \
     --db-subnet-group-description "DB subnet group for DMS tutorial" \
-    --subnet-ids "$PUBLIC_SUBNET_1_ID" "$PUBLIC_SUBNET_2_ID"
+    --subnet-ids "$PUBLIC_SUBNET_1_ID" "$PUBLIC_SUBNET_2_ID" \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-database-migration-service-gs
 check_status
 echo "DB subnet group created: $DB_SUBNET_GROUP"
 # Step 3: Create Your Source Amazon RDS Database (MariaDB)
@@ -623,7 +624,8 @@ aws rds create-db-instance \
     --db-name dms_sample \
     --backup-retention-period 1 \
     --no-auto-minor-version-upgrade \
-    --publicly-accessible
+    --publicly-accessible \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-database-migration-service-gs
 check_status
 
 echo "Waiting for MariaDB instance to be available..."
@@ -650,7 +652,8 @@ aws rds create-db-instance \
     --db-name dms_sample \
     --backup-retention-period 0 \
     --no-auto-minor-version-upgrade \
-    --publicly-accessible
+    --publicly-accessible \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-database-migration-service-gs
 check_status
 
 echo "Waiting for PostgreSQL instance to be available..."
@@ -672,7 +675,7 @@ echo "Using AMI: $AMI_ID"
 # Create a key pair
 KEY_NAME="DMSKeyPair-$RANDOM_ID"
 echo "Creating key pair: $KEY_NAME"
-aws ec2 create-key-pair --key-name "$KEY_NAME" --query 'KeyMaterial' --output text > "${KEY_NAME}.pem"
+aws ec2 create-key-pair --key-name "$KEY_NAME" --tag-specifications 'ResourceType=key-pair,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=aws-database-migration-service-gs}]' --query 'KeyMaterial' --output text > "${KEY_NAME}.pem"
 check_status
 chmod 400 "${KEY_NAME}.pem"
 echo "Key pair created and saved to ${KEY_NAME}.pem"
@@ -695,7 +698,7 @@ EC2_INSTANCE_ID=$(aws ec2 run-instances \
     --key-name "$KEY_NAME" \
     --subnet-id "$PUBLIC_SUBNET_1_ID" \
     --security-group-ids "$SG_ID" \
-    --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=DMSClient}]' \
+    --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=DMSClient},{Key=project,Value=doc-smith},{Key=tutorial,Value=aws-database-migration-service-gs}]' \
     --associate-public-ip-address \
     --query 'Instances[0].InstanceId' \
     --output text)
@@ -801,7 +804,8 @@ if [[ "${RUN_MIGRATION,,}" == "y" ]]; then
     aws dms create-replication-subnet-group \
         --replication-subnet-group-identifier "$DMS_SUBNET_GROUP" \
         --replication-subnet-group-description "DMS subnet group" \
-        --subnet-ids "$PUBLIC_SUBNET_1_ID" "$PUBLIC_SUBNET_2_ID"
+        --subnet-ids "$PUBLIC_SUBNET_1_ID" "$PUBLIC_SUBNET_2_ID" \
+        --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-database-migration-service-gs
     check_status
 
     # Create a replication instance
@@ -814,7 +818,8 @@ if [[ "${RUN_MIGRATION,,}" == "y" ]]; then
         --vpc-security-group-ids "$SG_ID" \
         --replication-subnet-group-identifier "$DMS_SUBNET_GROUP" \
         --availability-zone "$AZ1" \
-        --no-publicly-accessible
+        --no-publicly-accessible \
+        --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-database-migration-service-gs
     check_status
 
     echo "Waiting for DMS replication instance to be available..."
@@ -865,6 +870,7 @@ if [[ "${RUN_MIGRATION,,}" == "y" ]]; then
         --server-name "$MARIADB_ENDPOINT" \
         --port 3306 \
         --database-name dms_sample \
+        --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-database-migration-service-gs \
         --query 'Endpoint.EndpointArn' \
         --output text)
     check_status
@@ -882,6 +888,7 @@ if [[ "${RUN_MIGRATION,,}" == "y" ]]; then
         --server-name "$POSTGRES_ENDPOINT" \
         --port 5432 \
         --database-name dms_sample \
+        --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-database-migration-service-gs \
         --query 'Endpoint.EndpointArn' \
         --output text)
     check_status
@@ -964,6 +971,7 @@ if [[ "${RUN_MIGRATION,,}" == "y" ]]; then
         --migration-type full-load-and-cdc \
         --table-mappings "$TABLE_MAPPINGS" \
         --replication-task-settings "$TASK_SETTINGS" \
+        --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-database-migration-service-gs \
         --query 'ReplicationTask.ReplicationTaskArn' \
         --output text)
     check_status
@@ -995,9 +1003,10 @@ if [[ "${RUN_MIGRATION,,}" == "y" ]]; then
 
     echo "Migration task started. Initial replication will take some time to complete."
 else
-    echo "Step 10: Skipping DMS migration task creation (as requested)"
-    echo "========================================================"
-    echo "Infrastructure is ready. You can create migration tasks later as needed."
+    echo ""
+    echo "✗ Skipping DMS migration setup"
+    echo "=============================="
+    echo "Infrastructure is ready. You can create DMS resources later as needed."
     echo ""
 fi
 

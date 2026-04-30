@@ -18,6 +18,9 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 echo "Starting AWS Elemental MediaConnect tutorial script at $(date)"
 echo "All commands and outputs will be logged to $LOG_FILE"
 
+# Tags for all resources
+TAGS_ARRAY=("Key=project,Value=doc-smith" "Key=tutorial,Value=aws-elemental-mediaconnect-gs")
+
 # Function to handle errors
 handle_error() {
     echo "ERROR: $1" >&2
@@ -69,6 +72,18 @@ extract_json_value() {
         fi
         echo "$json_output" | grep -o "\"$key\": \"[^\"]*" | head -1 | cut -d'"' -f4
     fi
+}
+
+# Function to tag MediaConnect resource
+tag_mediaconnect_resource() {
+    local resource_arn="$1"
+    echo "Tagging resource: $resource_arn"
+    
+    for tag in "${TAGS_ARRAY[@]}"; do
+        if ! aws mediaconnect tag-resource --resource-arn "$resource_arn" --tags "$tag" 2>&1; then
+            echo "WARNING: Failed to apply tag $tag to resource"
+        fi
+    done
 }
 
 # Function to clean up resources
@@ -206,6 +221,9 @@ if [[ ! "$FLOW_ARN" =~ ^arn:aws:mediaconnect:[a-z0-9-]+:[0-9]+:flow:[a-zA-Z0-9:-
     handle_error "Invalid Flow ARN format: $FLOW_ARN"
 fi
 
+# Tag the flow
+tag_mediaconnect_resource "$FLOW_ARN"
+
 # Step 3: Add an output
 echo "Step 3: Adding an output to the flow..."
 add_output_output=""
@@ -226,6 +244,7 @@ if [ -z "$output_arn" ]; then
 else
     OUTPUT_ARN="$output_arn"
     echo "Output ARN: $OUTPUT_ARN"
+    tag_mediaconnect_resource "$OUTPUT_ARN"
 fi
 
 # Step 4: Grant an entitlement
@@ -250,6 +269,7 @@ if [ -z "$entitlement_arn" ]; then
 else
     ENTITLEMENT_ARN="$entitlement_arn"
     echo "Entitlement ARN: $ENTITLEMENT_ARN"
+    tag_mediaconnect_resource "$ENTITLEMENT_ARN"
 fi
 
 # Step 5: List entitlements to share with affiliates

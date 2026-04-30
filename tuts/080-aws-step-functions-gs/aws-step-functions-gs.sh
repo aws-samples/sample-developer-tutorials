@@ -371,6 +371,7 @@ ROLE_RESULT=$(aws iam create-role \
 
 check_api_error "$ROLE_RESULT" "Create IAM role"
 echo "Role created successfully"
+aws iam tag-role --role-name "$ROLE_NAME" --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-step-functions-gs
 
 # Get the role ARN
 ROLE_ARN=$(extract_json_field "$ROLE_RESULT" ".Role.Arn")
@@ -435,7 +436,8 @@ SM_RESULT=$(aws stepfunctions create-state-machine \
   --name "$STATE_MACHINE_NAME" \
   --definition file://hello-world.json \
   --role-arn "$ROLE_ARN" \
-  --type STANDARD 2>&1)
+  --type STANDARD \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-step-functions-gs 2>&1)
 
 check_api_error "$SM_RESULT" "Create state machine"
 echo "State machine created successfully"

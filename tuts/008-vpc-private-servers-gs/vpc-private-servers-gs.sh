@@ -184,7 +184,7 @@ echo "Using random identifier: $RANDOM_ID"
 
 # Create VPC
 echo "Creating VPC..."
-VPC_RESULT=$(aws ec2 create-vpc --cidr-block 10.0.0.0/16 --tag-specifications "ResourceType=vpc,Tags=[{Key=Name,Value=ProductionVPC-$RANDOM_ID}]")
+VPC_RESULT=$(aws ec2 create-vpc --cidr-block 10.0.0.0/16 --tag-specifications "ResourceType=vpc,Tags=[{Key=Name,Value=ProductionVPC-$RANDOM_ID},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-private-servers-gs}]")
 check_command "Failed to create VPC"
 
 VPC_ID=$(echo "$VPC_RESULT" | jq -r '.Vpc.VpcId')
@@ -203,19 +203,19 @@ echo "Using Availability Zones: $AZ1 and $AZ2"
 
 # Create subnets
 echo "Creating subnets..."
-PUBLIC_SUBNET1_RESULT=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block 10.0.0.0/24 --availability-zone "$AZ1" --tag-specifications "ResourceType=subnet,Tags=[{Key=Name,Value=PublicSubnet1-$RANDOM_ID}]")
+PUBLIC_SUBNET1_RESULT=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block 10.0.0.0/24 --availability-zone "$AZ1" --tag-specifications "ResourceType=subnet,Tags=[{Key=Name,Value=PublicSubnet1-$RANDOM_ID},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-private-servers-gs}]")
 check_command "Failed to create public subnet 1"
 PUBLIC_SUBNET1_ID=$(echo "$PUBLIC_SUBNET1_RESULT" | jq -r '.Subnet.SubnetId')
 
-PRIVATE_SUBNET1_RESULT=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block 10.0.1.0/24 --availability-zone "$AZ1" --tag-specifications "ResourceType=subnet,Tags=[{Key=Name,Value=PrivateSubnet1-$RANDOM_ID}]")
+PRIVATE_SUBNET1_RESULT=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block 10.0.1.0/24 --availability-zone "$AZ1" --tag-specifications "ResourceType=subnet,Tags=[{Key=Name,Value=PrivateSubnet1-$RANDOM_ID},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-private-servers-gs}]")
 check_command "Failed to create private subnet 1"
 PRIVATE_SUBNET1_ID=$(echo "$PRIVATE_SUBNET1_RESULT" | jq -r '.Subnet.SubnetId')
 
-PUBLIC_SUBNET2_RESULT=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block 10.0.2.0/24 --availability-zone "$AZ2" --tag-specifications "ResourceType=subnet,Tags=[{Key=Name,Value=PublicSubnet2-$RANDOM_ID}]")
+PUBLIC_SUBNET2_RESULT=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block 10.0.2.0/24 --availability-zone "$AZ2" --tag-specifications "ResourceType=subnet,Tags=[{Key=Name,Value=PublicSubnet2-$RANDOM_ID},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-private-servers-gs}]")
 check_command "Failed to create public subnet 2"
 PUBLIC_SUBNET2_ID=$(echo "$PUBLIC_SUBNET2_RESULT" | jq -r '.Subnet.SubnetId')
 
-PRIVATE_SUBNET2_RESULT=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block 10.0.3.0/24 --availability-zone "$AZ2" --tag-specifications "ResourceType=subnet,Tags=[{Key=Name,Value=PrivateSubnet2-$RANDOM_ID}]")
+PRIVATE_SUBNET2_RESULT=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block 10.0.3.0/24 --availability-zone "$AZ2" --tag-specifications "ResourceType=subnet,Tags=[{Key=Name,Value=PrivateSubnet2-$RANDOM_ID},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-private-servers-gs}]")
 check_command "Failed to create private subnet 2"
 PRIVATE_SUBNET2_ID=$(echo "$PRIVATE_SUBNET2_RESULT" | jq -r '.Subnet.SubnetId')
 
@@ -227,7 +227,7 @@ echo "Private Subnet 2: $PRIVATE_SUBNET2_ID"
 
 # Create Internet Gateway
 echo "Creating Internet Gateway..."
-IGW_RESULT=$(aws ec2 create-internet-gateway --tag-specifications "ResourceType=internet-gateway,Tags=[{Key=Name,Value=ProductionIGW-$RANDOM_ID}]")
+IGW_RESULT=$(aws ec2 create-internet-gateway --tag-specifications "ResourceType=internet-gateway,Tags=[{Key=Name,Value=ProductionIGW-$RANDOM_ID},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-private-servers-gs}]")
 check_command "Failed to create Internet Gateway"
 IGW_ID=$(echo "$IGW_RESULT" | jq -r '.InternetGateway.InternetGatewayId')
 echo "Internet Gateway created with ID: $IGW_ID"
@@ -239,15 +239,15 @@ check_command "Failed to attach Internet Gateway to VPC"
 
 # Create route tables
 echo "Creating route tables..."
-PUBLIC_RT_RESULT=$(aws ec2 create-route-table --vpc-id "$VPC_ID" --tag-specifications "ResourceType=route-table,Tags=[{Key=Name,Value=PublicRouteTable-$RANDOM_ID}]")
+PUBLIC_RT_RESULT=$(aws ec2 create-route-table --vpc-id "$VPC_ID" --tag-specifications "ResourceType=route-table,Tags=[{Key=Name,Value=PublicRouteTable-$RANDOM_ID},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-private-servers-gs}]")
 check_command "Failed to create public route table"
 PUBLIC_RT_ID=$(echo "$PUBLIC_RT_RESULT" | jq -r '.RouteTable.RouteTableId')
 
-PRIVATE_RT1_RESULT=$(aws ec2 create-route-table --vpc-id "$VPC_ID" --tag-specifications "ResourceType=route-table,Tags=[{Key=Name,Value=PrivateRouteTable1-$RANDOM_ID}]")
+PRIVATE_RT1_RESULT=$(aws ec2 create-route-table --vpc-id "$VPC_ID" --tag-specifications "ResourceType=route-table,Tags=[{Key=Name,Value=PrivateRouteTable1-$RANDOM_ID},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-private-servers-gs}]")
 check_command "Failed to create private route table 1"
 PRIVATE_RT1_ID=$(echo "$PRIVATE_RT1_RESULT" | jq -r '.RouteTable.RouteTableId')
 
-PRIVATE_RT2_RESULT=$(aws ec2 create-route-table --vpc-id "$VPC_ID" --tag-specifications "ResourceType=route-table,Tags=[{Key=Name,Value=PrivateRouteTable2-$RANDOM_ID}]")
+PRIVATE_RT2_RESULT=$(aws ec2 create-route-table --vpc-id "$VPC_ID" --tag-specifications "ResourceType=route-table,Tags=[{Key=Name,Value=PrivateRouteTable2-$RANDOM_ID},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-private-servers-gs}]")
 check_command "Failed to create private route table 2"
 PRIVATE_RT2_ID=$(echo "$PRIVATE_RT2_RESULT" | jq -r '.RouteTable.RouteTableId')
 
@@ -290,11 +290,11 @@ echo "Creating NAT Gateways..."
 
 # Allocate Elastic IPs for NAT Gateways
 echo "Allocating Elastic IPs for NAT Gateways..."
-EIP1_RESULT=$(aws ec2 allocate-address --domain vpc --tag-specifications "ResourceType=elastic-ip,Tags=[{Key=Name,Value=NAT1-EIP-$RANDOM_ID}]")
+EIP1_RESULT=$(aws ec2 allocate-address --domain vpc --tag-specifications "ResourceType=elastic-ip,Tags=[{Key=Name,Value=NAT1-EIP-$RANDOM_ID},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-private-servers-gs}]")
 check_command "Failed to allocate Elastic IP 1"
 EIP1_ALLOC_ID=$(echo "$EIP1_RESULT" | jq -r '.AllocationId')
 
-EIP2_RESULT=$(aws ec2 allocate-address --domain vpc --tag-specifications "ResourceType=elastic-ip,Tags=[{Key=Name,Value=NAT2-EIP-$RANDOM_ID}]")
+EIP2_RESULT=$(aws ec2 allocate-address --domain vpc --tag-specifications "ResourceType=elastic-ip,Tags=[{Key=Name,Value=NAT2-EIP-$RANDOM_ID},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-private-servers-gs}]")
 check_command "Failed to allocate Elastic IP 2"
 EIP2_ALLOC_ID=$(echo "$EIP2_RESULT" | jq -r '.AllocationId')
 
@@ -304,12 +304,12 @@ echo "EIP 2 Allocation ID: $EIP2_ALLOC_ID"
 
 # Create NAT Gateways
 echo "Creating NAT Gateway in public subnet 1..."
-NAT_GW1_RESULT=$(aws ec2 create-nat-gateway --subnet-id "$PUBLIC_SUBNET1_ID" --allocation-id "$EIP1_ALLOC_ID" --tag-specifications "ResourceType=natgateway,Tags=[{Key=Name,Value=NAT-Gateway1-$RANDOM_ID}]")
+NAT_GW1_RESULT=$(aws ec2 create-nat-gateway --subnet-id "$PUBLIC_SUBNET1_ID" --allocation-id "$EIP1_ALLOC_ID" --tag-specifications "ResourceType=natgateway,Tags=[{Key=Name,Value=NAT-Gateway1-$RANDOM_ID},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-private-servers-gs}]")
 check_command "Failed to create NAT Gateway 1"
 NAT_GW1_ID=$(echo "$NAT_GW1_RESULT" | jq -r '.NatGateway.NatGatewayId')
 
 echo "Creating NAT Gateway in public subnet 2..."
-NAT_GW2_RESULT=$(aws ec2 create-nat-gateway --subnet-id "$PUBLIC_SUBNET2_ID" --allocation-id "$EIP2_ALLOC_ID" --tag-specifications "ResourceType=natgateway,Tags=[{Key=Name,Value=NAT-Gateway2-$RANDOM_ID}]")
+NAT_GW2_RESULT=$(aws ec2 create-nat-gateway --subnet-id "$PUBLIC_SUBNET2_ID" --allocation-id "$EIP2_ALLOC_ID" --tag-specifications "ResourceType=natgateway,Tags=[{Key=Name,Value=NAT-Gateway2-$RANDOM_ID},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-private-servers-gs}]")
 check_command "Failed to create NAT Gateway 2"
 NAT_GW2_ID=$(echo "$NAT_GW2_RESULT" | jq -r '.NatGateway.NatGatewayId')
 
@@ -338,14 +338,14 @@ echo "Creating VPC Endpoint for S3..."
 S3_PREFIX_LIST_ID=$(aws ec2 describe-prefix-lists --filters "Name=prefix-list-name,Values=com.amazonaws.$(aws configure get region).s3" --query 'PrefixLists[0].PrefixListId' --output text)
 check_command "Failed to get S3 prefix list ID"
 
-VPC_ENDPOINT_RESULT=$(aws ec2 create-vpc-endpoint --vpc-id "$VPC_ID" --service-name "com.amazonaws.$(aws configure get region).s3" --route-table-ids "$PRIVATE_RT1_ID" "$PRIVATE_RT2_ID" --tag-specifications "ResourceType=vpc-endpoint,Tags=[{Key=Name,Value=S3-Endpoint-$RANDOM_ID}]")
+VPC_ENDPOINT_RESULT=$(aws ec2 create-vpc-endpoint --vpc-id "$VPC_ID" --service-name "com.amazonaws.$(aws configure get region).s3" --route-table-ids "$PRIVATE_RT1_ID" "$PRIVATE_RT2_ID" --tag-specifications "ResourceType=vpc-endpoint,Tags=[{Key=Name,Value=S3-Endpoint-$RANDOM_ID},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-private-servers-gs}]")
 check_command "Failed to create VPC endpoint for S3"
 VPC_ENDPOINT_ID=$(echo "$VPC_ENDPOINT_RESULT" | jq -r '.VpcEndpoint.VpcEndpointId')
 echo "VPC Endpoint created with ID: $VPC_ENDPOINT_ID"
 
 # Create security groups
 echo "Creating security groups..."
-LB_SG_RESULT=$(aws ec2 create-security-group --group-name "LoadBalancerSG-$RANDOM_ID" --description "Security group for the load balancer" --vpc-id "$VPC_ID" --tag-specifications "ResourceType=security-group,Tags=[{Key=Name,Value=LoadBalancerSG-$RANDOM_ID}]")
+LB_SG_RESULT=$(aws ec2 create-security-group --group-name "LoadBalancerSG-$RANDOM_ID" --description "Security group for the load balancer" --vpc-id "$VPC_ID" --tag-specifications "ResourceType=security-group,Tags=[{Key=Name,Value=LoadBalancerSG-$RANDOM_ID},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-private-servers-gs}]")
 check_command "Failed to create load balancer security group"
 LB_SG_ID=$(echo "$LB_SG_RESULT" | jq -r '.GroupId')
 
@@ -353,7 +353,7 @@ LB_SG_ID=$(echo "$LB_SG_RESULT" | jq -r '.GroupId')
 aws ec2 authorize-security-group-ingress --group-id "$LB_SG_ID" --protocol tcp --port 80 --cidr 0.0.0.0/0
 check_command "Failed to authorize ingress to load balancer security group"
 
-APP_SG_RESULT=$(aws ec2 create-security-group --group-name "AppServerSG-$RANDOM_ID" --description "Security group for the application servers" --vpc-id "$VPC_ID" --tag-specifications "ResourceType=security-group,Tags=[{Key=Name,Value=AppServerSG-$RANDOM_ID}]")
+APP_SG_RESULT=$(aws ec2 create-security-group --group-name "AppServerSG-$RANDOM_ID" --description "Security group for the application servers" --vpc-id "$VPC_ID" --tag-specifications "ResourceType=security-group,Tags=[{Key=Name,Value=AppServerSG-$RANDOM_ID},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-private-servers-gs}]")
 check_command "Failed to create application server security group"
 APP_SG_ID=$(echo "$APP_SG_RESULT" | jq -r '.GroupId')
 
@@ -400,7 +400,7 @@ echo "Creating launch template: $LAUNCH_TEMPLATE_NAME"
 aws ec2 create-launch-template \
   --launch-template-name "$LAUNCH_TEMPLATE_NAME" \
   --version-description "Initial version" \
-  --tag-specifications "ResourceType=launch-template,Tags=[{Key=Name,Value=$LAUNCH_TEMPLATE_NAME}]" \
+  --tag-specifications "ResourceType=launch-template,Tags=[{Key=Name,Value=$LAUNCH_TEMPLATE_NAME},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-private-servers-gs}]" \
   --launch-template-data "{
     \"NetworkInterfaces\": [{
       \"DeviceIndex\": 0,
@@ -435,7 +435,8 @@ TARGET_GROUP_RESULT=$(aws elbv2 create-target-group \
   --target-type instance \
   --health-check-protocol HTTP \
   --health-check-path "/" \
-  --health-check-port traffic-port)
+  --health-check-port traffic-port \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=vpc-private-servers-gs)
 check_command "Failed to create target group"
 TARGET_GROUP_ARN=$(echo "$TARGET_GROUP_RESULT" | jq -r '.TargetGroups[0].TargetGroupArn')
 echo "Target group created with ARN: $TARGET_GROUP_ARN"
@@ -447,7 +448,7 @@ LB_RESULT=$(aws elbv2 create-load-balancer \
   --name "$LB_NAME" \
   --subnets "$PUBLIC_SUBNET1_ID" "$PUBLIC_SUBNET2_ID" \
   --security-groups "$LB_SG_ID" \
-  --tags "Key=Name,Value=$LB_NAME")
+  --tags "Key=Name,Value=$LB_NAME" Key=project,Value=doc-smith Key=tutorial,Value=vpc-private-servers-gs)
 check_command "Failed to create load balancer"
 LB_ARN=$(echo "$LB_RESULT" | jq -r '.LoadBalancers[0].LoadBalancerArn')
 echo "Load balancer created with ARN: $LB_ARN"
@@ -481,7 +482,7 @@ aws autoscaling create-auto-scaling-group \
   --target-group-arns "$TARGET_GROUP_ARN" \
   --health-check-type ELB \
   --health-check-grace-period 300 \
-  --tags "Key=Name,Value=AppServer-$RANDOM_ID,PropagateAtLaunch=true"
+  --tags "Key=Name,Value=AppServer-$RANDOM_ID,PropagateAtLaunch=true" Key=project,Value=doc-smith,PropagateAtLaunch=true Key=tutorial,Value=vpc-private-servers-gs,PropagateAtLaunch=true
 check_command "Failed to create Auto Scaling group"
 echo "Auto Scaling group created with name: $ASG_NAME"
 

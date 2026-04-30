@@ -274,7 +274,7 @@ else
         echo "Creating a new IAM Identity Center instance..." | tee -a "$LOG_FILE"
         
         # Create IAM Identity Center instance (only works for non-organization management accounts)
-        INSTANCE_OUTPUT=$(log_cmd "aws sso-admin create-instance --name \"MyIdentityCenter\" --tags Key=Purpose,Value=Tutorial")
+        INSTANCE_OUTPUT=$(log_cmd "aws sso-admin create-instance --name \"MyIdentityCenter\" --tags Key=Purpose,Value=Tutorial Key=project,Value=doc-smith Key=tutorial,Value=aws-iam-identity-center-gs")
         check_error "$INSTANCE_OUTPUT" $? "Failed to create IAM Identity Center instance"
         
         # Wait for instance to be created and get instance ARN
@@ -402,6 +402,9 @@ if [[ "$IS_ORGANIZATION_INSTANCE" == "true" ]]; then
         cleanup_resources
         exit 1
     fi
+    aws sso-admin tag-resource --instance-arn "$INSTANCE_ARN" \
+      --resource-arn "$PERMISSION_SET_ARN" \
+      --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-iam-identity-center-gs
     
     track_resource "permission_set" "$INSTANCE_ARN,$PERMISSION_SET_ARN"
     echo "Permission set created successfully with ARN: $PERMISSION_SET_ARN" | tee -a "$LOG_FILE"

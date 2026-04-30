@@ -192,7 +192,7 @@ fi
 
 # Step 2: Create a test volume for snapshot with minimal size for cost optimization
 echo "Step 2: Creating a test volume (1 GiB for testing)..."
-VOLUME_ID=$(aws ec2 create-volume --region "$AWS_REGION" --availability-zone "$AVAILABILITY_ZONE" --size 1 --volume-type gp3 --iops 3000 --throughput 125 --tag-specifications 'ResourceType=volume,Tags=[{Key=Name,Value=ebs-tutorial-volume},{Key=ManagedBy,Value=ebs-intermediate-script}]' --query 'VolumeId' --output text)
+VOLUME_ID=$(aws ec2 create-volume --region "$AWS_REGION" --availability-zone "$AVAILABILITY_ZONE" --size 1 --volume-type gp3 --iops 3000 --throughput 125 --tag-specifications 'ResourceType=volume,Tags=[{Key=Name,Value=ebs-tutorial-volume},{Key=ManagedBy,Value=ebs-intermediate-script},{Key=project,Value=doc-smith},{Key=tutorial,Value=ebs-intermediate}]' --query 'VolumeId' --output text)
 check_status "Creating test volume"
 
 # Security: Validate volume ID
@@ -209,7 +209,7 @@ check_status "Waiting for volume"
 
 # Step 3: Create a snapshot of the volume
 echo "Step 3: Creating snapshot of the volume..."
-SNAPSHOT_ID=$(aws ec2 create-snapshot --region "$AWS_REGION" --volume-id "$VOLUME_ID" --description "Snapshot for EBS tutorial - $(date +%Y-%m-%d)" --tag-specifications 'ResourceType=snapshot,Tags=[{Key=Name,Value=ebs-tutorial-snapshot},{Key=ManagedBy,Value=ebs-intermediate-script}]' --query 'SnapshotId' --output text)
+SNAPSHOT_ID=$(aws ec2 create-snapshot --region "$AWS_REGION" --volume-id "$VOLUME_ID" --description "Snapshot for EBS tutorial - $(date +%Y-%m-%d)" --tag-specifications 'ResourceType=snapshot,Tags=[{Key=Name,Value=ebs-tutorial-snapshot},{Key=ManagedBy,Value=ebs-intermediate-script},{Key=project,Value=doc-smith},{Key=tutorial,Value=ebs-intermediate}]' --query 'SnapshotId' --output text)
 check_status "Creating snapshot"
 
 # Security: Validate snapshot ID
@@ -227,7 +227,7 @@ echo "Snapshot completed."
 
 # Step 4: Create a new volume from the snapshot
 echo "Step 4: Creating a new volume from the snapshot..."
-NEW_VOLUME_ID=$(aws ec2 create-volume --region "$AWS_REGION" --snapshot-id "$SNAPSHOT_ID" --availability-zone "$AVAILABILITY_ZONE" --volume-type gp3 --iops 3000 --throughput 125 --tag-specifications 'ResourceType=volume,Tags=[{Key=Name,Value=ebs-tutorial-volume-from-snapshot},{Key=ManagedBy,Value=ebs-intermediate-script}]' --query 'VolumeId' --output text)
+NEW_VOLUME_ID=$(aws ec2 create-volume --region "$AWS_REGION" --snapshot-id "$SNAPSHOT_ID" --availability-zone "$AVAILABILITY_ZONE" --volume-type gp3 --iops 3000 --throughput 125 --tag-specifications 'ResourceType=volume,Tags=[{Key=Name,Value=ebs-tutorial-volume-from-snapshot},{Key=ManagedBy,Value=ebs-intermediate-script},{Key=project,Value=doc-smith},{Key=tutorial,Value=ebs-intermediate}]' --query 'VolumeId' --output text)
 check_status "Creating new volume from snapshot"
 
 # Security: Validate new volume ID

@@ -131,7 +131,8 @@ echo "Creating a dedicated connection at location $LOCATION_CODE with bandwidth 
 CONNECTION_OUTPUT=$(aws directconnect create-connection \
     --location "$LOCATION_CODE" \
     --bandwidth "1Gbps" \
-    --connection-name "$CONNECTION_NAME")
+    --connection-name "$CONNECTION_NAME" \
+    --tags key=project,value=doc-smith key=tutorial,value=aws-direct-connect-gs)
 check_error "$CONNECTION_OUTPUT" "create-connection"
 echo "$CONNECTION_OUTPUT"
 
@@ -173,7 +174,8 @@ fi
 
 # Step 6: Create a virtual private gateway (required for private virtual interface)
 echo "Creating a virtual private gateway..."
-VGW_OUTPUT=$(aws ec2 create-vpn-gateway --type ipsec.1)
+VGW_OUTPUT=$(aws ec2 create-vpn-gateway --type ipsec.1 \
+    --tag-specifications 'ResourceType=vpn-gateway,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=aws-direct-connect-gs}]')
 check_error "$VGW_OUTPUT" "create-vpn-gateway"
 echo "$VGW_OUTPUT"
 

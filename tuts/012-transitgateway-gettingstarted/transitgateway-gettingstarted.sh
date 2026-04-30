@@ -201,7 +201,7 @@ if [ "$VPC1_ID" = "None" ] || [ -z "$VPC1_ID" ]; then
   echo "Creating VPC1..."
   VPC1_ID=$(aws ec2 create-vpc \
     --cidr-block 10.1.0.0/16 \
-    --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=VPC1}]' \
+    --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=VPC1},{Key=project,Value=doc-smith},{Key=tutorial,Value=transitgateway-gettingstarted}]' \
     --query Vpc.VpcId \
     --output text)
   validate_aws_output "$VPC1_ID" "VPC1" || exit 1
@@ -213,7 +213,7 @@ if [ "$VPC1_ID" = "None" ] || [ -z "$VPC1_ID" ]; then
     --vpc-id "$VPC1_ID" \
     --cidr-block 10.1.0.0/24 \
     --availability-zone "$AZ" \
-    --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=VPC1-Subnet}]' \
+    --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=VPC1-Subnet},{Key=project,Value=doc-smith},{Key=tutorial,Value=transitgateway-gettingstarted}]' \
     --query Subnet.SubnetId \
     --output text)
   validate_aws_output "$SUBNET1_ID" "VPC1 subnet" || exit 1
@@ -230,7 +230,7 @@ else
       --vpc-id "$VPC1_ID" \
       --cidr-block 10.1.0.0/24 \
       --availability-zone "$AZ" \
-      --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=VPC1-Subnet}]' \
+      --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=VPC1-Subnet},{Key=project,Value=doc-smith},{Key=tutorial,Value=transitgateway-gettingstarted}]' \
       --query Subnet.SubnetId \
       --output text)
     validate_aws_output "$SUBNET1_ID" "VPC1 subnet" || exit 1
@@ -244,7 +244,7 @@ if [ "$VPC2_ID" = "None" ] || [ -z "$VPC2_ID" ]; then
   echo "Creating VPC2..."
   VPC2_ID=$(aws ec2 create-vpc \
     --cidr-block 10.2.0.0/16 \
-    --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=VPC2}]' \
+    --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=VPC2},{Key=project,Value=doc-smith},{Key=tutorial,Value=transitgateway-gettingstarted}]' \
     --query Vpc.VpcId \
     --output text)
   validate_aws_output "$VPC2_ID" "VPC2" || exit 1
@@ -256,7 +256,7 @@ if [ "$VPC2_ID" = "None" ] || [ -z "$VPC2_ID" ]; then
     --vpc-id "$VPC2_ID" \
     --cidr-block 10.2.0.0/24 \
     --availability-zone "$AZ" \
-    --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=VPC2-Subnet}]' \
+    --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=VPC2-Subnet},{Key=project,Value=doc-smith},{Key=tutorial,Value=transitgateway-gettingstarted}]' \
     --query Subnet.SubnetId \
     --output text)
   validate_aws_output "$SUBNET2_ID" "VPC2 subnet" || exit 1
@@ -273,7 +273,7 @@ else
       --vpc-id "$VPC2_ID" \
       --cidr-block 10.2.0.0/24 \
       --availability-zone "$AZ" \
-      --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=VPC2-Subnet}]' \
+      --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=VPC2-Subnet},{Key=project,Value=doc-smith},{Key=tutorial,Value=transitgateway-gettingstarted}]' \
       --query Subnet.SubnetId \
       --output text)
     validate_aws_output "$SUBNET2_ID" "VPC2 subnet" || exit 1
@@ -304,7 +304,7 @@ echo "Creating Transit Gateway..."
 TGW_ID=$(aws ec2 create-transit-gateway \
   --description "My Transit Gateway" \
   --options "AmazonSideAsn=64512,AutoAcceptSharedAttachments=disable,DefaultRouteTableAssociation=enable,DefaultRouteTablePropagation=enable,VpnEcmpSupport=enable,DnsSupport=enable,MulticastSupport=disable" \
-  --tag-specifications 'ResourceType=transit-gateway,Tags=[{Key=Name,Value=MyTransitGateway}]' \
+  --tag-specifications 'ResourceType=transit-gateway,Tags=[{Key=Name,Value=MyTransitGateway},{Key=project,Value=doc-smith},{Key=tutorial,Value=transitgateway-gettingstarted}]' \
   --query TransitGateway.TransitGatewayId \
   --output text)
 validate_aws_output "$TGW_ID" "Transit Gateway" || exit 1
@@ -319,7 +319,7 @@ TGW_ATTACHMENT_1_ID=$(aws ec2 create-transit-gateway-vpc-attachment \
   --transit-gateway-id "$TGW_ID" \
   --vpc-id "$VPC1_ID" \
   --subnet-ids "$SUBNET1_ID" \
-  --tag-specifications 'ResourceType=transit-gateway-attachment,Tags=[{Key=Name,Value=VPC1-Attachment}]' \
+  --tag-specifications 'ResourceType=transit-gateway-attachment,Tags=[{Key=Name,Value=VPC1-Attachment},{Key=project,Value=doc-smith},{Key=tutorial,Value=transitgateway-gettingstarted}]' \
   --query TransitGatewayVpcAttachment.TransitGatewayAttachmentId \
   --output text)
 validate_aws_output "$TGW_ATTACHMENT_1_ID" "Transit Gateway VPC1 Attachment" || exit 1
@@ -330,7 +330,7 @@ TGW_ATTACHMENT_2_ID=$(aws ec2 create-transit-gateway-vpc-attachment \
   --transit-gateway-id "$TGW_ID" \
   --vpc-id "$VPC2_ID" \
   --subnet-ids "$SUBNET2_ID" \
-  --tag-specifications 'ResourceType=transit-gateway-attachment,Tags=[{Key=Name,Value=VPC2-Attachment}]' \
+  --tag-specifications 'ResourceType=transit-gateway-attachment,Tags=[{Key=Name,Value=VPC2-Attachment},{Key=project,Value=doc-smith},{Key=tutorial,Value=transitgateway-gettingstarted}]' \
   --query TransitGatewayVpcAttachment.TransitGatewayAttachmentId \
   --output text)
 validate_aws_output "$TGW_ATTACHMENT_2_ID" "Transit Gateway VPC2 Attachment" || exit 1

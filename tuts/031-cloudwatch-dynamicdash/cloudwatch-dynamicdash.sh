@@ -11,7 +11,7 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 echo "$(date): Starting CloudWatch dashboard creation script"
 
 # Security: Set strict error handling
-set -euo pipefail
+set -uo pipefail
 trap 'handle_error "Script failed at line $LINENO"' ERR
 
 # Function to handle errors
@@ -102,6 +102,7 @@ EOF
     if ! ROLE_ARN=$(aws iam create-role \
         --role-name "$ROLE_NAME" \
         --assume-role-policy-document "$TRUST_POLICY" \
+        --tags Key=project,Value=doc-smith Key=tutorial,Value=cloudwatch-dynamicdash \
         --query "Role.Arn" \
         --output text 2>/dev/null); then
         handle_error "Failed to create IAM role for Lambda function"
@@ -126,6 +127,7 @@ EOF
         --role "$ROLE_ARN" \
         --handler index.handler \
         --zip-file fileb://function.zip \
+        --tags project=doc-smith,tutorial=cloudwatch-dynamicdash \
         --region "$REGION" > /dev/null 2>&1; then
         aws iam detach-role-policy \
             --role-name "$ROLE_NAME" \
@@ -247,8 +249,9 @@ if ! jq empty "$DASHBOARD_JSON" 2>/dev/null; then
 fi
 
 # Create the dashboard using the JSON file
+DASHBOARD_NAME="LambdaMetricsDashboard-$(date +%s)"
 if ! DASHBOARD_RESULT=$(aws cloudwatch put-dashboard \
-    --dashboard-name "LambdaMetricsDashboard-$(date +%s)" \
+    --dashboard-name "$DASHBOARD_NAME" \
     --dashboard-body file://"$DASHBOARD_JSON" \
     --region "$REGION" 2>&1); then
     # If we created resources, clean them up
@@ -270,9 +273,6 @@ if echo "$DASHBOARD_RESULT" | grep -q "DashboardValidationMessages"; then
 else
     echo "Dashboard created successfully!"
 fi
-
-# Extract dashboard name from result
-DASHBOARD_NAME=$(echo "$DASHBOARD_RESULT" | grep -oP '"DashboardName"\s*:\s*"\K[^"]+' || echo "LambdaMetricsDashboard")
 
 # Verify the dashboard was created
 echo "Verifying dashboard creation..."
