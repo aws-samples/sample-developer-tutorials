@@ -267,7 +267,7 @@ sleep "$API_CALL_DELAY"
 # Security: Define valid contact types
 declare -a CONTACT_TYPES=("BILLING" "OPERATIONS" "SECURITY")
 
-for contact_type in "${CONTACT_TYPES[@]}"; do
+for contact_type in "${CONTACT_TYPES[@]+"${CONTACT_TYPES[@]}"}"; do
     {
         echo ""
         echo "Attempting to check $contact_type contact information..."

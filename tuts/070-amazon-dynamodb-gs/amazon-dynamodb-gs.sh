@@ -89,7 +89,7 @@ cleanup() {
     echo "CLEANUP"
     echo "==========================================="
     echo "Resources to clean up:"
-    for resource in "${RESOURCES[@]}"; do
+    for resource in "${RESOURCES[@]+"${RESOURCES[@]}"}"; do
         echo "- $resource"
     done
     echo ""
@@ -97,7 +97,7 @@ cleanup() {
     if [[ ${#RESOURCES[@]} -gt 0 ]]; then
         echo "Proceeding with cleanup of all created resources..."
         
-        for resource in "${RESOURCES[@]}"; do
+        for resource in "${RESOURCES[@]+"${RESOURCES[@]}"}"; do
             if [[ "$resource" == Table:* ]]; then
                 local table_name="${resource#Table:}"
                 echo "Deleting table: $table_name"

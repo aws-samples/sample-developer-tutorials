@@ -277,7 +277,7 @@ else
         if [[ ${#CREATED_RESOURCES[@]} -eq 0 ]]; then
             echo "No resources were created."
         else
-            for resource in "${CREATED_RESOURCES[@]}"; do
+            for resource in "${CREATED_RESOURCES[@]+"${CREATED_RESOURCES[@]}"}"; do
                 echo "- $resource"
             done
         fi

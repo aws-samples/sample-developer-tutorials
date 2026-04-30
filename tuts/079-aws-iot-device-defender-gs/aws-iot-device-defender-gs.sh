@@ -667,7 +667,7 @@ echo "==================================================="
 echo "AWS IoT Device Defender setup completed successfully!"
 echo "==================================================="
 echo "The following resources were created:"
-for resource in "${CREATED_RESOURCES[@]}"; do
+for resource in "${CREATED_RESOURCES[@]+"${CREATED_RESOURCES[@]}"}"; do
     echo "- $resource"
 done
 echo ""
