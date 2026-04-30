@@ -19,3 +19,8 @@ qbusiness-*.json
 datazone_script_v3_fixed.log
 idc_setup_*.log
 workspaces_creation.log
+logs/
+*.csv
+*.png
+Dockerfile
+cfn/
