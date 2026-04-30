@@ -1,0 +1,20 @@
+glue_GettingStarted_024:
+  title: Getting started with the Glue Data Catalog
+  title_abbrev: Getting started with the Glue Data Catalog
+  synopsis_list:
+    - Create a database
+    - Create a table
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/024-glue-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/024-glue-gs/glue-gs.sh
+  services:
+    glue: {CreateDatabase, CreateTable, DeleteDatabase, DeleteTable, GetDatabase, GetTable}

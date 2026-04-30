@@ -1,0 +1,24 @@
+docdb_GettingStarted_025:
+  title: Getting started with Amazon DocumentDB
+  title_abbrev: Getting started with Amazon DocumentDB
+  synopsis_list:
+    - Create a DB subnet group
+    - Create a DocumentDB cluster
+    - Create a DocumentDB instance
+    - Configure security and connectivity
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/025-documentdb-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/025-documentdb-gs/documentdb-gs.sh
+  services:
+    docdb: {CreateDbCluster, CreateDbInstance, CreateDbSubnetGroup, DeleteDbCluster, DeleteDbInstance, DeleteDbSubnetGroup, DescribeDbClusters, DescribeDbInstances, Wait}
+    ec2: {AuthorizeSecurityGroupIngress, CreateDefaultVpc, DescribeSubnets, DescribeVpcs, RevokeSecurityGroupIngress}
+    secrets-manager: {CreateSecret, DeleteSecret, GetSecretValue}
