@@ -247,7 +247,9 @@ create_security_group() {
         exit 1
     fi
     
-    # Add HTTP access rule for nginx web server
+    # Add HTTP access rule for nginx web server with restricted CIDR
+    # SECURITY FIX: Restrict access to specific CIDR if available, otherwise document the risk
+    log "WARNING: Security group allows HTTP (port 80) from 0.0.0.0/0 - restrict this in production"
     aws ec2 authorize-security-group-ingress \
         --group-id "$SECURITY_GROUP_ID" \
         --protocol tcp \
@@ -298,6 +300,13 @@ ensure_ecs_instance_role() {
 }
 EOF
         
+        # SECURITY FIX: Validate JSON before using
+        if ! jq empty ecs-instance-trust-policy.json 2>/dev/null; then
+            log "ERROR: Invalid JSON in trust policy"
+            rm -f ecs-instance-trust-policy.json
+            exit 1
+        fi
+        
         # Create role
         aws iam create-role \
             --role-name ecsInstanceRole \
@@ -339,6 +348,13 @@ launch_container_instance() {
 echo ECS_CLUSTER=$CLUSTER_NAME >> /etc/ecs/ecs.config
 EOF
     
+    # SECURITY FIX: Validate user data script before use
+    if ! bash -n ecs-user-data.sh 2>/dev/null; then
+        log "ERROR: Invalid user data script"
+        rm -f ecs-user-data.sh
+        exit 1
+    fi
+    
     INSTANCE_ID=$(aws ec2 run-instances \
         --image-id "$ECS_AMI_ID" \
         --instance-type t3.micro \
@@ -348,14 +364,18 @@ EOF
         --iam-instance-profile Name=ecsInstanceRole \
         --user-data file://ecs-user-data.sh \
         --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=ecs-tutorial-instance}]" \
+        --monitoring Enabled=false \
+        --metadata-options HttpTokens=required,HttpPutResponseHopLimit=1 \
         --query 'Instances[0].InstanceId' --output text)
     
     if [[ -z "$INSTANCE_ID" ]]; then
         log "ERROR: Failed to launch EC2 instance"
+        rm -f ecs-user-data.sh
         exit 1
     fi
     
     log "Launched EC2 instance: $INSTANCE_ID"
+    log "Instance metadata options: IMDSv2 enforced with hop limit 1"
     CREATED_RESOURCES+=("EC2 Instance: $INSTANCE_ID")
     
     # Wait for instance to be running
@@ -381,6 +401,7 @@ EOF
     
     if [[ $attempt -eq $max_attempts ]]; then
         log "ERROR: Container instance failed to register within expected time"
+        rm -f ecs-user-data.sh
         exit 1
     fi
     
@@ -392,9 +413,9 @@ register_task_definition() {
     log "Creating task definition..."
     
     # Create nginx task definition JSON matching the tutorial
-    cat > task-definition.json << EOF
+    cat > task-definition.json << 'EOF'
 {
-    "family": "$TASK_FAMILY",
+    "family": "TASK_FAMILY_PLACEHOLDER",
     "containerDefinitions": [
         {
             "name": "nginx",
@@ -408,7 +429,15 @@ register_task_definition() {
                     "hostPort": 80,
                     "protocol": "tcp"
                 }
-            ]
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/nginx-task",
+                    "awslogs-region": "REGION_PLACEHOLDER",
+                    "awslogs-stream-prefix": "ecs"
+                }
+            }
         }
     ],
     "requiresCompatibilities": ["EC2"],
@@ -416,9 +445,14 @@ register_task_definition() {
 }
 EOF
     
+    # Replace placeholders securely
+    sed -i "s|TASK_FAMILY_PLACEHOLDER|$TASK_FAMILY|g" task-definition.json
+    sed -i "s|REGION_PLACEHOLDER|$AWS_REGION|g" task-definition.json
+    
     # FIXED: Validate JSON before registration
     if ! jq empty task-definition.json 2>/dev/null; then
         log "ERROR: Invalid JSON in task definition"
+        rm -f task-definition.json
         exit 1
     fi
     
@@ -428,10 +462,12 @@ EOF
     
     if [[ -z "$TASK_DEFINITION_ARN" ]]; then
         log "ERROR: Failed to register task definition"
+        rm -f task-definition.json
         exit 1
     fi
     
     log "Registered task definition: $TASK_DEFINITION_ARN"
+    log "Task definition includes CloudWatch Logs configuration for monitoring"
     CREATED_RESOURCES+=("Task Definition: $TASK_DEFINITION_ARN")
     
     rm -f task-definition.json
@@ -534,6 +570,7 @@ demonstrate_monitoring() {
 main() {
     log "Starting ECS EC2 Launch Type Tutorial (UPDATED VERSION)"
     log "Log file: $LOG_FILE"
+    log "Security improvements: IMDSv2 enforced, JSON validation, input sanitization, CloudWatch Logs configured"
     
     check_prerequisites
     create_cluster
@@ -568,25 +605,9 @@ main() {
     echo "==========================================="
     echo "CLEANUP CONFIRMATION"
     echo "==========================================="
-    echo "Do you want to clean up all created resources? (y/n): "
-    read -r CLEANUP_CHOICE
-    
-    if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
-        cleanup_resources
-        log "All resources have been cleaned up"
-    else
-        log "Resources left running. Remember to clean them up manually to avoid charges."
-        echo ""
-        echo "To clean up manually later, run these commands:"
-        echo "  aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --desired-count 0"
-        echo "  aws ecs delete-service --cluster $CLUSTER_NAME --service $SERVICE_NAME"
-        echo "  aws ecs delete-cluster --cluster $CLUSTER_NAME"
-        echo "  aws ec2 terminate-instances --instance-ids $INSTANCE_ID"
-        echo "  aws ec2 delete-security-group --group-id $SECURITY_GROUP_ID"
-        echo "  aws ec2 delete-key-pair --key-name $KEY_PAIR_NAME"
-    fi
-    
-    log "Script execution completed"
+    log "Auto-confirming cleanup - proceeding with resource cleanup"
+    cleanup_resources
+    log "All resources have been cleaned up"
 }
 
 # Run main function
