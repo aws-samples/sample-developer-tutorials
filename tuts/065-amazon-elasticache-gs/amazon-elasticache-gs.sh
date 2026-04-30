@@ -4,6 +4,8 @@
 # This script creates a Valkey serverless cache, configures security groups,
 # and demonstrates how to connect to and use the cache.
 
+set -euo pipefail
+
 # Set up logging
 LOG_FILE="elasticache_tutorial_$(date +%Y%m%d_%H%M%S).log"
 exec > >(tee -a "$LOG_FILE") 2>&1
@@ -15,15 +17,25 @@ echo "============================================================"
 handle_error() {
     echo "ERROR: $1"
     echo "Resources created:"
-    if [ -n "$CACHE_NAME" ]; then
+    if [ -n "${CACHE_NAME:-}" ]; then
         echo "- ElastiCache serverless cache: $CACHE_NAME"
     fi
-    if [ -n "$SG_RULE_6379" ] || [ -n "$SG_RULE_6380" ]; then
+    if [ -n "${SG_RULE_6379:-}" ] || [ -n "${SG_RULE_6380:-}" ]; then
         echo "- Security group rules for ports 6379 and 6380"
     fi
     echo "Please clean up these resources manually."
     exit 1
 }
+
+# Validate AWS CLI is installed and configured
+if ! command -v aws &> /dev/null; then
+    handle_error "AWS CLI is not installed or not in PATH"
+fi
+
+# Check AWS credentials are configured
+if ! aws sts get-caller-identity &> /dev/null; then
+    handle_error "AWS credentials are not configured or invalid"
+fi
 
 # Generate a random identifier for resource names
 RANDOM_ID=$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | fold -w 8 | head -n 1)
@@ -39,7 +51,7 @@ echo "Getting default security group ID..."
 SG_ID=$(aws ec2 describe-security-groups \
   --filters Name=group-name,Values=default \
   --query "SecurityGroups[0].GroupId" \
-  --output text)
+  --output text 2>/dev/null || echo "")
 
 if [[ -z "$SG_ID" || "$SG_ID" == "None" ]]; then
     handle_error "Failed to get default security group ID"
@@ -49,18 +61,20 @@ echo "Default security group ID: $SG_ID"
 
 # Add inbound rule for port 6379
 echo "Adding inbound rule for port 6379..."
-SG_RULE_6379=$(aws ec2 authorize-security-group-ingress \
+SG_RULE_6379=""
+if SG_RULE_6379=$(aws ec2 authorize-security-group-ingress \
   --group-id "$SG_ID" \
   --protocol tcp \
   --port 6379 \
   --cidr 0.0.0.0/0 \
   --query "SecurityGroupRules[0].SecurityGroupRuleId" \
-  --output text 2>&1)
-
-# Check for errors in the output
-if echo "$SG_RULE_6379" | grep -i "error" > /dev/null; then
-    # If the rule already exists, this is not a fatal error
-    if echo "$SG_RULE_6379" | grep -i "already exists" > /dev/null; then
+  --output text 2>&1); then
+    if [[ "$SG_RULE_6379" == *"InvalidGroup.Duplicate"* ]] || [[ "$SG_RULE_6379" == *"already exists"* ]]; then
+        echo "Rule for port 6379 already exists, continuing..."
+        SG_RULE_6379="existing"
+    fi
+else
+    if [[ "$SG_RULE_6379" == *"InvalidGroup.Duplicate"* ]] || [[ "$SG_RULE_6379" == *"already exists"* ]]; then
         echo "Rule for port 6379 already exists, continuing..."
         SG_RULE_6379="existing"
     else
@@ -70,18 +84,20 @@ fi
 
 # Add inbound rule for port 6380
 echo "Adding inbound rule for port 6380..."
-SG_RULE_6380=$(aws ec2 authorize-security-group-ingress \
+SG_RULE_6380=""
+if SG_RULE_6380=$(aws ec2 authorize-security-group-ingress \
   --group-id "$SG_ID" \
   --protocol tcp \
   --port 6380 \
   --cidr 0.0.0.0/0 \
   --query "SecurityGroupRules[0].SecurityGroupRuleId" \
-  --output text 2>&1)
-
-# Check for errors in the output
-if echo "$SG_RULE_6380" | grep -i "error" > /dev/null; then
-    # If the rule already exists, this is not a fatal error
-    if echo "$SG_RULE_6380" | grep -i "already exists" > /dev/null; then
+  --output text 2>&1); then
+    if [[ "$SG_RULE_6380" == *"InvalidGroup.Duplicate"* ]] || [[ "$SG_RULE_6380" == *"already exists"* ]]; then
+        echo "Rule for port 6380 already exists, continuing..."
+        SG_RULE_6380="existing"
+    fi
+else
+    if [[ "$SG_RULE_6380" == *"InvalidGroup.Duplicate"* ]] || [[ "$SG_RULE_6380" == *"already exists"* ]]; then
         echo "Rule for port 6380 already exists, continuing..."
         SG_RULE_6380="existing"
     else
@@ -91,19 +107,17 @@ fi
 
 echo "Security group rules added successfully."
 echo ""
-echo "SECURITY NOTE: The security group rules created allow access from any IP address (0.0.0.0/0)."
-echo "This is not recommended for production environments. For production,"
+echo "⚠️  SECURITY WARNING: The security group rules created allow access from any IP address (0.0.0.0/0)."
+echo "This is NOT RECOMMENDED for production environments. For production,"
 echo "you should restrict access to specific IP ranges or security groups."
+echo "Update the CIDR blocks in this script before using in production."
 echo ""
 
 # Step 2: Create a Valkey serverless cache
 echo "Step 2: Creating Valkey serverless cache..."
-CREATE_RESULT=$(aws elasticache create-serverless-cache \
+if ! CREATE_RESULT=$(aws elasticache create-serverless-cache \
   --serverless-cache-name "$CACHE_NAME" \
-  --engine valkey 2>&1)
-
-# Check for errors in the output
-if echo "$CREATE_RESULT" | grep -i "error" > /dev/null; then
+  --engine valkey 2>&1); then
     handle_error "Failed to create serverless cache: $CREATE_RESULT"
 fi
 
@@ -120,16 +134,17 @@ CACHE_STATUS=""
 while [[ $ATTEMPT -le $MAX_ATTEMPTS ]]; do
     echo "Checking cache status (attempt $ATTEMPT of $MAX_ATTEMPTS)..."
     
-    DESCRIBE_RESULT=$(aws elasticache describe-serverless-caches \
-      --serverless-cache-name "$CACHE_NAME" 2>&1)
-    
-    # Check for errors in the output
-    if echo "$DESCRIBE_RESULT" | grep -i "error" > /dev/null; then
+    if ! DESCRIBE_RESULT=$(aws elasticache describe-serverless-caches \
+      --serverless-cache-name "$CACHE_NAME" 2>&1); then
         handle_error "Failed to describe serverless cache: $DESCRIBE_RESULT"
     fi
     
-    # Extract status using grep and awk for more reliable parsing
-    CACHE_STATUS=$(echo "$DESCRIBE_RESULT" | grep -o '"Status": "[^"]*"' | awk -F'"' '{print $4}')
+    # Extract status using jq for reliable JSON parsing
+    if command -v jq &> /dev/null; then
+        CACHE_STATUS=$(echo "$DESCRIBE_RESULT" | jq -r '.ServerlessCaches[0].Status // "UNKNOWN"' 2>/dev/null || echo "")
+    else
+        CACHE_STATUS=$(echo "$DESCRIBE_RESULT" | grep -o '"Status": "[^"]*"' | awk -F'"' '{print $4}' | head -n 1)
+    fi
     
     echo "Current status: $CACHE_STATUS"
     
@@ -154,10 +169,12 @@ fi
 
 # Step 4: Find your cache endpoint
 echo "Step 4: Getting cache endpoint..."
-ENDPOINT=$(aws elasticache describe-serverless-caches \
+if ! ENDPOINT=$(aws elasticache describe-serverless-caches \
   --serverless-cache-name "$CACHE_NAME" \
   --query "ServerlessCaches[0].Endpoint.Address" \
-  --output text)
+  --output text 2>&1); then
+    handle_error "Failed to get cache endpoint: $ENDPOINT"
+fi
 
 if [[ -z "$ENDPOINT" || "$ENDPOINT" == "None" ]]; then
     handle_error "Failed to get cache endpoint"
@@ -191,30 +208,28 @@ echo "   set mykey \"Hello ElastiCache\""
 echo "   get mykey"
 echo ""
 
-# Prompt for cleanup
+# Auto-confirm cleanup
 echo ""
 echo "==========================================="
 echo "CLEANUP CONFIRMATION"
 echo "==========================================="
 echo "Resources created:"
 echo "- ElastiCache serverless cache: $CACHE_NAME"
-if [ "$SG_RULE_6379" != "existing" ] || [ "$SG_RULE_6380" != "existing" ]; then
+if [[ "${SG_RULE_6379:-}" != "existing" ]] || [[ "${SG_RULE_6380:-}" != "existing" ]]; then
     echo "- Security group rules for ports 6379 and 6380"
 fi
 echo ""
-echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+echo "Proceeding with cleanup..."
+
+CLEANUP_CHOICE="y"
 
 if [[ "${CLEANUP_CHOICE,,}" == "y" ]]; then
     echo "Starting cleanup process..."
     
     # Step 7: Delete the cache
     echo "Deleting serverless cache $CACHE_NAME..."
-    DELETE_RESULT=$(aws elasticache delete-serverless-cache \
-      --serverless-cache-name "$CACHE_NAME" 2>&1)
-    
-    # Check for errors in the output
-    if echo "$DELETE_RESULT" | grep -i "error" > /dev/null; then
+    if ! DELETE_RESULT=$(aws elasticache delete-serverless-cache \
+      --serverless-cache-name "$CACHE_NAME" 2>&1); then
         echo "WARNING: Failed to delete serverless cache: $DELETE_RESULT"
         echo "Please delete the cache manually from the AWS console."
     else
@@ -222,32 +237,29 @@ if [[ "${CLEANUP_CHOICE,,}" == "y" ]]; then
     fi
     
     # Only attempt to remove security group rules if we created them
-    if [ "$SG_RULE_6379" != "existing" ]; then
+    if [[ "${SG_RULE_6379:-}" != "existing" ]]; then
         echo "Removing security group rule for port 6379..."
-        aws ec2 revoke-security-group-ingress \
+        if ! aws ec2 revoke-security-group-ingress \
           --group-id "$SG_ID" \
           --protocol tcp \
           --port 6379 \
-          --cidr 0.0.0.0/0
+          --cidr 0.0.0.0/0 2>&1; then
+            echo "WARNING: Failed to remove security group rule for port 6379"
+        fi
     fi
     
-    if [ "$SG_RULE_6380" != "existing" ]; then
+    if [[ "${SG_RULE_6380:-}" != "existing" ]]; then
         echo "Removing security group rule for port 6380..."
-        aws ec2 revoke-security-group-ingress \
+        if ! aws ec2 revoke-security-group-ingress \
           --group-id "$SG_ID" \
           --protocol tcp \
           --port 6380 \
-          --cidr 0.0.0.0/0
+          --cidr 0.0.0.0/0 2>&1; then
+            echo "WARNING: Failed to remove security group rule for port 6380"
+        fi
     fi
     
     echo "Cleanup completed."
-else
-    echo "Cleanup skipped. Resources will remain in your AWS account."
-    echo "To clean up later, run:"
-    echo "aws elasticache delete-serverless-cache --serverless-cache-name $CACHE_NAME"
-    if [ "$SG_RULE_6379" != "existing" ] || [ "$SG_RULE_6380" != "existing" ]; then
-        echo "And remove the security group rules for ports 6379 and 6380 from security group $SG_ID"
-    fi
 fi
 
 echo ""

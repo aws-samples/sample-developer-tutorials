@@ -1,0 +1,22 @@
+iot_GettingStarted_063:
+  title: Getting started with IoT Core
+  title_abbrev: Getting started with IoT Core
+  synopsis_list:
+    - Create IoT resources
+    - Configure your device
+    - Run the sample application
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/063-aws-iot-core-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/063-aws-iot-core-gs/aws-iot-core-gs.sh
+  services:
+    iot: {AttachPolicy, AttachThingPrincipal, CreateKeysAndCertificate, CreatePolicy, CreateThing, DeleteCertificate, DeletePolicy, DeleteThing, DescribeEndpoint, DetachPolicy, DetachThingPrincipal, UpdateCertificate}
+    sts: {GetCallerIdentity}

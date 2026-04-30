@@ -15,3 +15,30 @@ The script creates the following AWS resources in order:
 - EC2 vpc
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.
+
+
+## CloudFormation
+
+This tutorial includes a CloudFormation template that creates the same resources as the CLI script.
+
+**Resources created:** VPC IPAM with pool and CIDR
+
+### Deploy with CloudFormation
+
+```bash
+./cfn/deploy.sh 009-vpc-ipam-gs
+```
+
+### Run the interactive steps
+
+Once deployed, run the interactive tutorial steps against the CloudFormation-created resources. Each command is displayed with resolved values so you can run them individually.
+
+```bash
+bash tuts/009-vpc-ipam-gs/vpc-ipam-gs-cfn.sh
+```
+
+### Clean up
+
+```bash
+./cfn/cleanup.sh 009-vpc-ipam-gs
+```
