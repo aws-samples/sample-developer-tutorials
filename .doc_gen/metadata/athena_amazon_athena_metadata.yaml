@@ -1,0 +1,24 @@
+athena_GettingStarted_061:
+  title: Getting started with Amazon Athena
+  title_abbrev: Getting started with Amazon Athena
+  synopsis_list:
+    - Create an S3 bucket for query results
+    - Create a database
+    - Create a table
+    - Run a query
+    - Create and use named queries
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/061-amazon-athena-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/061-amazon-athena-gs/amazon-athena-gs.sh
+  services:
+    athena: {CreateNamedQuery, DeleteNamedQuery, GetNamedQuery, GetQueryExecution, GetQueryResults, ListDatabases, ListNamedQueries, ListTableMetadata, StartQueryExecution}
+    s3: {Cp, Mb, Rb, Rm}

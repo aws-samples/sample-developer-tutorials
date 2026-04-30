@@ -4,6 +4,7 @@
 # blocking, tag the bucket, list objects and versions, and clean up.
 
 set -eE
+set -o pipefail
 
 # ============================================================================
 # Prerequisites check
@@ -15,14 +16,31 @@ if [ -z "$CONFIGURED_REGION" ] && [ -z "$AWS_DEFAULT_REGION" ] && [ -z "$AWS_REG
     exit 1
 fi
 
+# Verify AWS credentials are configured
+if ! aws sts get-caller-identity &>/dev/null; then
+    echo "ERROR: AWS credentials not configured or invalid. Run 'aws configure'."
+    exit 1
+fi
+
 # ============================================================================
 # Setup: logging, temp directory, resource tracking
 # ============================================================================
 
-UNIQUE_ID=$(cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 12 | head -n 1)
-BUCKET_NAME="s3api-${UNIQUE_ID}"
+UNIQUE_ID=$(head -c 6 /dev/urandom | od -An -tx1 | tr -d ' ')
+# Check for shared prereq bucket
+PREREQ_BUCKET=$(aws cloudformation describe-stacks --stack-name tutorial-prereqs-bucket \
+    --query 'Stacks[0].Outputs[?OutputKey==`BucketName`].OutputValue' --output text 2>/dev/null || true)
+if [ -n "$PREREQ_BUCKET" ] && [ "$PREREQ_BUCKET" != "None" ]; then
+    BUCKET_NAME="$PREREQ_BUCKET"
+    BUCKET_IS_SHARED=true
+    echo "Using shared bucket: $BUCKET_NAME"
+else
+    BUCKET_IS_SHARED=false
+    BUCKET_NAME="s3api-${UNIQUE_ID}"
+fi
 
 TEMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TEMP_DIR"' EXIT
 LOG_FILE="${TEMP_DIR}/s3-gettingstarted.log"
 CREATED_RESOURCES=()
 
@@ -37,6 +55,37 @@ echo "Log file: ${LOG_FILE}"
 echo ""
 
 # ============================================================================
+# Helper functions
+# ============================================================================
+
+get_region() {
+    echo "${AWS_REGION:-${AWS_DEFAULT_REGION:-${CONFIGURED_REGION}}}"
+}
+
+delete_object_versions() {
+    local bucket=$1
+    local query=$2
+    
+    local versions
+    versions=$(aws s3api list-object-versions \
+        --bucket "$bucket" \
+        --query "$query" \
+        --output json 2>&1) || return 0
+    
+    if [ -z "$versions" ] || [ "$versions" = "null" ] || [ "$versions" = "[]" ]; then
+        return 0
+    fi
+    
+    echo "$versions" | jq -r '.[] | "\(.Key)\t\(.VersionId)"' 2>/dev/null | while IFS=$'\t' read -r key version_id; do
+        if [ -n "$key" ] && [ "$key" != "null" ]; then
+            aws s3api delete-object --bucket "$bucket" --key "$key" --version-id "$version_id" >/dev/null 2>&1 || true
+        fi
+    done
+    
+    return 0
+}
+
+# ============================================================================
 # Error handling and cleanup functions
 # ============================================================================
 
@@ -46,90 +95,81 @@ cleanup() {
     echo "CLEANUP"
     echo "============================================"
 
-    # Delete all object versions and delete markers
-    echo "Listing all object versions in bucket..."
-    VERSIONS_OUTPUT=$(aws s3api list-object-versions \
-        --bucket "$BUCKET_NAME" \
-        --query "Versions[].{Key:Key,VersionId:VersionId}" \
-        --output text 2>&1) || true
+    if [ "$BUCKET_IS_SHARED" = "false" ]; then
+        echo "Deleting all object versions in bucket..."
+        
+        delete_object_versions "$BUCKET_NAME" "Versions[].{Key:Key,VersionId:VersionId}" || true
+        
+        delete_object_versions "$BUCKET_NAME" "DeleteMarkers[].{Key:Key,VersionId:VersionId}" || true
 
-    if [ -n "$VERSIONS_OUTPUT" ] && [ "$VERSIONS_OUTPUT" != "None" ]; then
-        while IFS=$'\t' read -r KEY VERSION_ID; do
-            if [ -n "$KEY" ] && [ "$KEY" != "None" ]; then
-                echo "Deleting version: ${KEY} (${VERSION_ID})"
-                aws s3api delete-object \
-                    --bucket "$BUCKET_NAME" \
-                    --key "$KEY" \
-                    --version-id "$VERSION_ID" 2>&1 || echo "WARNING: Failed to delete version ${KEY} (${VERSION_ID})"
+        echo "Deleting bucket: ${BUCKET_NAME}"
+        if ! aws s3api delete-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
+            echo "WARNING: Failed to delete bucket ${BUCKET_NAME}"
+        fi
+        
+        # Clean up logs bucket
+        LOG_TARGET_BUCKET="${BUCKET_NAME}-logs"
+        if aws s3api head-bucket --bucket "$LOG_TARGET_BUCKET" 2>/dev/null; then
+            echo "Deleting log bucket: ${LOG_TARGET_BUCKET}"
+            if ! aws s3api delete-bucket --bucket "$LOG_TARGET_BUCKET" 2>/dev/null; then
+                echo "WARNING: Failed to delete bucket ${LOG_TARGET_BUCKET}"
             fi
-        done <<< "$VERSIONS_OUTPUT"
+        fi
+    else
+        echo "Keeping shared bucket: ${BUCKET_NAME}"
     fi
-
-    DELETE_MARKERS_OUTPUT=$(aws s3api list-object-versions \
-        --bucket "$BUCKET_NAME" \
-        --query "DeleteMarkers[].{Key:Key,VersionId:VersionId}" \
-        --output text 2>&1) || true
-
-    if [ -n "$DELETE_MARKERS_OUTPUT" ] && [ "$DELETE_MARKERS_OUTPUT" != "None" ]; then
-        while IFS=$'\t' read -r KEY VERSION_ID; do
-            if [ -n "$KEY" ] && [ "$KEY" != "None" ]; then
-                echo "Deleting delete marker: ${KEY} (${VERSION_ID})"
-                aws s3api delete-object \
-                    --bucket "$BUCKET_NAME" \
-                    --key "$KEY" \
-                    --version-id "$VERSION_ID" 2>&1 || echo "WARNING: Failed to delete marker ${KEY} (${VERSION_ID})"
-            fi
-        done <<< "$DELETE_MARKERS_OUTPUT"
-    fi
-
-    echo "Deleting bucket: ${BUCKET_NAME}"
-    aws s3api delete-bucket --bucket "$BUCKET_NAME" 2>&1 || echo "WARNING: Failed to delete bucket ${BUCKET_NAME}"
-
-    echo ""
-    echo "Cleaning up temp directory: ${TEMP_DIR}"
-    rm -rf "$TEMP_DIR"
 
     echo ""
     echo "Cleanup complete."
 }
 
 handle_error() {
+    local line_number=$1
     echo ""
     echo "============================================"
-    echo "ERROR on $1"
+    echo "ERROR on line ${line_number}"
     echo "============================================"
     echo ""
     echo "Resources created before error:"
-    for RESOURCE in "${CREATED_RESOURCES[@]}"; do
-        echo "  - ${RESOURCE}"
-    done
+    if [ ${#CREATED_RESOURCES[@]} -gt 0 ]; then
+        for RESOURCE in "${CREATED_RESOURCES[@]}"; do
+            echo "  - ${RESOURCE}"
+        done
+    else
+        echo "  (none)"
+    fi
     echo ""
     echo "Attempting cleanup..."
     cleanup
     exit 1
 }
 
-trap 'handle_error "line $LINENO"' ERR
+trap 'handle_error "$LINENO"' ERR
 
 # ============================================================================
 # Step 1: Create a bucket
 # ============================================================================
 
 echo "Step 1: Creating bucket ${BUCKET_NAME}..."
-
-# CreateBucket requires LocationConstraint for all regions except us-east-1
-REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-${CONFIGURED_REGION}}}"
-if [ "$REGION" = "us-east-1" ]; then
-    CREATE_OUTPUT=$(aws s3api create-bucket \
-        --bucket "$BUCKET_NAME" 2>&1)
-else
-    CREATE_OUTPUT=$(aws s3api create-bucket \
-        --bucket "$BUCKET_NAME" \
-        --create-bucket-configuration LocationConstraint="$REGION" 2>&1)
+if [ "$BUCKET_IS_SHARED" = "false" ]; then
+    REGION=$(get_region)
+    if [ "$REGION" = "us-east-1" ]; then
+        if ! aws s3api create-bucket --bucket "$BUCKET_NAME" >/dev/null 2>&1; then
+            echo "ERROR: Failed to create bucket $BUCKET_NAME"
+            exit 1
+        fi
+    else
+        if ! aws s3api create-bucket \
+            --bucket "$BUCKET_NAME" \
+            --region "$REGION" \
+            --create-bucket-configuration LocationConstraint="$REGION" >/dev/null 2>&1; then
+            echo "ERROR: Failed to create bucket $BUCKET_NAME in region $REGION"
+            exit 1
+        fi
+    fi
+    CREATED_RESOURCES+=("s3:bucket:${BUCKET_NAME}")
+    echo "Bucket created."
 fi
-echo "$CREATE_OUTPUT"
-CREATED_RESOURCES+=("s3:bucket:${BUCKET_NAME}")
-echo "Bucket created."
 echo ""
 
 # ============================================================================
@@ -139,13 +179,19 @@ echo ""
 echo "Step 2: Uploading a sample text file..."
 
 SAMPLE_FILE="${TEMP_DIR}/sample.txt"
-echo "Hello, Amazon S3! This is a sample file for the getting started tutorial." > "$SAMPLE_FILE"
+cat > "$SAMPLE_FILE" << 'EOF'
+Hello, Amazon S3! This is a sample file for the getting started tutorial.
+EOF
 
-UPLOAD_OUTPUT=$(aws s3api put-object \
+if ! aws s3api put-object \
     --bucket "$BUCKET_NAME" \
     --key "sample.txt" \
-    --body "$SAMPLE_FILE" 2>&1)
-echo "$UPLOAD_OUTPUT"
+    --body "$SAMPLE_FILE" \
+    --server-side-encryption AES256 \
+    --metadata "tutorial=s3-gettingstarted" >/dev/null 2>&1; then
+    echo "ERROR: Failed to upload sample.txt"
+    exit 1
+fi
 echo "File uploaded."
 echo ""
 
@@ -156,10 +202,13 @@ echo ""
 echo "Step 3: Downloading the object..."
 
 DOWNLOAD_FILE="${TEMP_DIR}/downloaded-sample.txt"
-aws s3api get-object \
+if ! aws s3api get-object \
     --bucket "$BUCKET_NAME" \
     --key "sample.txt" \
-    "$DOWNLOAD_FILE" 2>&1
+    "$DOWNLOAD_FILE" >/dev/null 2>&1; then
+    echo "ERROR: Failed to download sample.txt"
+    exit 1
+fi
 echo "Downloaded to: ${DOWNLOAD_FILE}"
 echo "Contents:"
 cat "$DOWNLOAD_FILE"
@@ -171,11 +220,15 @@ echo ""
 
 echo "Step 4: Copying object to a folder prefix..."
 
-COPY_OUTPUT=$(aws s3api copy-object \
+if ! aws s3api copy-object \
     --bucket "$BUCKET_NAME" \
     --copy-source "${BUCKET_NAME}/sample.txt" \
-    --key "backup/sample.txt" 2>&1)
-echo "$COPY_OUTPUT"
+    --key "backup/sample.txt" \
+    --server-side-encryption AES256 \
+    --metadata-directive COPY >/dev/null 2>&1; then
+    echo "ERROR: Failed to copy object to backup/sample.txt"
+    exit 1
+fi
 echo "Object copied to backup/sample.txt."
 echo ""
 
@@ -185,20 +238,28 @@ echo ""
 
 echo "Step 5: Enabling versioning..."
 
-VERSIONING_OUTPUT=$(aws s3api put-bucket-versioning \
+if ! aws s3api put-bucket-versioning \
     --bucket "$BUCKET_NAME" \
-    --versioning-configuration Status=Enabled 2>&1)
-echo "$VERSIONING_OUTPUT"
+    --versioning-configuration Status=Enabled >/dev/null 2>&1; then
+    echo "ERROR: Failed to enable versioning"
+    exit 1
+fi
 echo "Versioning enabled."
 
 echo "Uploading a second version of sample.txt..."
-echo "Hello, Amazon S3! This is version 2 of the sample file." > "$SAMPLE_FILE"
+cat > "$SAMPLE_FILE" << 'EOF'
+Hello, Amazon S3! This is version 2 of the sample file.
+EOF
 
-UPLOAD_V2_OUTPUT=$(aws s3api put-object \
+if ! aws s3api put-object \
     --bucket "$BUCKET_NAME" \
     --key "sample.txt" \
-    --body "$SAMPLE_FILE" 2>&1)
-echo "$UPLOAD_V2_OUTPUT"
+    --body "$SAMPLE_FILE" \
+    --server-side-encryption AES256 \
+    --metadata "tutorial=s3-gettingstarted,version=2" >/dev/null 2>&1; then
+    echo "ERROR: Failed to upload second version of sample.txt"
+    exit 1
+fi
 echo "Second version uploaded."
 echo ""
 
@@ -208,7 +269,7 @@ echo ""
 
 echo "Step 6: Configuring SSE-S3 default encryption..."
 
-ENCRYPTION_OUTPUT=$(aws s3api put-bucket-encryption \
+if ! aws s3api put-bucket-encryption \
     --bucket "$BUCKET_NAME" \
     --server-side-encryption-configuration '{
         "Rules": [
@@ -219,8 +280,10 @@ ENCRYPTION_OUTPUT=$(aws s3api put-bucket-encryption \
                 "BucketKeyEnabled": true
             }
         ]
-    }' 2>&1)
-echo "$ENCRYPTION_OUTPUT"
+    }' >/dev/null 2>&1; then
+    echo "ERROR: Failed to configure SSE-S3 encryption"
+    exit 1
+fi
 echo "SSE-S3 encryption configured."
 echo ""
 
@@ -230,25 +293,64 @@ echo ""
 
 echo "Step 7: Blocking all public access..."
 
-PUBLIC_ACCESS_OUTPUT=$(aws s3api put-public-access-block \
+if ! aws s3api put-public-access-block \
     --bucket "$BUCKET_NAME" \
     --public-access-block-configuration '{
         "BlockPublicAcls": true,
         "IgnorePublicAcls": true,
         "BlockPublicPolicy": true,
         "RestrictPublicBuckets": true
-    }' 2>&1)
-echo "$PUBLIC_ACCESS_OUTPUT"
+    }' >/dev/null 2>&1; then
+    echo "ERROR: Failed to block public access"
+    exit 1
+fi
 echo "Public access blocked."
 echo ""
 
 # ============================================================================
-# Step 8: Tag the bucket
+# Step 8: Configure bucket logging
 # ============================================================================
 
-echo "Step 8: Tagging the bucket..."
+echo "Step 8: Configuring bucket logging..."
 
-TAG_OUTPUT=$(aws s3api put-bucket-tagging \
+LOG_TARGET_BUCKET="${BUCKET_NAME}-logs"
+if [ "$BUCKET_IS_SHARED" = "false" ]; then
+    REGION=$(get_region)
+    if [ "$REGION" = "us-east-1" ]; then
+        aws s3api create-bucket --bucket "$LOG_TARGET_BUCKET" 2>/dev/null || true
+    else
+        aws s3api create-bucket \
+            --bucket "$LOG_TARGET_BUCKET" \
+            --region "$REGION" \
+            --create-bucket-configuration LocationConstraint="$REGION" 2>/dev/null || true
+    fi
+    
+    aws s3api put-bucket-acl --bucket "$LOG_TARGET_BUCKET" --acl log-delivery-write 2>/dev/null || true
+    
+    if ! aws s3api put-bucket-logging \
+        --bucket "$BUCKET_NAME" \
+        --bucket-logging-status '{
+            "LoggingEnabled": {
+                "TargetBucket": "'$LOG_TARGET_BUCKET'",
+                "TargetPrefix": "logs/"
+            }
+        }' >/dev/null 2>&1; then
+        echo "WARNING: Failed to configure bucket logging"
+    else
+        echo "Bucket logging configured."
+    fi
+else
+    echo "Skipping logging configuration for shared bucket."
+fi
+echo ""
+
+# ============================================================================
+# Step 9: Tag the bucket
+# ============================================================================
+
+echo "Step 9: Tagging the bucket..."
+
+if ! aws s3api put-bucket-tagging \
     --bucket "$BUCKET_NAME" \
     --tagging '{
         "TagSet": [
@@ -259,38 +361,44 @@ TAG_OUTPUT=$(aws s3api put-bucket-tagging \
             {
                 "Key": "Project",
                 "Value": "S3-GettingStarted"
+            },
+            {
+                "Key": "ManagedBy",
+                "Value": "Bash-Tutorial"
             }
         ]
-    }' 2>&1)
-echo "$TAG_OUTPUT"
+    }' >/dev/null 2>&1; then
+    echo "ERROR: Failed to tag bucket"
+    exit 1
+fi
 echo "Bucket tagged."
 
 echo "Verifying tags..."
-GET_TAGS_OUTPUT=$(aws s3api get-bucket-tagging \
-    --bucket "$BUCKET_NAME" 2>&1)
-echo "$GET_TAGS_OUTPUT"
+if ! aws s3api get-bucket-tagging --bucket "$BUCKET_NAME" 2>&1; then
+    echo "WARNING: Failed to retrieve bucket tags"
+fi
 echo ""
 
 # ============================================================================
-# Step 9: List objects and versions
+# Step 10: List objects and versions
 # ============================================================================
 
-echo "Step 9: Listing objects..."
+echo "Step 10: Listing objects..."
 
-LIST_OUTPUT=$(aws s3api list-objects-v2 \
-    --bucket "$BUCKET_NAME" 2>&1)
-echo "$LIST_OUTPUT"
+if ! aws s3api list-objects-v2 --bucket "$BUCKET_NAME" 2>&1; then
+    echo "WARNING: Failed to list objects"
+fi
 echo ""
 
 echo "Listing object versions..."
 
-VERSIONS_LIST=$(aws s3api list-object-versions \
-    --bucket "$BUCKET_NAME" 2>&1)
-echo "$VERSIONS_LIST"
+if ! aws s3api list-object-versions --bucket "$BUCKET_NAME" 2>&1; then
+    echo "WARNING: Failed to list object versions"
+fi
 echo ""
 
 # ============================================================================
-# Step 10: Cleanup
+# Step 11: Cleanup
 # ============================================================================
 
 echo ""
@@ -299,34 +407,19 @@ echo "TUTORIAL COMPLETE"
 echo "============================================"
 echo ""
 echo "Resources created:"
-for RESOURCE in "${CREATED_RESOURCES[@]}"; do
-    echo "  - ${RESOURCE}"
-done
+if [ ${#CREATED_RESOURCES[@]} -gt 0 ]; then
+    for RESOURCE in "${CREATED_RESOURCES[@]}"; do
+        echo "  - ${RESOURCE}"
+    done
+else
+    echo "  (none)"
+fi
 echo ""
 echo "==========================================="
-echo "CLEANUP CONFIRMATION"
+echo "CLEANUP"
 echo "==========================================="
-echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
-
-if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
-    cleanup
-else
-    echo ""
-    echo "Resources were NOT deleted. To clean up manually, run:"
-    echo ""
-    echo "  # Delete all object versions"
-    echo "  aws s3api list-object-versions --bucket ${BUCKET_NAME} --query 'Versions[].{Key:Key,VersionId:VersionId}' --output text | while IFS=\$'\\t' read -r KEY VID; do aws s3api delete-object --bucket ${BUCKET_NAME} --key \"\$KEY\" --version-id \"\$VID\"; done"
-    echo ""
-    echo "  # Delete all delete markers"
-    echo "  aws s3api list-object-versions --bucket ${BUCKET_NAME} --query 'DeleteMarkers[].{Key:Key,VersionId:VersionId}' --output text | while IFS=\$'\\t' read -r KEY VID; do aws s3api delete-object --bucket ${BUCKET_NAME} --key \"\$KEY\" --version-id \"\$VID\"; done"
-    echo ""
-    echo "  # Delete the bucket"
-    echo "  aws s3api delete-bucket --bucket ${BUCKET_NAME}"
-    echo ""
-    echo "  # Remove temp directory"
-    echo "  rm -rf ${TEMP_DIR}"
-fi
+echo "Cleaning up all created resources..."
+cleanup
 
 echo ""
 echo "Done."
