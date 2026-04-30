@@ -14,3 +14,7 @@
 ### 2026-04-27 v-ni1 non-interactive
 - Type: functional
 - Made script fully non-interactive for automated testing
+
+### 2026-04-29 note
+- Type: documentation
+- Requires a user in the AD directory before running. Simple AD user creation needs LDAP tools or a domain-joined EC2 instance. Cannot be fully automated without manual directory user setup.

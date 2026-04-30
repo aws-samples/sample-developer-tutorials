@@ -5,7 +5,7 @@
 # Version 3-working: Uses existing users since AWS CLI version doesn't support user creation
 
 # Set AWS region explicitly to avoid cross-region issues
-AWS_REGION="us-east-1"  # Change this to your preferred region
+AWS_REGION="${AWS_DEFAULT_REGION:-us-east-1}"  # Uses configured region or defaults to us-east-1
 export AWS_DEFAULT_REGION="$AWS_REGION"
 
 # Initialize log file

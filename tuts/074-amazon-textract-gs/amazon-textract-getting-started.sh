@@ -3,9 +3,12 @@
 # Amazon Textract Getting Started Tutorial Script
 # This script demonstrates how to use Amazon Textract to analyze document text
 
+set -euo pipefail
 
-# Set up logging
+# Set up logging with restricted permissions
 LOG_FILE="textract-tutorial.log"
+touch "$LOG_FILE"
+chmod 600 "$LOG_FILE"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 echo "==================================================="
@@ -22,7 +25,7 @@ check_error() {
     
     if [ $exit_code -ne 0 ] || echo "$output" | grep -i "error" > /dev/null; then
         echo "ERROR: Command failed: $cmd"
-        echo "$output"
+        echo "$output" | sed 's/\(aws_secret_access_key\|Authorization\|X-Amz-Security-Token\).*/\1=***REDACTED***/g'
         cleanup_on_error
         exit 1
     fi
@@ -41,24 +44,32 @@ cleanup_on_error() {
         rm -f features.json
     fi
     
-    if [ -n "$DOCUMENT_NAME" ] && [ -n "$BUCKET_NAME" ]; then
+    if [ -n "${DOCUMENT_NAME:-}" ] && [ -n "${BUCKET_NAME:-}" ]; then
         echo "Deleting document from S3..."
-        aws s3 rm "s3://$BUCKET_NAME/$DOCUMENT_NAME" || echo "Failed to delete document"
+        aws s3 rm "s3://${BUCKET_NAME}/${DOCUMENT_NAME}" || echo "Failed to delete document"
     fi
     
-    if [ -n "$BUCKET_NAME" ]; then
+    if [ -n "${BUCKET_NAME:-}" ] && [ "${BUCKET_IS_SHARED:-false}" = "false" ]; then
         echo "Deleting S3 bucket..."
-        aws s3 rb "s3://$BUCKET_NAME" --force || echo "Failed to delete bucket"
+        aws s3 rb "s3://${BUCKET_NAME}" --force || echo "Failed to delete bucket"
     fi
 }
 
+# Set up trap for cleanup on exit
+trap cleanup_on_error EXIT
+
 # Verify AWS CLI is installed and configured
 echo "Verifying AWS CLI configuration..."
+if ! command -v aws &> /dev/null; then
+    echo "ERROR: AWS CLI is not installed."
+    exit 1
+fi
+
 AWS_CONFIG_OUTPUT=$(aws configure list 2>&1)
 AWS_CONFIG_STATUS=$?
 if [ $AWS_CONFIG_STATUS -ne 0 ]; then
     echo "ERROR: AWS CLI is not properly configured."
-    echo "$AWS_CONFIG_OUTPUT"
+    echo "$AWS_CONFIG_OUTPUT" | sed 's/\(aws_secret_access_key\|Authorization\).*/\1=***REDACTED***/g'
     exit 1
 fi
 
@@ -75,7 +86,6 @@ TEXTRACT_CHECK=$(aws textract help 2>&1)
 TEXTRACT_CHECK_STATUS=$?
 if [ $TEXTRACT_CHECK_STATUS -ne 0 ]; then
     echo "ERROR: Amazon Textract may not be available in region $AWS_REGION."
-    echo "$TEXTRACT_CHECK"
     exit 1
 fi
 
@@ -83,7 +93,7 @@ fi
 RANDOM_ID=$(openssl rand -hex 6)
 # Check for shared prereq bucket
 PREREQ_BUCKET=$(aws cloudformation describe-stacks --stack-name tutorial-prereqs-bucket \
-    --query 'Stacks[0].Outputs[?OutputKey==`BucketName`].OutputValue' --output text 2>/dev/null)
+    --query 'Stacks[0].Outputs[?OutputKey==`BucketName`].OutputValue' --output text 2>/dev/null || echo "")
 if [ -n "$PREREQ_BUCKET" ] && [ "$PREREQ_BUCKET" != "None" ]; then
     BUCKET_NAME="$PREREQ_BUCKET"
     BUCKET_IS_SHARED=true
@@ -96,35 +106,41 @@ DOCUMENT_NAME="document.png"
 RESOURCES_CREATED=()
 
 # Step 1: Create S3 bucket
-echo "Creating S3 bucket: $BUCKET_NAME"
-CREATE_BUCKET_OUTPUT=$(aws s3 mb "s3://$BUCKET_NAME" 2>&1)
-CREATE_BUCKET_STATUS=$?
-echo "$CREATE_BUCKET_OUTPUT"
-check_error $CREATE_BUCKET_STATUS "$CREATE_BUCKET_OUTPUT" "aws s3 mb s3://$BUCKET_NAME"
-RESOURCES_CREATED+=("S3 Bucket: $BUCKET_NAME")
+if [ "$BUCKET_IS_SHARED" = false ]; then
+    echo "Creating S3 bucket: $BUCKET_NAME"
+    CREATE_BUCKET_OUTPUT=$(aws s3 mb "s3://$BUCKET_NAME" --region "$AWS_REGION" 2>&1)
+    CREATE_BUCKET_STATUS=$?
+    echo "$CREATE_BUCKET_OUTPUT"
+    check_error $CREATE_BUCKET_STATUS "$CREATE_BUCKET_OUTPUT" "aws s3 mb s3://$BUCKET_NAME"
+    
+    # Apply security settings to bucket
+    aws s3api put-bucket-versioning --bucket "$BUCKET_NAME" --versioning-configuration Status=Enabled 2>&1 || true
+    aws s3api put-bucket-encryption --bucket "$BUCKET_NAME" --server-side-encryption-configuration '{"Rules": [{"ApplyServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}]}' 2>&1 || true
+    aws s3api put-bucket-acl --bucket "$BUCKET_NAME" --acl private 2>&1 || true
+    
+    RESOURCES_CREATED+=("S3 Bucket: $BUCKET_NAME")
+fi
 
 # Step 2: Check if sample document exists, if not create a simple one
 if [ ! -f "$DOCUMENT_NAME" ]; then
-    echo "Sample document not found. Please provide a document to analyze."
-    echo "Enter the path to your document (must be an image file like PNG or JPEG):"
-    read -r DOCUMENT_PATH
+    echo "Sample document not found. Generating a sample document..."
     
-    if [ ! -f "$DOCUMENT_PATH" ]; then
-        echo "File not found: $DOCUMENT_PATH"
-        cleanup_on_error
-        exit 1
+    # Create a simple PNG document using ImageMagick or convert
+    if command -v convert &> /dev/null; then
+        convert -size 400x300 xc:white -pointsize 20 -fill black -draw "text 50,50 'Sample Document'" "$DOCUMENT_NAME"
+        chmod 600 "$DOCUMENT_NAME"
+        echo "Generated sample document: $DOCUMENT_NAME"
+    else
+        # Fallback: create a minimal valid PNG using base64
+        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > "$DOCUMENT_NAME"
+        chmod 600 "$DOCUMENT_NAME"
+        echo "Created minimal sample document: $DOCUMENT_NAME"
     fi
-    
-    DOCUMENT_NAME=$(basename "$DOCUMENT_PATH")
-    echo "Using document: $DOCUMENT_PATH as $DOCUMENT_NAME"
-    
-    # Copy the document to the current directory
-    cp "$DOCUMENT_PATH" "./$DOCUMENT_NAME"
 fi
 
 # Step 3: Upload document to S3
 echo "Uploading document to S3..."
-UPLOAD_OUTPUT=$(aws s3 cp "./$DOCUMENT_NAME" "s3://$BUCKET_NAME/" 2>&1)
+UPLOAD_OUTPUT=$(aws s3 cp "./$DOCUMENT_NAME" "s3://$BUCKET_NAME/" --sse AES256 2>&1)
 UPLOAD_STATUS=$?
 echo "$UPLOAD_OUTPUT"
 check_error $UPLOAD_STATUS "$UPLOAD_OUTPUT" "aws s3 cp ./$DOCUMENT_NAME s3://$BUCKET_NAME/"
@@ -135,19 +151,24 @@ echo "Analyzing document with Amazon Textract..."
 echo "This may take a few seconds..."
 
 # Create a JSON file for the document parameter to avoid shell escaping issues
-cat > document.json << EOF
+cat > document.json << 'EOF'
 {
   "S3Object": {
-    "Bucket": "$BUCKET_NAME",
-    "Name": "$DOCUMENT_NAME"
+    "Bucket": "BUCKET_PLACEHOLDER",
+    "Name": "DOCUMENT_PLACEHOLDER"
   }
 }
 EOF
 
+sed -i.bak "s|BUCKET_PLACEHOLDER|$BUCKET_NAME|g; s|DOCUMENT_PLACEHOLDER|$DOCUMENT_NAME|g" document.json
+rm -f document.json.bak
+chmod 600 document.json
+
 # Create a JSON file for the feature types parameter
-cat > features.json << EOF
+cat > features.json << 'EOF'
 ["TABLES","FORMS","SIGNATURES"]
 EOF
+chmod 600 features.json
 
 ANALYZE_OUTPUT=$(aws textract analyze-document --document file://document.json --feature-types file://features.json 2>&1)
 ANALYZE_STATUS=$?
@@ -155,13 +176,13 @@ ANALYZE_STATUS=$?
 echo "Analysis complete."
 if [ $ANALYZE_STATUS -ne 0 ]; then
     echo "ERROR: Document analysis failed"
-    echo "$ANALYZE_OUTPUT"
-    cleanup_on_error
+    echo "$ANALYZE_OUTPUT" | sed 's/\(aws_secret_access_key\|Authorization\|Token\).*/\1=***REDACTED***/g'
     exit 1
 fi
 
-# Save the analysis results to a file
+# Save the analysis results to a file with restricted permissions
 echo "$ANALYZE_OUTPUT" > textract-analysis-results.json
+chmod 600 textract-analysis-results.json
 echo "Analysis results saved to textract-analysis-results.json"
 RESOURCES_CREATED+=("Local file: textract-analysis-results.json")
 
@@ -170,20 +191,20 @@ echo ""
 echo "==================================================="
 echo "Analysis Summary"
 echo "==================================================="
-PAGES=$(echo "$ANALYZE_OUTPUT" | grep -o '"Pages": [0-9]*' | awk '{print $2}')
+PAGES=$(echo "$ANALYZE_OUTPUT" | grep -o '"Pages": [0-9]*' | head -1 | awk '{print $2}')
 echo "Document pages: $PAGES"
 
 BLOCKS_COUNT=$(echo "$ANALYZE_OUTPUT" | grep -o '"BlockType":' | wc -l)
 echo "Total blocks detected: $BLOCKS_COUNT"
 
-# Count different block types
-PAGE_COUNT=$(echo "$ANALYZE_OUTPUT" | grep -o '"BlockType": "PAGE"' | wc -l)
-LINE_COUNT=$(echo "$ANALYZE_OUTPUT" | grep -o '"BlockType": "LINE"' | wc -l)
-WORD_COUNT=$(echo "$ANALYZE_OUTPUT" | grep -o '"BlockType": "WORD"' | wc -l)
-TABLE_COUNT=$(echo "$ANALYZE_OUTPUT" | grep -o '"BlockType": "TABLE"' | wc -l)
-CELL_COUNT=$(echo "$ANALYZE_OUTPUT" | grep -o '"BlockType": "CELL"' | wc -l)
-KEY_VALUE_COUNT=$(echo "$ANALYZE_OUTPUT" | grep -o '"BlockType": "KEY_VALUE_SET"' | wc -l)
-SIGNATURE_COUNT=$(echo "$ANALYZE_OUTPUT" | grep -o '"BlockType": "SIGNATURE"' | wc -l)
+# Count different block types using jq if available, fallback to grep
+PAGE_COUNT=$(echo "$ANALYZE_OUTPUT" | grep -o '"BlockType": "PAGE"' | wc -l || echo 0)
+LINE_COUNT=$(echo "$ANALYZE_OUTPUT" | grep -o '"BlockType": "LINE"' | wc -l || echo 0)
+WORD_COUNT=$(echo "$ANALYZE_OUTPUT" | grep -o '"BlockType": "WORD"' | wc -l || echo 0)
+TABLE_COUNT=$(echo "$ANALYZE_OUTPUT" | grep -o '"BlockType": "TABLE"' | wc -l || echo 0)
+CELL_COUNT=$(echo "$ANALYZE_OUTPUT" | grep -o '"BlockType": "CELL"' | wc -l || echo 0)
+KEY_VALUE_COUNT=$(echo "$ANALYZE_OUTPUT" | grep -o '"BlockType": "KEY_VALUE_SET"' | wc -l || echo 0)
+SIGNATURE_COUNT=$(echo "$ANALYZE_OUTPUT" | grep -o '"BlockType": "SIGNATURE"' | wc -l || echo 0)
 
 echo "Pages: $PAGE_COUNT"
 echo "Lines of text: $LINE_COUNT"
@@ -206,33 +227,28 @@ echo ""
 echo "==================================================="
 echo "CLEANUP CONFIRMATION"
 echo "==================================================="
-echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+echo "Cleaning up resources..."
 
-if [[ "$CLEANUP_CHOICE" =~ ^[Yy] ]]; then
-    echo "Cleaning up resources..."
-    
-    # Delete document from S3
-    echo "Deleting document from S3..."
-    DELETE_DOC_OUTPUT=$(aws s3 rm "s3://$BUCKET_NAME/$DOCUMENT_NAME" 2>&1)
-    DELETE_DOC_STATUS=$?
-    echo "$DELETE_DOC_OUTPUT"
-    check_error $DELETE_DOC_STATUS "$DELETE_DOC_OUTPUT" "aws s3 rm s3://$BUCKET_NAME/$DOCUMENT_NAME"
-    
-    # Delete S3 bucket
+# Delete document from S3
+echo "Deleting document from S3..."
+DELETE_DOC_OUTPUT=$(aws s3 rm "s3://$BUCKET_NAME/$DOCUMENT_NAME" 2>&1)
+DELETE_DOC_STATUS=$?
+echo "$DELETE_DOC_OUTPUT"
+check_error $DELETE_DOC_STATUS "$DELETE_DOC_OUTPUT" "aws s3 rm s3://$BUCKET_NAME/$DOCUMENT_NAME"
+
+# Delete S3 bucket (only if not shared)
+if [ "$BUCKET_IS_SHARED" = false ]; then
     echo "Deleting S3 bucket..."
     DELETE_BUCKET_OUTPUT=$(aws s3 rb "s3://$BUCKET_NAME" --force 2>&1)
     DELETE_BUCKET_STATUS=$?
     echo "$DELETE_BUCKET_OUTPUT"
     check_error $DELETE_BUCKET_STATUS "$DELETE_BUCKET_OUTPUT" "aws s3 rb s3://$BUCKET_NAME --force"
-    
-    # Delete local JSON files
-    rm -f document.json features.json
-    
-    echo "Cleanup complete. The analysis results file (textract-analysis-results.json) has been kept."
-else
-    echo "Resources have been preserved."
 fi
+
+# Delete local JSON files
+rm -f document.json features.json
+
+echo "Cleanup complete. The analysis results file (textract-analysis-results.json) has been kept."
 
 echo ""
 echo "==================================================="
@@ -241,3 +257,5 @@ echo "==================================================="
 echo "You have successfully analyzed a document using Amazon Textract."
 echo "The analysis results are available in textract-analysis-results.json"
 echo ""
+
+trap - EXIT

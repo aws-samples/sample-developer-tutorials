@@ -130,8 +130,8 @@ if [ -n "$PREREQ_BUCKET" ] && [ "$PREREQ_BUCKET" != "None" ]; then
 else
     BUCKET_IS_SHARED=false
     S3_BUCKET_NAME="configservice-${RANDOM_ID}"
+    echo "Creating S3 bucket: $S3_BUCKET_NAME"
 fi
-echo "Creating S3 bucket: $S3_BUCKET_NAME"
 
 # Get the current region
 AWS_REGION=$(aws configure get region)
@@ -141,13 +141,17 @@ fi
 echo "Using AWS Region: $AWS_REGION"
 
 # Create bucket with appropriate command based on region
-if [ "$AWS_REGION" = "us-east-1" ]; then
-    BUCKET_RESULT=$(aws s3api create-bucket --bucket "$S3_BUCKET_NAME")
+if [ "$BUCKET_IS_SHARED" = "false" ]; then
+    if [ "$AWS_REGION" = "us-east-1" ]; then
+        BUCKET_RESULT=$(aws s3api create-bucket --bucket "$S3_BUCKET_NAME")
+    else
+        BUCKET_RESULT=$(aws s3api create-bucket --bucket "$S3_BUCKET_NAME" --create-bucket-configuration LocationConstraint="$AWS_REGION")
+    fi
+    check_command "$BUCKET_RESULT"
+    echo "S3 bucket created: $S3_BUCKET_NAME"
 else
-    BUCKET_RESULT=$(aws s3api create-bucket --bucket "$S3_BUCKET_NAME" --create-bucket-configuration LocationConstraint="$AWS_REGION")
+    echo "Using shared bucket: $S3_BUCKET_NAME (skipping creation)"
 fi
-check_command "$BUCKET_RESULT"
-echo "S3 bucket created: $S3_BUCKET_NAME"
 
 # Block public access for the bucket
 aws s3api put-public-access-block \
@@ -367,7 +371,7 @@ echo "==========================================="
 echo "CLEANUP CONFIRMATION"
 echo "==========================================="
 echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+CLEANUP_CHOICE='y'
 
 if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
     echo "Cleaning up resources..."

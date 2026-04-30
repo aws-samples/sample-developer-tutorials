@@ -308,7 +308,10 @@ WORKSPACE_JSON="{\"DirectoryId\":\"$DIRECTORY_ID\",\"UserName\":\"$USERNAME\",\"
 
 # Add tags if specified
 if [ -n "$TAGS_JSON" ]; then
-    WORKSPACE_JSON="$WORKSPACE_JSON,\"Tags\":$TAGS_JSON"
+    USER_TAGS=$(echo "$TAGS_JSON" | sed 's/^\[//;s/\]$//')
+    WORKSPACE_JSON="$WORKSPACE_JSON,\"Tags\":[$USER_TAGS,{\"Key\":\"project\",\"Value\":\"doc-smith\"},{\"Key\":\"tutorial\",\"Value\":\"035-workspaces-personal\"}]"
+else
+    WORKSPACE_JSON="$WORKSPACE_JSON,\"Tags\":[{\"Key\":\"project\",\"Value\":\"doc-smith\"},{\"Key\":\"tutorial\",\"Value\":\"035-workspaces-personal\"}]"
 fi
 
 # Close the JSON object
