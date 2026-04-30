@@ -37,7 +37,7 @@ This tutorial includes a CloudFormation template that creates the same resources
 ### Deploy with CloudFormation
 
 ```bash
-./deploy.sh 002-vpc-gs
+./cfn/deploy.sh 002-vpc-gs
 ```
 
 ### Run the interactive steps
@@ -51,5 +51,5 @@ bash tuts/002-vpc-gs/vpc-gs-cfn.sh
 ### Clean up
 
 ```bash
-./cleanup.sh 002-vpc-gs
+./cfn/cleanup.sh 002-vpc-gs
 ```
