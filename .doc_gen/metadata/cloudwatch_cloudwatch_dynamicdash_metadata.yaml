@@ -1,0 +1,24 @@
+cloudwatch_GettingStarted_031:
+  title: Creating a CloudWatch dashboard with function name as a variable
+  title_abbrev: Creating a CloudWatch dashboard with function name as a variable
+  synopsis_list:
+    - Create a CloudWatch dashboard
+    - Add Lambda metrics widgets with a function name variable
+    - Verify the dashboard
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/031-cloudwatch-dynamicdash
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/031-cloudwatch-dynamicdash/cloudwatch-dynamicdash.sh
+  services:
+    cloudwatch: {DeleteDashboards, GetDashboard, ListDashboards, PutDashboard}
+    iam: {AttachRolePolicy, CreateRole, DeleteRole, DetachRolePolicy}
+    lambda: {CreateFunction, DeleteFunction, Invoke, ListFunctions}
+    sts: {GetCallerIdentity}

@@ -388,7 +388,7 @@ aws redshift-data get-statement-result --id "$QUERY1_ID"
 
 This command returns the results of the query, showing the top 10 buyers by quantity.
 
-Let's run another query to find events in the 99.9 percentile in terms of all-time gross sales:
+Let's run another query to find events in the 99.9 percentile in terms of all-time total sales:
 
 ```
 QUERY2_ID=$(aws redshift-data execute-statement \
@@ -418,7 +418,7 @@ Retrieve the results:
 aws redshift-data get-statement-result --id "$QUERY2_ID"
 ```
 
-This query shows the events with the highest gross sales, representing the top 0.1% of all events.
+This query shows the events with the highest total sales, representing the top 0.1% of all events.
 
 ## Cleaning up resources
 

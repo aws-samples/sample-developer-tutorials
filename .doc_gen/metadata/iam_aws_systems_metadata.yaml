@@ -1,0 +1,24 @@
+iam_GettingStarted_046:
+  title: Setting up Systems Manager
+  title_abbrev: Setting up Systems Manager
+  synopsis_list:
+    - Create IAM permissions for Systems Manager
+    - Create an IAM role for Systems Manager
+    - Configure Systems Manager
+    - Verify the setup
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/046-aws-systems-manager-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/046-aws-systems-manager-gs/aws-systems-manager-gs.sh
+  services:
+    iam: {AttachRolePolicy, CreatePolicy, CreateRole, DeletePolicy, DeleteRole, DetachRolePolicy}
+    ssm: {CreateConfigurationManager, DeleteConfigurationManager, GetConfigurationManager}
+    sts: {GetCallerIdentity}
