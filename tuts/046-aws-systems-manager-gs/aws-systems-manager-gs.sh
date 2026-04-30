@@ -528,7 +528,7 @@ echo ""
 echo "==========================================="
 echo "CREATED RESOURCES"
 echo "==========================================="
-for resource in "${CREATED_RESOURCES[@]}"; do
+for resource in "${CREATED_RESOURCES[@]+"${CREATED_RESOURCES[@]}"}"; do
     echo "$resource"
 done
 

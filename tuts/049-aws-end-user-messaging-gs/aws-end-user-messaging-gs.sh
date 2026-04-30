@@ -43,7 +43,7 @@ cleanup() {
     
     # Optionally delete AWS resources
     if [ "${DELETE_AWS_RESOURCES:-false}" = "true" ]; then
-        for resource in "${AWS_RESOURCES[@]}"; do
+        for resource in "${AWS_RESOURCES[@]+"${AWS_RESOURCES[@]}"}"; do
             echo "Deleting AWS resource: $resource"
             aws pinpoint delete-app --application-id "$resource" 2>/dev/null || \
                 echo "Warning: Failed to delete application $resource"
@@ -406,7 +406,7 @@ echo "==========================================="
 echo "RESOURCES CREATED"
 echo "==========================================="
 echo "AWS Resources:"
-for resource in "${AWS_RESOURCES[@]}"; do
+for resource in "${AWS_RESOURCES[@]+"${AWS_RESOURCES[@]}"}"; do
     echo "- Application: $resource"
 done
 

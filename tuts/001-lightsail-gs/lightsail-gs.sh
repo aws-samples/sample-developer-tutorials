@@ -48,7 +48,7 @@ track_resource() {
 # Function to clean up resources
 cleanup_resources() {
   echo "Resources created by this script:"
-  for resource in "${CREATED_RESOURCES[@]}"; do
+  for resource in "${CREATED_RESOURCES[@]+"${CREATED_RESOURCES[@]}"}"; do
     echo "  $resource"
   done
   
@@ -250,7 +250,7 @@ fi
 # Step 7: Clean up resources
 echo "Step 7: Clean up resources"
 echo "The script has created the following resources:"
-for resource in "${CREATED_RESOURCES[@]}"; do
+for resource in "${CREATED_RESOURCES[@]+"${CREATED_RESOURCES[@]}"}"; do
   echo "  $resource"
 done
 

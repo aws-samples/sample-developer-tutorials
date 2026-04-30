@@ -290,7 +290,7 @@ log_command "aws vpc-lattice list-service-network-vpc-associations --service-net
 # Step 10: Cleanup - Auto-confirm
 echo -e "\n=== Step 10: Resource Cleanup ===" | tee -a "$LOG_FILE"
 echo "Resources created in this tutorial:" | tee -a "$LOG_FILE"
-for resource in "${CREATED_RESOURCES[@]}"; do
+for resource in "${CREATED_RESOURCES[@]+"${CREATED_RESOURCES[@]}"}"; do
     echo "- $resource" | tee -a "$LOG_FILE"
 done
 
