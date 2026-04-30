@@ -10,18 +10,19 @@
 #   - Lambda function (Python 3.13 or Node.js 22.x runtime)
 #   - CloudWatch log group (created automatically by Lambda on invocation)
 
-set -eE
+set -eE -o pipefail
 
 ###############################################################################
 # Setup
 ###############################################################################
 
-UNIQUE_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
+UNIQUE_ID=$(head -c 8 /dev/urandom | od -An -tx1 | tr -d ' ')
 FUNCTION_NAME="my-lambda-function-${UNIQUE_ID}"
 ROLE_NAME="lambda-execution-role-${UNIQUE_ID}"
 LOG_GROUP_NAME="/aws/lambda/${FUNCTION_NAME}"
 
 TEMP_DIR=$(mktemp -d)
+readonly TEMP_DIR
 LOG_FILE="${TEMP_DIR}/lambda-gettingstarted.log"
 
 exec > >(tee -a "$LOG_FILE") 2>&1
@@ -131,6 +132,16 @@ wait_for_resource() {
     done
 }
 
+validate_input() {
+    local input="$1"
+    local pattern="$2"
+    if ! [[ "$input" =~ $pattern ]]; then
+        echo "ERROR: Invalid input: $input"
+        return 1
+    fi
+    return 0
+}
+
 ###############################################################################
 # Region pre-check
 ###############################################################################
@@ -155,8 +166,8 @@ echo "Select a runtime for your Lambda function:"
 echo "  1) Python 3.13"
 echo "  2) Node.js 22.x"
 echo ""
-echo "Enter your choice (1 or 2): "
-read -r RUNTIME_CHOICE
+echo "Using default: Python 3.13"
+RUNTIME_CHOICE="1"
 
 case "$RUNTIME_CHOICE" in
     1)
@@ -169,12 +180,20 @@ import logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 def lambda_handler(event, context):
-    length = event['length']
-    width = event['width']
-    area = calculate_area(length, width)
-    print(f'The area is {area}')
-    logger.info(f'CloudWatch logs group: {context.log_group_name}')
-    return json.dumps({'area': area})
+    if not isinstance(event, dict) or 'length' not in event or 'width' not in event:
+        raise ValueError('Event must contain length and width')
+    try:
+        length = float(event['length'])
+        width = float(event['width'])
+        if length < 0 or width < 0:
+            raise ValueError('Length and width must be non-negative')
+        area = calculate_area(length, width)
+        print(f'The area is {area}')
+        logger.info(f'CloudWatch logs group: {context.log_group_name}')
+        return json.dumps({'area': area})
+    except (TypeError, ValueError) as e:
+        logger.error(f'Error processing input: {str(e)}')
+        raise
 def calculate_area(length, width):
     return length * width
 PYTHON_EOF
@@ -186,6 +205,12 @@ PYTHON_EOF
         CODE_FILE="index.mjs"
         cat > "${TEMP_DIR}/${CODE_FILE}" << 'NODEJS_EOF'
 export const handler = async (event, context) => {
+  if (!event || typeof event.length !== 'number' || typeof event.width !== 'number') {
+    throw new Error('Event must contain numeric length and width');
+  }
+  if (event.length < 0 || event.width < 0) {
+    throw new Error('Length and width must be non-negative');
+  }
   const area = event.length * event.width;
   console.log(`The area is ${area}`);
   console.log('CloudWatch log group: ', context.logGroupName);
@@ -229,6 +254,12 @@ ROLE_OUTPUT=$(aws iam create-role \
     --assume-role-policy-document "$TRUST_POLICY" \
     --query 'Role.Arn' \
     --output text 2>&1)
+
+if ! validate_input "$ROLE_OUTPUT" "^arn:aws:iam::[0-9]+:role/"; then
+    echo "ERROR: Failed to create IAM role"
+    exit 1
+fi
+
 echo "$ROLE_OUTPUT"
 ROLE_ARN="$ROLE_OUTPUT"
 CREATED_RESOURCES+=("iam-role:${ROLE_NAME}")
@@ -258,9 +289,17 @@ echo ""
 
 echo "Creating deployment package..."
 ORIGINAL_DIR=$(pwd)
-cd "$TEMP_DIR"
-zip -j function.zip "$CODE_FILE" > /dev/null 2>&1
-cd "$ORIGINAL_DIR"
+cd "$TEMP_DIR" || exit 1
+zip -j function.zip "$CODE_FILE" > /dev/null 2>&1 || {
+    echo "ERROR: Failed to create deployment package"
+    exit 1
+}
+cd "$ORIGINAL_DIR" || exit 1
+
+if [ ! -f "${TEMP_DIR}/function.zip" ]; then
+    echo "ERROR: Deployment package creation failed"
+    exit 1
+fi
 
 echo "Creating Lambda function: ${FUNCTION_NAME}"
 echo "  Runtime: ${RUNTIME}"
@@ -276,6 +315,12 @@ CREATE_OUTPUT=$(aws lambda create-function \
     --zip-file "fileb://${TEMP_DIR}/function.zip" \
     --query '[FunctionName, FunctionArn, Runtime, State]' \
     --output text 2>&1)
+
+if [ -z "$CREATE_OUTPUT" ]; then
+    echo "ERROR: Failed to create Lambda function"
+    exit 1
+fi
+
 echo "$CREATE_OUTPUT"
 CREATED_RESOURCES+=("lambda-function:${FUNCTION_NAME}")
 
@@ -299,12 +344,22 @@ echo ""
 
 echo "$TEST_EVENT" > "${TEMP_DIR}/test-event.json"
 
+if ! validate_input "$TEST_EVENT" '"length": [0-9]+, "width": [0-9]+'; then
+    echo "ERROR: Invalid test event format"
+    exit 1
+fi
+
 INVOKE_OUTPUT=$(aws lambda invoke \
     --function-name "$FUNCTION_NAME" \
     --payload "fileb://${TEMP_DIR}/test-event.json" \
     --cli-read-timeout 30 \
     "${TEMP_DIR}/response.json" 2>&1)
 echo "$INVOKE_OUTPUT"
+
+if [ ! -f "${TEMP_DIR}/response.json" ]; then
+    echo "ERROR: No response file generated"
+    exit 1
+fi
 
 RESPONSE=$(cat "${TEMP_DIR}/response.json")
 echo ""
@@ -379,33 +434,11 @@ echo "  Lambda function:   ${FUNCTION_NAME}"
 echo "  CloudWatch logs:   ${LOG_GROUP_NAME}"
 echo ""
 echo "==========================================="
-echo "CLEANUP CONFIRMATION"
+echo "CLEANUP"
 echo "==========================================="
 echo ""
-echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
-
-if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
-    cleanup_resources
-else
-    echo ""
-    echo "Resources were NOT deleted. To clean up manually, run:"
-    echo ""
-    echo "  # Delete the Lambda function"
-    echo "  aws lambda delete-function --function-name ${FUNCTION_NAME}"
-    echo ""
-    echo "  # Delete the CloudWatch log group"
-    echo "  aws logs delete-log-group --log-group-name ${LOG_GROUP_NAME}"
-    echo ""
-    echo "  # Detach the policy and delete the IAM role"
-    echo "  aws iam detach-role-policy --role-name ${ROLE_NAME} --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-    echo "  aws iam delete-role --role-name ${ROLE_NAME}"
-    echo ""
-
-    if [ -d "$TEMP_DIR" ]; then
-        rm -rf "$TEMP_DIR"
-    fi
-fi
+echo "Cleaning up all created resources..."
+cleanup_resources
 
 echo ""
 echo "Done."

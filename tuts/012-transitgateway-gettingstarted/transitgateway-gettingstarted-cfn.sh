@@ -22,7 +22,7 @@ if [ "$STATUS" = "NONE" ] || [ "$STATUS" = "DELETE_COMPLETE" ]; then
     echo "Stack $STACK_NAME does not exist."
     read -rp "Deploy it now? (y/n): " CHOICE
     if [[ "$CHOICE" =~ ^[Yy]$ ]]; then
-        "$REPO_ROOT/deploy.sh" "$TUT_DIR"
+        "$REPO_ROOT/cfn/deploy.sh" "$TUT_DIR"
     else
         echo "Cannot proceed without the stack. Deploy with: ./deploy.sh $TUT_DIR"
         exit 1
