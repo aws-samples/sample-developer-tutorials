@@ -1,0 +1,22 @@
+iam_GettingStarted_080:
+  title: Getting started with Step Functions
+  title_abbrev: Getting started with Step Functions
+  synopsis_list:
+    - Create an IAM role for Step Functions
+    - Create your first state machine
+    - Start your state machine execution
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/080-aws-step-functions-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/080-aws-step-functions-gs/aws-step-functions-gs.sh
+  services:
+    iam: {AttachRolePolicy, CreatePolicy, CreateRole, DeletePolicy, DeleteRole, DetachRolePolicy}
+    sfn: {CreateStateMachine, DeleteStateMachine, DescribeExecution, StartExecution, UpdateStateMachine}
