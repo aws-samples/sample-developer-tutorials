@@ -1,14 +1,12 @@
 fargate_GettingStarted:
-  title: Get started with Batch and Fargate using the CLI
-  title_abbrev: Get started with Batch and Fargate
+  title: Getting started with Batch and Fargate
+  title_abbrev: Getting started with Batch and Fargate
   synopsis_list:
-    - Create an IAM execution role for ECS tasks
-    - Create a managed Fargate compute environment
-    - Create a job queue with priority settings
-    - Register a job definition for containerized workloads
-    - Submit and monitor a batch job execution
-    - View job output in CloudWatch Logs
-    - Clean up resources in proper dependency order
+    - Create an IAM execution role
+    - Create a compute environment
+    - Create a job queue
+    - Create a job definition
+    - Clean up resources
   category: Scenarios
   languages:
     Bash:

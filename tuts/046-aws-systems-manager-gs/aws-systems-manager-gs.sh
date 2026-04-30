@@ -9,6 +9,7 @@
 
 # Initialize log file
 LOG_FILE="ssm_setup_$(date +%Y%m%d_%H%M%S).log"
+UNIQUE_ID=$(openssl rand -hex 4)
 echo "Starting AWS Systems Manager setup at $(date)" > "$LOG_FILE"
 
 # Function to log commands and their outputs with immediate terminal display
@@ -114,7 +115,7 @@ echo ""
 CURRENT_REGION=$(aws configure get region)
 if [[ -z "$CURRENT_REGION" ]]; then
     echo "No AWS region configured. Please specify a region:"
-    read -r CURRENT_REGION
+    CURRENT_REGION="${AWS_DEFAULT_REGION:-us-west-2}"
     if [[ -z "$CURRENT_REGION" ]]; then
         echo "ERROR: A region must be specified" | tee -a "$LOG_FILE"
         exit 1
@@ -369,12 +370,12 @@ cat > ssm-onboarding-policy.json << 'EOF'
 EOF
 
 # Create the IAM policy
-POLICY_OUTPUT=$(log_cmd "aws iam create-policy --policy-name SSMOnboardingPolicy --policy-document file://ssm-onboarding-policy.json --output json")
+POLICY_OUTPUT=$(log_cmd "aws iam create-policy --policy-name SSMOnboardingPolicy-$UNIQUE_ID --policy-document file://ssm-onboarding-policy.json --output json")
 POLICY_STATUS=$?
 check_error "$POLICY_OUTPUT" $POLICY_STATUS "Failed to create IAM policy"
 
 # Extract the policy ARN
-POLICY_ARN=$(echo "$POLICY_OUTPUT" | grep -o 'arn:aws:iam::[0-9]*:policy/SSMOnboardingPolicy')
+POLICY_ARN=$(echo "$POLICY_OUTPUT" | grep -o 'arn:aws:iam::[0-9]*:policy/SSMOnboardingPolicy-[a-f0-9]*')
 if [[ -z "$POLICY_ARN" ]]; then
     echo "ERROR: Failed to extract policy ARN" | tee -a "$LOG_FILE"
     exit 1
@@ -527,7 +528,7 @@ echo ""
 echo "==========================================="
 echo "CREATED RESOURCES"
 echo "==========================================="
-for resource in "${CREATED_RESOURCES[@]}"; do
+for resource in "${CREATED_RESOURCES[@]+"${CREATED_RESOURCES[@]}"}"; do
     echo "$resource"
 done
 
@@ -537,7 +538,7 @@ echo "==========================================="
 echo "CLEANUP CONFIRMATION"
 echo "==========================================="
 echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+CLEANUP_CHOICE="y"
 
 if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
     echo "Cleaning up resources..." | tee -a "$LOG_FILE"
