@@ -1,0 +1,27 @@
+ec2_GettingStarted_057:
+  title: Getting started with Amazon MSK
+  title_abbrev: Getting started with Amazon MSK
+  synopsis_list:
+    - Create an MSK cluster
+    - Create IAM permissions for MSK access
+    - Create a client machine
+    - Get bootstrap brokers
+    - Set up the client machine
+    - Create a topic and produce/consume data
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/057-amazon-managed-streaming-for-apache-kafka-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/057-amazon-managed-streaming-for-apache-kafka-gs/amazon-managed-streaming-for-apache-kafka-gs.sh
+  services:
+    ec2: {AuthorizeSecurityGroupIngress, CreateKeyPair, CreateSecurityGroup, DeleteKeyPair, DeleteSecurityGroup, DescribeAvailabilityZones, DescribeImages, DescribeInstanceTypeOfferings, DescribeInstances, DescribeKeyPairs, DescribeSecurityGroups, DescribeSubnets, DescribeVpcs, RevokeSecurityGroupEgress, RevokeSecurityGroupIngress, RunInstances, TerminateInstances, Wait}
+    iam: {AddRoleToInstanceProfile, AttachRolePolicy, CreateInstanceProfile, CreatePolicy, CreateRole, DeleteInstanceProfile, DeletePolicy, DeleteRole, DetachRolePolicy, GetInstanceProfile, GetPolicy, GetRole, RemoveRoleFromInstanceProfile}
+    kafka: {CreateCluster, DeleteCluster, DescribeCluster, GetBootstrapBrokers}
+    sts: {GetCallerIdentity}

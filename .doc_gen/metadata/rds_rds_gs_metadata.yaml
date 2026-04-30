@@ -1,0 +1,23 @@
+rds_GettingStarted_036:
+  title: Creating an Amazon RDS DB instance
+  title_abbrev: Creating an Amazon RDS DB instance
+  synopsis_list:
+    - Set up networking components
+    - Create a DB subnet group
+    - Create a DB instance
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/036-rds-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/036-rds-gs/rds-gs.sh
+  services:
+    ec2: {AuthorizeSecurityGroupIngress, CreateSecurityGroup, DeleteSecurityGroup, DescribeSubnets, DescribeVpcs}
+    rds: {CreateDbInstance, CreateDbSubnetGroup, DeleteDbInstance, DeleteDbSubnetGroup, DescribeDbInstances, Wait}
+    secrets-manager: {CreateSecret, DeleteSecret, GetSecretValue}
