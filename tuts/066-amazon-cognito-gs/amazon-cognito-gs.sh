@@ -3,8 +3,15 @@
 # Amazon Cognito User Pools Getting Started Script
 # This script creates and configures an Amazon Cognito user pool with an app client
 
-# Set up logging
+set -euo pipefail
+
+# Security: Set restrictive umask
+umask 0077
+
+# Set up logging with secure permissions
 LOG_FILE="cognito-user-pool-setup.log"
+touch "$LOG_FILE"
+chmod 600 "$LOG_FILE"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 echo "Starting Amazon Cognito User Pool setup script at $(date)"
@@ -15,28 +22,69 @@ check_error() {
   local output=$1
   local cmd=$2
   
-  if echo "$output" | grep -i "error" > /dev/null; then
-    echo "ERROR: Command failed: $cmd"
-    echo "Output: $output"
+  if echo "$output" | grep -qi "error\|failed"; then
+    echo "ERROR: Command failed: $cmd" >&2
+    echo "Output: $output" >&2
     cleanup_on_error
     exit 1
   fi
 }
 
-# Function to clean up resources on error
-cleanup_on_error() {
-  echo "Error encountered. Attempting to clean up resources..."
+# Function to check AWS CLI return code
+check_aws_error() {
+  local exit_code=$?
+  local cmd=$1
   
-  if [ -n "$DOMAIN_NAME" ] && [ -n "$USER_POOL_ID" ]; then
-    echo "Deleting user pool domain: $DOMAIN_NAME"
-    aws cognito-idp delete-user-pool-domain --user-pool-id "$USER_POOL_ID" --domain "$DOMAIN_NAME"
-  fi
-  
-  if [ -n "$USER_POOL_ID" ]; then
-    echo "Deleting user pool: $USER_POOL_ID"
-    aws cognito-idp delete-user-pool --user-pool-id "$USER_POOL_ID"
+  if [ $exit_code -ne 0 ]; then
+    echo "ERROR: AWS CLI command failed with exit code $exit_code: $cmd" >&2
+    cleanup_on_error
+    exit "$exit_code"
   fi
 }
+
+# Function to clean up resources on error
+cleanup_on_error() {
+  echo "Error encountered. Attempting to clean up resources..." >&2
+  
+  if [ -n "${DOMAIN_NAME:-}" ] && [ -n "${USER_POOL_ID:-}" ]; then
+    echo "Deleting user pool domain: $DOMAIN_NAME" >&2
+    aws cognito-idp delete-user-pool-domain \
+      --user-pool-id "$USER_POOL_ID" \
+      --domain "$DOMAIN_NAME" 2>/dev/null || true
+  fi
+  
+  if [ -n "${USER_POOL_ID:-}" ]; then
+    echo "Deleting user pool: $USER_POOL_ID" >&2
+    aws cognito-idp delete-user-pool \
+      --user-pool-id "$USER_POOL_ID" 2>/dev/null || true
+  fi
+}
+
+# Set trap for cleanup on exit
+trap cleanup_on_error EXIT ERR
+
+# Validate AWS CLI is installed and configured
+if ! command -v aws &> /dev/null; then
+  echo "ERROR: AWS CLI is not installed" >&2
+  exit 1
+fi
+
+# Validate jq is installed
+if ! command -v jq &> /dev/null; then
+  echo "ERROR: jq is not installed" >&2
+  exit 1
+fi
+
+# Validate openssl is installed
+if ! command -v openssl &> /dev/null; then
+  echo "ERROR: openssl is not installed" >&2
+  exit 1
+fi
+
+if ! aws sts get-caller-identity &> /dev/null; then
+  echo "ERROR: AWS CLI is not configured or credentials are invalid" >&2
+  exit 1
+fi
 
 # Get the current AWS region
 AWS_REGION=$(aws configure get region)
@@ -45,11 +93,33 @@ if [ -z "$AWS_REGION" ]; then
 fi
 echo "Using AWS Region: $AWS_REGION"
 
-# Generate random identifier for resource names
+# Validate region format
+if ! [[ "$AWS_REGION" =~ ^[a-z]{2}-[a-z]+-[0-9]{1}$ ]]; then
+  echo "ERROR: Invalid AWS region format: $AWS_REGION" >&2
+  exit 1
+fi
+
+# Generate random identifier for resource names using secure method
 RANDOM_ID=$(openssl rand -hex 6)
+if [ -z "$RANDOM_ID" ]; then
+  echo "ERROR: Failed to generate random identifier" >&2
+  exit 1
+fi
+
 USER_POOL_NAME="MyUserPool-${RANDOM_ID}"
 APP_CLIENT_NAME="MyAppClient-${RANDOM_ID}"
 DOMAIN_NAME="my-auth-domain-${RANDOM_ID}"
+
+# Validate resource names don't exceed limits
+if [ ${#USER_POOL_NAME} -gt 128 ]; then
+  echo "ERROR: User pool name exceeds maximum length of 128 characters" >&2
+  exit 1
+fi
+
+if [ ${#APP_CLIENT_NAME} -gt 128 ]; then
+  echo "ERROR: App client name exceeds maximum length of 128 characters" >&2
+  exit 1
+fi
 
 echo "Using random identifier: $RANDOM_ID"
 echo "User pool name: $USER_POOL_NAME"
@@ -62,16 +132,26 @@ USER_POOL_OUTPUT=$(aws cognito-idp create-user-pool \
   --pool-name "$USER_POOL_NAME" \
   --auto-verified-attributes email \
   --username-attributes email \
-  --policies '{"PasswordPolicy":{"MinimumLength":8,"RequireUppercase":true,"RequireLowercase":true,"RequireNumbers":true,"RequireSymbols":false}}' \
+  --policies '{"PasswordPolicy":{"MinimumLength":12,"RequireUppercase":true,"RequireLowercase":true,"RequireNumbers":true,"RequireSymbols":true}}' \
   --schema '[{"Name":"email","Required":true,"Mutable":true}]' \
-  --mfa-configuration OFF)
+  --mfa-configuration OFF \
+  --user-attribute-update-settings '{"AttributesRequireVerificationBeforeUpdate":["email"]}' \
+  --account-recovery-setting 'RecoveryMechanisms=[{Name=verified_email,Priority=1}]' \
+  --deletion-protection INACTIVE \
+  --region "$AWS_REGION" \
+  2>&1)
+check_aws_error "create-user-pool"
 
-check_error "$USER_POOL_OUTPUT" "create-user-pool"
-
-# Extract the User Pool ID
-USER_POOL_ID=$(echo "$USER_POOL_OUTPUT" | grep -o '"Id": "[^"]*' | cut -d'"' -f4)
+# Extract the User Pool ID using jq for safety
+USER_POOL_ID=$(echo "$USER_POOL_OUTPUT" | jq -r '.UserPool.Id // empty')
 if [ -z "$USER_POOL_ID" ]; then
-  echo "Failed to extract User Pool ID"
+  echo "ERROR: Failed to extract User Pool ID" >&2
+  exit 1
+fi
+
+# Validate User Pool ID format
+if ! [[ "$USER_POOL_ID" =~ ^[a-z]{2}-[a-z]+-[0-9]+_[a-zA-Z0-9]+$ ]]; then
+  echo "ERROR: Invalid User Pool ID format: $USER_POOL_ID" >&2
   exit 1
 fi
 
@@ -81,21 +161,38 @@ echo "User Pool created with ID: $USER_POOL_ID"
 echo "Waiting for user pool to be ready..."
 sleep 5
 
-# Step 2: Create an App Client
+# Step 2: Create an App Client with enhanced security
 echo "Creating app client..."
 APP_CLIENT_OUTPUT=$(aws cognito-idp create-user-pool-client \
   --user-pool-id "$USER_POOL_ID" \
   --client-name "$APP_CLIENT_NAME" \
   --no-generate-secret \
-  --explicit-auth-flows ALLOW_USER_PASSWORD_AUTH ALLOW_REFRESH_TOKEN_AUTH \
-  --callback-urls '["https://localhost:3000/callback"]')
+  --explicit-auth-flows ALLOW_REFRESH_TOKEN_AUTH ALLOW_USER_PASSWORD_AUTH \
+  --callback-urls '["https://localhost:3000/callback"]' \
+  --allowed-o-auth-flows 'code' \
+  --allowed-o-auth-scopes 'openid' 'email' 'profile' \
+  --allowed-o-auth-flows-user-pool-client \
+  --prevent-user-existence-errors ENABLED \
+  --enable-token-revocation \
+  --access-token-validity 1 \
+  --id-token-validity 1 \
+  --refresh-token-validity 30 \
+  --token-validity-units 'AccessToken=hours,IdToken=hours,RefreshToken=days' \
+  --region "$AWS_REGION" \
+  2>&1)
+check_aws_error "create-user-pool-client"
 
-check_error "$APP_CLIENT_OUTPUT" "create-user-pool-client"
-
-# Extract the Client ID
-CLIENT_ID=$(echo "$APP_CLIENT_OUTPUT" | grep -o '"ClientId": "[^"]*' | cut -d'"' -f4)
+# Extract the Client ID using jq for safety
+CLIENT_ID=$(echo "$APP_CLIENT_OUTPUT" | jq -r '.UserPoolClient.ClientId // empty')
 if [ -z "$CLIENT_ID" ]; then
-  echo "Failed to extract Client ID"
+  echo "ERROR: Failed to extract Client ID" >&2
+  cleanup_on_error
+  exit 1
+fi
+
+# Validate Client ID format
+if ! [[ "$CLIENT_ID" =~ ^[a-z0-9]{26}$ ]]; then
+  echo "ERROR: Invalid Client ID format: $CLIENT_ID" >&2
   cleanup_on_error
   exit 1
 fi
@@ -106,52 +203,72 @@ echo "App Client created with ID: $CLIENT_ID"
 echo "Setting up user pool domain..."
 DOMAIN_OUTPUT=$(aws cognito-idp create-user-pool-domain \
   --user-pool-id "$USER_POOL_ID" \
-  --domain "$DOMAIN_NAME")
-
-check_error "$DOMAIN_OUTPUT" "create-user-pool-domain"
+  --domain "$DOMAIN_NAME" \
+  --region "$AWS_REGION" \
+  2>&1)
+check_aws_error "create-user-pool-domain"
 echo "Domain created: $DOMAIN_NAME.auth.$AWS_REGION.amazoncognito.com"
 
 # Step 4: View User Pool Details
 echo "Retrieving user pool details..."
 USER_POOL_DETAILS=$(aws cognito-idp describe-user-pool \
-  --user-pool-id "$USER_POOL_ID")
-
-check_error "$USER_POOL_DETAILS" "describe-user-pool"
+  --user-pool-id "$USER_POOL_ID" \
+  --region "$AWS_REGION" \
+  2>&1)
+check_aws_error "describe-user-pool"
 echo "User Pool details retrieved successfully"
 
 # Step 5: View App Client Details
 echo "Retrieving app client details..."
 APP_CLIENT_DETAILS=$(aws cognito-idp describe-user-pool-client \
   --user-pool-id "$USER_POOL_ID" \
-  --client-id "$CLIENT_ID")
-
-check_error "$APP_CLIENT_DETAILS" "describe-user-pool-client"
+  --client-id "$CLIENT_ID" \
+  --region "$AWS_REGION" \
+  2>&1)
+check_aws_error "describe-user-pool-client"
 echo "App Client details retrieved successfully"
 
 # Step 6: Create a User (Admin)
 echo "Creating admin user..."
 ADMIN_USER_EMAIL="admin@example.com"
+TEMP_PASSWORD="$(openssl rand -base64 12 | tr -d '\n')!@#"
+if [ -z "$TEMP_PASSWORD" ]; then
+  echo "ERROR: Failed to generate temporary password" >&2
+  cleanup_on_error
+  exit 1
+fi
+
 ADMIN_USER_OUTPUT=$(aws cognito-idp admin-create-user \
   --user-pool-id "$USER_POOL_ID" \
   --username "$ADMIN_USER_EMAIL" \
   --user-attributes Name=email,Value="$ADMIN_USER_EMAIL" Name=email_verified,Value=true \
-  --temporary-password "Temp123!")
-
-check_error "$ADMIN_USER_OUTPUT" "admin-create-user"
+  --temporary-password "$TEMP_PASSWORD" \
+  --message-action SUPPRESS \
+  --region "$AWS_REGION" \
+  2>&1)
+check_aws_error "admin-create-user"
 echo "Admin user created: $ADMIN_USER_EMAIL"
+
+# Securely clear temporary password from memory
+unset TEMP_PASSWORD
 
 # Step 7: Self-Registration
 echo "Demonstrating self-registration..."
 USER_EMAIL="user@example.com"
+USER_PASSWORD="SecurePassword123!"
 SIGNUP_OUTPUT=$(aws cognito-idp sign-up \
   --client-id "$CLIENT_ID" \
   --username "$USER_EMAIL" \
-  --password "Password123!" \
-  --user-attributes Name=email,Value="$USER_EMAIL")
-
-check_error "$SIGNUP_OUTPUT" "sign-up"
+  --password "$USER_PASSWORD" \
+  --user-attributes Name=email,Value="$USER_EMAIL" \
+  --region "$AWS_REGION" \
+  2>&1)
+check_aws_error "sign-up"
 echo "User signed up: $USER_EMAIL"
 echo "A confirmation code would be sent to the user's email in a real scenario"
+
+# Securely clear password from memory
+unset USER_PASSWORD
 
 echo ""
 echo "==================================================="
@@ -165,27 +282,63 @@ echo ""
 echo "Confirming user registration (admin method)..."
 CONFIRM_OUTPUT=$(aws cognito-idp admin-confirm-sign-up \
   --user-pool-id "$USER_POOL_ID" \
-  --username "$USER_EMAIL")
-
-check_error "$CONFIRM_OUTPUT" "admin-confirm-sign-up"
+  --username "$USER_EMAIL" \
+  --region "$AWS_REGION" \
+  2>&1)
+check_aws_error "admin-confirm-sign-up"
 echo "User confirmed: $USER_EMAIL"
 
-# Step 9: Authenticate a User
+# Step 9: Set permanent password for user
+echo "Setting permanent password for user..."
+SET_PASSWORD="SecureUserPassword123!"
+SET_PASS_OUTPUT=$(aws cognito-idp admin-set-user-password \
+  --user-pool-id "$USER_POOL_ID" \
+  --username "$USER_EMAIL" \
+  --password "$SET_PASSWORD" \
+  --permanent \
+  --region "$AWS_REGION" \
+  2>&1)
+check_aws_error "admin-set-user-password"
+echo "Permanent password set for user"
+
+unset SET_PASSWORD
+
+# Step 10: Authenticate a User
 echo "Authenticating user..."
+AUTH_PASSWORD="SecureUserPassword123!"
 AUTH_OUTPUT=$(aws cognito-idp initiate-auth \
   --client-id "$CLIENT_ID" \
   --auth-flow USER_PASSWORD_AUTH \
-  --auth-parameters USERNAME="$USER_EMAIL",PASSWORD="Password123!")
-
-check_error "$AUTH_OUTPUT" "initiate-auth"
+  --auth-parameters "USERNAME=$USER_EMAIL,PASSWORD=$AUTH_PASSWORD" \
+  --region "$AWS_REGION" \
+  2>&1)
+check_aws_error "initiate-auth"
 echo "User authenticated successfully"
 
-# Step 10: List Users in the User Pool
+unset AUTH_PASSWORD
+
+# Extract auth tokens securely
+ID_TOKEN=$(echo "$AUTH_OUTPUT" | jq -r '.AuthenticationResult.IdToken // empty')
+ACCESS_TOKEN=$(echo "$AUTH_OUTPUT" | jq -r '.AuthenticationResult.AccessToken // empty')
+
+# Validate tokens exist
+if [ -z "$ID_TOKEN" ] || [ -z "$ACCESS_TOKEN" ]; then
+  echo "WARNING: Failed to extract authentication tokens" >&2
+else
+  echo "Authentication tokens obtained successfully"
+fi
+
+# Securely clear tokens from memory
+unset ID_TOKEN
+unset ACCESS_TOKEN
+
+# Step 11: List Users in the User Pool
 echo "Listing users in the user pool..."
 USERS_OUTPUT=$(aws cognito-idp list-users \
-  --user-pool-id "$USER_POOL_ID")
-
-check_error "$USERS_OUTPUT" "list-users"
+  --user-pool-id "$USER_POOL_ID" \
+  --region "$AWS_REGION" \
+  2>&1)
+check_aws_error "list-users"
 echo "Users listed successfully"
 
 # Display summary of created resources
@@ -203,43 +356,38 @@ echo "Regular User: $USER_EMAIL"
 echo "==================================================="
 echo ""
 
-# Prompt for cleanup
+# Auto-confirm cleanup
 echo ""
 echo "==========================================="
-echo "CLEANUP CONFIRMATION"
+echo "CLEANUP"
 echo "==========================================="
-echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
+echo "Starting cleanup process..."
 
-if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
-  echo "Starting cleanup process..."
-  
-  # Step 11: Clean Up Resources
-  echo "Deleting user pool domain..."
-  DELETE_DOMAIN_OUTPUT=$(aws cognito-idp delete-user-pool-domain \
-    --user-pool-id "$USER_POOL_ID" \
-    --domain "$DOMAIN_NAME")
-  
-  check_error "$DELETE_DOMAIN_OUTPUT" "delete-user-pool-domain"
-  echo "Domain deleted successfully"
-  
-  # Wait for domain deletion to complete
-  echo "Waiting for domain deletion to complete..."
-  sleep 5
-  
-  echo "Deleting user pool (this will also delete the app client)..."
-  DELETE_POOL_OUTPUT=$(aws cognito-idp delete-user-pool \
-    --user-pool-id "$USER_POOL_ID")
-  
-  check_error "$DELETE_POOL_OUTPUT" "delete-user-pool"
-  echo "User pool deleted successfully"
-  
-  echo "All resources have been cleaned up"
-else
-  echo "Resources will not be deleted. You can manually delete them later."
-  echo "To delete the resources manually, use the following commands:"
-  echo "aws cognito-idp delete-user-pool-domain --user-pool-id $USER_POOL_ID --domain $DOMAIN_NAME"
-  echo "aws cognito-idp delete-user-pool --user-pool-id $USER_POOL_ID"
-fi
+# Step 12: Clean Up Resources
+echo "Deleting user pool domain..."
+DELETE_DOMAIN_OUTPUT=$(aws cognito-idp delete-user-pool-domain \
+  --user-pool-id "$USER_POOL_ID" \
+  --domain "$DOMAIN_NAME" \
+  --region "$AWS_REGION" \
+  2>&1)
+check_aws_error "delete-user-pool-domain"
+echo "Domain deleted successfully"
+
+# Wait for domain deletion to complete
+echo "Waiting for domain deletion to complete..."
+sleep 5
+
+echo "Deleting user pool (this will also delete the app client)..."
+DELETE_POOL_OUTPUT=$(aws cognito-idp delete-user-pool \
+  --user-pool-id "$USER_POOL_ID" \
+  --region "$AWS_REGION" \
+  2>&1)
+check_aws_error "delete-user-pool"
+echo "User pool deleted successfully"
+
+echo "All resources have been cleaned up"
 
 echo "Script completed at $(date)"
+
+# Remove trap to prevent cleanup on successful exit
+trap - EXIT ERR
