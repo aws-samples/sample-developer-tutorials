@@ -26,3 +26,30 @@ The script creates the following AWS resources in order:
 - EC2 security group (database security group allowing MySQL from web servers)
 
 The script prompts you to clean up resources when you run it, including if there's an error part way through. If you need to clean up resources later, you can use the script log as a reference point for which resources were created.
+
+
+## CloudFormation
+
+This tutorial includes a CloudFormation template that creates the same resources as the CLI script.
+
+**Resources created:** VPC with public subnet and EC2 instance
+
+### Deploy with CloudFormation
+
+```bash
+./cfn/deploy.sh 002-vpc-gs
+```
+
+### Run the interactive steps
+
+Once deployed, run the interactive tutorial steps against the CloudFormation-created resources. Each command is displayed with resolved values so you can run them individually.
+
+```bash
+bash tuts/002-vpc-gs/vpc-gs-cfn.sh
+```
+
+### Clean up
+
+```bash
+./cfn/cleanup.sh 002-vpc-gs
+```

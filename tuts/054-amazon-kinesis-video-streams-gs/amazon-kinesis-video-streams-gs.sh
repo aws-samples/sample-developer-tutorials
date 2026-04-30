@@ -4,6 +4,8 @@
 # This script demonstrates how to create a Kinesis video stream, get endpoints for uploading and viewing video,
 # and clean up resources when done.
 
+set -euo pipefail
+
 # Set up logging
 LOG_FILE="kinesis-video-streams-tutorial.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
@@ -13,7 +15,7 @@ echo "All commands and outputs will be logged to $LOG_FILE"
 
 # Function to handle errors
 handle_error() {
-    echo "ERROR: $1"
+    echo "ERROR: $1" >&2
     echo "Attempting to clean up resources..."
     cleanup_resources
     exit 1
@@ -24,29 +26,45 @@ check_error() {
     local output="$1"
     local command_name="$2"
     
-    if echo "$output" | grep -i "error" > /dev/null; then
+    if echo "$output" | grep -qi "error\|failed"; then
         handle_error "Error detected in $command_name output: $output"
+    fi
+}
+
+# Function to safely extract JSON values using jq
+extract_json_value() {
+    local json_input="$1"
+    local json_path="$2"
+    
+    if command -v jq &> /dev/null; then
+        echo "$json_input" | jq -r "$json_path" 2>/dev/null || echo ""
+    else
+        echo "WARNING: jq not found. Using fallback parsing." >&2
+        echo "$json_input" | grep -o "\"$(basename "$json_path")\": \"[^\"]*" | cut -d'"' -f4 || echo ""
     fi
 }
 
 # Function to clean up resources
 cleanup_resources() {
-    if [ -n "$STREAM_ARN" ]; then
-        echo "Deleting Kinesis video stream: $STREAM_NAME (ARN: $STREAM_ARN)"
-        DELETE_STREAM_OUTPUT=$(aws kinesisvideo delete-stream --stream-arn "$STREAM_ARN")
-        echo "$DELETE_STREAM_OUTPUT"
-        echo "Stream deleted."
-    elif [ -n "$STREAM_NAME" ]; then
+    if [ -n "${STREAM_ARN:-}" ]; then
+        echo "Deleting Kinesis video stream: ${STREAM_NAME:-unknown} (ARN: $STREAM_ARN)"
+        if aws kinesisvideo delete-stream --stream-arn "$STREAM_ARN" 2>/dev/null; then
+            echo "Stream deletion initiated."
+        else
+            echo "WARNING: Could not delete stream with ARN: $STREAM_ARN" >&2
+        fi
+    elif [ -n "${STREAM_NAME:-}" ]; then
         echo "Stream ARN not available. Attempting to delete by name: $STREAM_NAME"
-        # Try to get the ARN first
-        DESCRIBE_OUTPUT=$(aws kinesisvideo describe-stream --stream-name "$STREAM_NAME" 2>/dev/null)
-        if [ $? -eq 0 ]; then
-            STREAM_ARN=$(echo "$DESCRIBE_OUTPUT" | grep -o '"StreamARN": "[^"]*' | cut -d'"' -f4)
+        DESCRIBE_OUTPUT=$(aws kinesisvideo describe-stream --stream-name "$STREAM_NAME" 2>/dev/null || echo "")
+        if [ -n "$DESCRIBE_OUTPUT" ]; then
+            STREAM_ARN=$(extract_json_value "$DESCRIBE_OUTPUT" ".StreamInfo.StreamARN")
             if [ -n "$STREAM_ARN" ]; then
                 echo "Found ARN: $STREAM_ARN"
-                DELETE_STREAM_OUTPUT=$(aws kinesisvideo delete-stream --stream-arn "$STREAM_ARN")
-                echo "$DELETE_STREAM_OUTPUT"
-                echo "Stream deleted."
+                if aws kinesisvideo delete-stream --stream-arn "$STREAM_ARN" 2>/dev/null; then
+                    echo "Stream deletion initiated."
+                else
+                    echo "WARNING: Could not delete stream with ARN: $STREAM_ARN" >&2
+                fi
             else
                 echo "Could not extract ARN from describe-stream output."
             fi
@@ -56,9 +74,22 @@ cleanup_resources() {
     fi
 }
 
+# Validate AWS CLI is available
+if ! command -v aws &> /dev/null; then
+    handle_error "AWS CLI is not installed or not found in PATH"
+fi
+
+# Validate AWS credentials are configured
+if ! aws sts get-caller-identity &> /dev/null; then
+    handle_error "AWS credentials are not properly configured. Please run 'aws configure'"
+fi
+
 # Generate a random stream name suffix to avoid conflicts
-RANDOM_SUFFIX=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
+RANDOM_SUFFIX=$(head -c 8 /dev/urandom | xxd -p)
 STREAM_NAME="KVSTutorialStream-${RANDOM_SUFFIX}"
+STREAM_ARN=""
+PUT_ENDPOINT=""
+HLS_ENDPOINT=""
 
 echo "=========================================="
 echo "STEP 1: Create a Kinesis Video Stream"
@@ -66,14 +97,16 @@ echo "=========================================="
 echo "Creating stream: $STREAM_NAME"
 
 # Create the Kinesis video stream
-CREATE_STREAM_OUTPUT=$(aws kinesisvideo create-stream --stream-name "$STREAM_NAME" --data-retention-in-hours 24)
+if ! CREATE_STREAM_OUTPUT=$(aws kinesisvideo create-stream --stream-name "$STREAM_NAME" --data-retention-in-hours 24 --output json 2>&1); then
+    handle_error "Failed to create stream: $CREATE_STREAM_OUTPUT"
+fi
 check_error "$CREATE_STREAM_OUTPUT" "create-stream"
 echo "$CREATE_STREAM_OUTPUT"
 
-# Extract the stream ARN
-STREAM_ARN=$(echo "$CREATE_STREAM_OUTPUT" | grep -o '"StreamARN": "[^"]*' | cut -d'"' -f4)
+# Extract the stream ARN safely
+STREAM_ARN=$(extract_json_value "$CREATE_STREAM_OUTPUT" ".StreamARN")
 if [ -z "$STREAM_ARN" ]; then
-    handle_error "Failed to extract stream ARN"
+    handle_error "Failed to extract stream ARN from response"
 fi
 echo "Stream ARN: $STREAM_ARN"
 
@@ -84,26 +117,32 @@ sleep 5
 echo "=========================================="
 echo "STEP 2: Verify Stream Creation"
 echo "=========================================="
-DESCRIBE_STREAM_OUTPUT=$(aws kinesisvideo describe-stream --stream-name "$STREAM_NAME")
+if ! DESCRIBE_STREAM_OUTPUT=$(aws kinesisvideo describe-stream --stream-name "$STREAM_NAME" --output json 2>&1); then
+    handle_error "Failed to describe stream: $DESCRIBE_STREAM_OUTPUT"
+fi
 check_error "$DESCRIBE_STREAM_OUTPUT" "describe-stream"
 echo "$DESCRIBE_STREAM_OUTPUT"
 
 echo "=========================================="
 echo "STEP 3: List Available Streams"
 echo "=========================================="
-LIST_STREAMS_OUTPUT=$(aws kinesisvideo list-streams)
+if ! LIST_STREAMS_OUTPUT=$(aws kinesisvideo list-streams --output json 2>&1); then
+    handle_error "Failed to list streams: $LIST_STREAMS_OUTPUT"
+fi
 check_error "$LIST_STREAMS_OUTPUT" "list-streams"
 echo "$LIST_STREAMS_OUTPUT"
 
 echo "=========================================="
 echo "STEP 4: Get Data Endpoint for Uploading Video"
 echo "=========================================="
-GET_ENDPOINT_OUTPUT=$(aws kinesisvideo get-data-endpoint --stream-name "$STREAM_NAME" --api-name PUT_MEDIA)
+if ! GET_ENDPOINT_OUTPUT=$(aws kinesisvideo get-data-endpoint --stream-name "$STREAM_NAME" --api-name PUT_MEDIA --output json 2>&1); then
+    handle_error "Failed to get PUT_MEDIA endpoint: $GET_ENDPOINT_OUTPUT"
+fi
 check_error "$GET_ENDPOINT_OUTPUT" "get-data-endpoint"
 echo "$GET_ENDPOINT_OUTPUT"
 
-# Extract the endpoint URL
-PUT_ENDPOINT=$(echo "$GET_ENDPOINT_OUTPUT" | grep -o '"DataEndpoint": "[^"]*' | cut -d'"' -f4)
+# Extract the endpoint URL safely
+PUT_ENDPOINT=$(extract_json_value "$GET_ENDPOINT_OUTPUT" ".DataEndpoint")
 if [ -z "$PUT_ENDPOINT" ]; then
     handle_error "Failed to extract PUT_MEDIA endpoint"
 fi
@@ -112,12 +151,14 @@ echo "PUT_MEDIA Endpoint: $PUT_ENDPOINT"
 echo "=========================================="
 echo "STEP 5: Get Data Endpoint for Viewing Video"
 echo "=========================================="
-GET_HLS_ENDPOINT_OUTPUT=$(aws kinesisvideo get-data-endpoint --stream-name "$STREAM_NAME" --api-name GET_HLS_STREAMING_SESSION_URL)
+if ! GET_HLS_ENDPOINT_OUTPUT=$(aws kinesisvideo get-data-endpoint --stream-name "$STREAM_NAME" --api-name GET_HLS_STREAMING_SESSION_URL --output json 2>&1); then
+    handle_error "Failed to get HLS endpoint: $GET_HLS_ENDPOINT_OUTPUT"
+fi
 check_error "$GET_HLS_ENDPOINT_OUTPUT" "get-data-endpoint-hls"
 echo "$GET_HLS_ENDPOINT_OUTPUT"
 
-# Extract the HLS endpoint URL
-HLS_ENDPOINT=$(echo "$GET_HLS_ENDPOINT_OUTPUT" | grep -o '"DataEndpoint": "[^"]*' | cut -d'"' -f4)
+# Extract the HLS endpoint URL safely
+HLS_ENDPOINT=$(extract_json_value "$GET_HLS_ENDPOINT_OUTPUT" ".DataEndpoint")
 if [ -z "$HLS_ENDPOINT" ]; then
     handle_error "Failed to extract GET_HLS_STREAMING_SESSION_URL endpoint"
 fi
@@ -128,10 +169,7 @@ echo "STEP 6: Instructions for Sending Data to the Stream"
 echo "=========================================="
 echo "To send data to your Kinesis video stream, you need to:"
 echo "1. Set up the Kinesis Video Streams Producer SDK with GStreamer"
-echo "2. Configure your AWS credentials as environment variables:"
-echo "   export AWS_ACCESS_KEY_ID=YourAccessKey"
-echo "   export AWS_SECRET_ACCESS_KEY=YourSecretKey"
-echo "   export AWS_DEFAULT_REGION=YourAWSRegion"
+echo "2. Configure your AWS credentials using IAM roles (preferred) or environment variables"
 echo "3. Upload a sample MP4 file or generate a test video stream"
 echo ""
 echo "For detailed instructions, refer to the tutorial documentation."
@@ -155,17 +193,8 @@ echo ""
 echo "==========================================="
 echo "CLEANUP CONFIRMATION"
 echo "==========================================="
-echo "Do you want to clean up all created resources? (y/n): "
-read -r CLEANUP_CHOICE
-
-if [[ "$CLEANUP_CHOICE" =~ ^[Yy]$ ]]; then
-    echo "Starting cleanup..."
-    cleanup_resources
-    echo "Cleanup completed."
-else
-    echo "Skipping cleanup. Resources will remain in your AWS account."
-    echo "To manually delete the stream later, run:"
-    echo "aws kinesisvideo delete-stream --stream-arn \"$STREAM_ARN\""
-fi
+echo "Starting cleanup..."
+cleanup_resources
+echo "Cleanup completed."
 
 echo "Script completed at $(date)"

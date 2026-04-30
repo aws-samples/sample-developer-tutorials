@@ -57,12 +57,30 @@ Free tier eligible. No charges expected for a few objects.
 
 ---
 
-## Appendix: Generation details
 
-| Field | Value |
-|-------|-------|
-| Generation date | 2026-04-14 (README regenerated with appendix) |
-| Source script | Regenerated from source topic, 332 lines |
-| Script test result | EXIT 0, 16s, 9 steps, clean teardown |
-| Issues encountered | None — straightforward S3 operations |
-| Iterations | v1 (original), v2 (regenerated from source topic 2026-04-12) |
+
+## CloudFormation
+
+This tutorial includes a CloudFormation template that creates the same resources as the CLI script.
+
+**Resources created:** S3 bucket (uses shared prereq bucket)
+
+### Deploy with CloudFormation
+
+```bash
+./cfn/deploy.sh 003-s3-gettingstarted
+```
+
+### Run the interactive steps
+
+Once deployed, run the interactive tutorial steps against the CloudFormation-created resources. Each command is displayed with resolved values so you can run them individually.
+
+```bash
+bash tuts/003-s3-gettingstarted/s3-gettingstarted-cfn.sh
+```
+
+### Clean up
+
+```bash
+./cfn/cleanup.sh 003-s3-gettingstarted
+```

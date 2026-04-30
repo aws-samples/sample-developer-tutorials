@@ -201,12 +201,23 @@ if [ -z "$REGION" ]; then
 else
     echo "Using region: $REGION"
 fi
-S3_BUCKET_NAME="sagemaker-featurestore-${RANDOM_ID}-${ACCOUNT_ID}"
+# Check for shared prereq bucket
+PREREQ_BUCKET=$(aws cloudformation describe-stacks --stack-name tutorial-prereqs-bucket \
+    --query 'Stacks[0].Outputs[?OutputKey==`BucketName`].OutputValue' --output text 2>/dev/null)
+if [ -n "$PREREQ_BUCKET" ] && [ "$PREREQ_BUCKET" != "None" ]; then
+    S3_BUCKET_NAME="$PREREQ_BUCKET"
+    BUCKET_IS_SHARED=true
+    echo "Using shared bucket: $S3_BUCKET_NAME"
+else
+    BUCKET_IS_SHARED=false
+    S3_BUCKET_NAME="sagemaker-featurestore-${RANDOM_ID}-${ACCOUNT_ID}"
+fi
 PREFIX="featurestore-tutorial"
 CURRENT_TIME=$(date +%s)
 
 echo "Creating S3 bucket: $S3_BUCKET_NAME"
-# Create bucket in current region
+# Create bucket in current region (skip if using shared bucket)
+if [ "$BUCKET_IS_SHARED" = "false" ]; then
 if [ "$REGION" = "us-east-1" ]; then
     BUCKET_RESULT=$(aws s3api create-bucket --bucket "$S3_BUCKET_NAME" \
         --region "$REGION" 2>&1)
@@ -233,6 +244,9 @@ if echo "$BLOCK_RESULT" | grep -i "error" > /dev/null; then
     echo "Failed to block public access to S3 bucket: $BLOCK_RESULT"
     cleanup_resources
     exit 1
+fi
+else
+    echo "Using shared bucket (skipping creation)"
 fi
 
 # Create feature groups

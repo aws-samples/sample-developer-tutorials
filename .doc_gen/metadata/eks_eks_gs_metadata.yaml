@@ -1,0 +1,26 @@
+eks_GettingStarted_034:
+  title: Getting started with Amazon EKS
+  title_abbrev: Getting started with Amazon EKS
+  synopsis_list:
+    - Create a VPC for your EKS cluster
+    - Create IAM roles for your EKS cluster
+    - Create your EKS cluster
+    - Configure kubectl to communicate with your cluster
+    - Create a managed node group
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/034-eks-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/034-eks-gs/eks-gs.sh
+  services:
+    cloudformation: {CreateStack, DeleteStack, DescribeStacks, Wait}
+    eks: {CreateCluster, CreateNodegroup, DeleteCluster, DeleteNodegroup, DescribeCluster, DescribeNodegroup, ListNodegroups, UpdateKubeconfig, Wait}
+    iam: {AttachRolePolicy, CreateRole, DeleteRole, DetachRolePolicy, GetRole}
+    sts: {GetCallerIdentity}
