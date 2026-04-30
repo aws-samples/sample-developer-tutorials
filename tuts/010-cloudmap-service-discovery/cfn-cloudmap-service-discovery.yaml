@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Cloud Map service discovery - HTTP namespace with service.
+
+Resources:
+  Namespace:
+    Type: AWS::ServiceDiscovery::HttpNamespace
+    Properties:
+      Name: !Sub '${AWS::StackName}'
+      Tags:
+        - Key: tutorial
+          Value: !Ref AWS::StackName
+
+  Service:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Name: web
+      NamespaceId: !GetAtt Namespace.Id
+
+Outputs:
+  NamespaceId:
+    Value: !GetAtt Namespace.Id
+  ServiceId:
+    Value: !GetAtt Service.Id
