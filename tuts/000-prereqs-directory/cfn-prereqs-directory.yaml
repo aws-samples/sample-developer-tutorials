@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Prereq: Simple AD directory for WorkSpaces tutorials. Uses default VPC.'
+
+Parameters:
+  DirectoryName:
+    Type: String
+    Default: corp.example.com
+  DirectorySize:
+    Type: String
+    Default: Small
+    AllowedValues: [Small, Large]
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC for the directory (use default VPC)
+  SubnetId1:
+    Type: AWS::EC2::Subnet::Id
+    Description: First subnet (must be in a different AZ from SubnetId2)
+  SubnetId2:
+    Type: AWS::EC2::Subnet::Id
+    Description: Second subnet (must be in a different AZ from SubnetId1)
+
+Resources:
+  Directory:
+    Type: AWS::DirectoryService::SimpleAD
+    Properties:
+      Name: !Ref DirectoryName
+      Password: 'TutorialPass123!'
+      Size: !Ref DirectorySize
+      VpcSettings:
+        VpcId: !Ref VpcId
+        SubnetIds:
+          - !Ref SubnetId1
+          - !Ref SubnetId2
+
+Outputs:
+  DirectoryId:
+    Value: !Ref Directory
+    Export:
+      Name: !Sub '${AWS::StackName}-DirectoryId'

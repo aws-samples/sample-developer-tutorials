@@ -1,0 +1,22 @@
+ses_GettingStarted_033:
+  title: Setting up Amazon Simple Email Service (SES)
+  title_abbrev: Setting up Amazon Simple Email Service (SES)
+  synopsis_list:
+    - Verify an email address
+    - Verify a domain (optional)
+    - Check your sending limits
+    - Send a test email
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/033-ses-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/033-ses-gs/ses-gs.sh
+  services:
+    ses: {DeleteIdentity, GetIdentityVerificationAttributes, GetSendQuota, ListIdentities, SendEmail, VerifyDomainDkim, VerifyDomainIdentity, VerifyEmailIdentity}
