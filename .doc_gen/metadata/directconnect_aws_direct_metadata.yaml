@@ -1,0 +1,24 @@
+directconnect_GettingStarted_051:
+  title: Get started with Aws Direct Connect using the CLI
+  title_abbrev: Get started with Aws Direct Connect
+  synopsis_list:
+    - Use ec2 CreateVpnGateway
+    - Use ec2 DeleteVpnGateway
+    - Use ec2 DescribeVpnGateways
+    - Use directconnect CreateConnection
+    - Use directconnect CreatePrivateVirtualInterface
+    - Use directconnect DeleteConnection
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/051-aws-direct-connect-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/051-aws-direct-connect-gs/aws-direct-connect-gs.sh
+  services:
+    direct-connect: {CreateConnection, CreatePrivateVirtualInterface, DeleteConnection, DeleteVirtualInterface, DescribeConnections, DescribeLoa, DescribeLocations, DescribeVirtualInterfaces, UpdateConnection}
+    ec2: {CreateVpnGateway, DeleteVpnGateway, DescribeVpnGateways}

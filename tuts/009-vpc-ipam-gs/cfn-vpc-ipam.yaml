@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: VPC IPAM getting started - IPAM with pool and VPC.
+
+Resources:
+  IPAM:
+    Type: AWS::EC2::IPAM
+    Properties:
+      Tags:
+        - Key: tutorial
+          Value: !Ref AWS::StackName
+      OperatingRegions:
+        - RegionName: !Ref AWS::Region
+
+  Pool:
+    Type: AWS::EC2::IPAMPool
+    Properties:
+      IpamScopeId: !GetAtt IPAM.PrivateDefaultScopeId
+      AddressFamily: ipv4
+      Locale: !Ref AWS::Region
+
+  PoolCidr:
+    Type: AWS::EC2::IPAMPoolCidr
+    Properties:
+      IpamPoolId: !GetAtt Pool.IpamPoolId
+      Cidr: 10.0.0.0/16
+
+Outputs:
+  IpamId:
+    Value: !GetAtt IPAM.IpamId
+  PoolId:
+    Value: !GetAtt Pool.IpamPoolId

@@ -1,0 +1,21 @@
+dynamodb_GettingStarted_070:
+  title: Getting started with DynamoDB
+  title_abbrev: Getting started with DynamoDB
+  synopsis_list:
+    - Create a table in DynamoDB
+    - Update data in a DynamoDB table
+    - Query data in a DynamoDB table
+    - Delete your DynamoDB table
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/070-amazon-dynamodb-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/070-amazon-dynamodb-gs/amazon-dynamodb-gs.sh
+  services:
+    dynamodb: {CreateTable, DeleteTable, DescribeTable, GetItem, PutItem, Query, UpdateContinuousBackups, UpdateItem, Wait}

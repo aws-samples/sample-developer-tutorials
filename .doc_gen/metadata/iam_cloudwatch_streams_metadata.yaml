@@ -1,0 +1,23 @@
+iam_GettingStarted_032:
+  title: Using property variables in CloudWatch dashboards to monitor multiple Lambda functions 
+  title_abbrev: Using property variables in CloudWatch dashboards to monitor multiple Lambda functions 
+  synopsis_list:
+    - Create Lambda functions for monitoring
+    - Create a CloudWatch dashboard
+    - Add a property variable to the dashboard
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/032-cloudwatch-streams
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/032-cloudwatch-streams/cloudwatch-streams.sh
+  services:
+    cloudwatch: {DeleteDashboards, GetDashboard, PutDashboard}
+    iam: {AttachRolePolicy, CreateRole, DeleteRole, DetachRolePolicy}
+    lambda: {CreateFunction, DeleteFunction, Invoke}
