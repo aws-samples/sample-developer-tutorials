@@ -112,101 +112,40 @@ echo "This may take 15-30 minutes to complete."
 
 # SECURITY IMPROVED: Use least privilege access policy
 # This policy restricts access to specific actions and should be further restricted to specific principals in production
-ACCESS_POLICY="{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${ACCOUNT_ID}:root\"},\"Action\":[\"es:ESHttpGet\",\"es:ESHttpPut\",\"es:ESHttpPost\",\"es:ESHttpDelete\",\"es:ESHttpHead\"],\"Resource\":\"arn:aws:es:${AWS_REGION}:${ACCOUNT_ID}:domain/${DOMAIN_NAME}/*\"}]}"
+# Create the domain using CloudFormation (handles the 15-20 min creation wait)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+STACK_NAME="tutorial-opensearch-${RANDOM_ID}"
 
-echo "Access policy created for region: $AWS_REGION"
-echo "Access policy: [REDACTED]"
+echo "Creating domain $DOMAIN_NAME via CloudFormation..."
+echo "This typically takes 15-20 minutes. CloudFormation will wait for completion."
+aws cloudformation deploy \
+  --template-file "$SCRIPT_DIR/cfn-opensearch-domain.yaml" \
+  --stack-name "$STACK_NAME" \
+  --parameter-overrides \
+    DomainName="$DOMAIN_NAME" \
+    MasterUserName="$MASTER_USER" \
+    MasterUserPassword="$MASTER_PASSWORD" \
+  --tags project=doc-smith tutorial=opensearch-service-gs \
+  --no-fail-on-empty-changeset 2>&1 || handle_error "CloudFormation stack creation failed"
 
-# Create the domain (matches tutorial command exactly)
-echo "Creating domain $DOMAIN_NAME..."
-CREATE_OUTPUT=$(aws opensearch create-domain \
-  --domain-name "$DOMAIN_NAME" \
-  --engine-version "OpenSearch_2.11" \
-  --cluster-config "InstanceType=t3.small.search,InstanceCount=1,ZoneAwarenessEnabled=false" \
-  --ebs-options "EBSEnabled=true,VolumeType=gp3,VolumeSize=10" \
-  --node-to-node-encryption-options "Enabled=true" \
-  --encryption-at-rest-options "Enabled=true" \
-  --domain-endpoint-options "EnforceHTTPS=true,TLSSecurityPolicy=Policy-Min-TLS-1-2-2019-07" \
-  --advanced-security-options "Enabled=true,InternalUserDatabaseEnabled=true,MasterUserOptions={MasterUserName=$MASTER_USER,MasterUserPassword=$MASTER_PASSWORD}" \
-  --access-policies "$ACCESS_POLICY" \
-  --tags "Key=Environment,Value=Tutorial" "Key=Purpose,Value=OpenSearchGettingStarted" "Key=project,Value=doc-smith" "Key=tutorial,Value=opensearch-service-gs" 2>&1)
+DOMAIN_CREATED=true
+echo "Domain created successfully via CloudFormation."
 
-# Check if domain creation was successful
-if [[ $? -ne 0 ]]; then
-    echo "Failed to create OpenSearch domain:"
-    echo "$CREATE_OUTPUT"
-    handle_error "Domain creation failed"
-fi
+# Get domain endpoint from stack outputs
+DOMAIN_ENDPOINT=$(aws cloudformation describe-stacks \
+  --stack-name "$STACK_NAME" \
+  --query 'Stacks[0].Outputs[?OutputKey==`DomainEndpoint`].OutputValue' \
+  --output text)
 
-# Verify the domain was actually created by checking the output
-if echo "$CREATE_OUTPUT" | grep -q "DomainStatus"; then
-    echo "Domain creation initiated successfully."
-    DOMAIN_CREATED=true
-else
-    echo "Domain creation output:"
-    echo "$CREATE_OUTPUT"
-    handle_error "Domain creation may have failed - no DomainStatus in response"
-fi
-
-# Wait for domain to become active (improved logic)
-echo "Waiting for domain to become active..."
-RETRY_COUNT=0
-MAX_RETRIES=45  # 45 minutes with 60 second intervals
-
-while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
-    echo "Checking domain status... (attempt $((RETRY_COUNT+1))/$MAX_RETRIES)"
-    
-    # Get domain status
-    DOMAIN_STATUS=$(aws opensearch describe-domain --domain-name "$DOMAIN_NAME" 2>&1)
-    
-    if [[ $? -ne 0 ]]; then
-        echo "Error checking domain status:"
-        echo "$DOMAIN_STATUS"
-        
-        # If domain not found after several attempts, it likely failed to create
-        if [[ $RETRY_COUNT -gt 5 ]] && echo "$DOMAIN_STATUS" | grep -q "ResourceNotFoundException"; then
-            handle_error "Domain not found after multiple attempts. Domain creation likely failed."
-        fi
-        
-        echo "Will retry in 60 seconds..."
-    else
-        # Check if domain is no longer processing
-        if echo "$DOMAIN_STATUS" | grep -q '"Processing": false'; then
-            DOMAIN_ACTIVE=true
-            echo "Domain is now active!"
-            break
-        else
-            echo "Domain is still being created. Checking again in 60 seconds..."
-        fi
-    fi
-    
-    sleep 60
-    RETRY_COUNT=$((RETRY_COUNT+1))
-done
-
-# Verify domain is active
-if [[ "$DOMAIN_ACTIVE" != "true" ]]; then
-    echo "Domain creation is taking longer than expected ($((MAX_RETRIES)) minutes)."
-    echo "You can check the status later using:"
-    echo "aws opensearch describe-domain --domain-name $DOMAIN_NAME"
-    handle_error "Domain did not become active within the expected time"
-fi
-
-# Get domain endpoint (matches tutorial)
-echo "Retrieving domain endpoint..."
-DOMAIN_ENDPOINT=$(aws opensearch describe-domain --domain-name "$DOMAIN_NAME" --query 'DomainStatus.Endpoint' --output text)
-
-if [[ $? -ne 0 ]] || [[ -z "$DOMAIN_ENDPOINT" ]] || [[ "$DOMAIN_ENDPOINT" == "None" ]]; then
-    handle_error "Failed to get domain endpoint"
+if [[ -z "$DOMAIN_ENDPOINT" ]] || [[ "$DOMAIN_ENDPOINT" == "None" ]]; then
+    handle_error "Failed to get domain endpoint from CloudFormation outputs"
 fi
 
 echo "Domain endpoint: $DOMAIN_ENDPOINT"
 
-# Wait additional time for fine-grained access control to be fully ready
-echo "Domain is active, but waiting additional time for fine-grained access control to be fully ready..."
-echo "Fine-grained access control can take several minutes to initialize after domain becomes active."
-echo "Waiting 8 minutes for full initialization..."
-sleep 480  # Wait 8 minutes for fine-grained access control to be ready
+# Wait for fine-grained access control to be fully ready
+echo "Waiting for fine-grained access control to initialize..."
+sleep 120
 
 # Verify variables are set correctly (matches tutorial)
 echo "Verifying configuration..."
@@ -534,21 +473,22 @@ CLEANUP_CHOICE="y"
 
 if [[ "${CLEANUP_CHOICE,,}" == "y" ]]; then
     echo "Cleaning up resources..."
-    aws opensearch delete-domain --domain-name "$DOMAIN_NAME"
-    echo "✓ Cleanup initiated. Domain deletion may take several minutes to complete."
-    echo ""
-    echo "You can check the deletion status using:"
-    echo "aws opensearch describe-domain --domain-name $DOMAIN_NAME"
-    echo ""
-    echo "When deletion is complete, you'll see a 'Domain not found' error."
+    if [ -n "${STACK_NAME:-}" ]; then
+        echo "Deleting CloudFormation stack $STACK_NAME..."
+        aws cloudformation delete-stack --stack-name "$STACK_NAME"
+        echo "✓ Stack deletion initiated. This may take several minutes."
+        echo "  Monitor: aws cloudformation describe-stacks --stack-name $STACK_NAME"
+    else
+        aws opensearch delete-domain --domain-name "$DOMAIN_NAME" 2>/dev/null
+        echo "✓ Domain deletion initiated."
+    fi
 else
     echo "Resources will NOT be deleted automatically."
     echo ""
-    echo "To delete the domain later, use:"
-    echo "aws opensearch delete-domain --domain-name $DOMAIN_NAME"
+    echo "To delete later:"
+    echo "  aws cloudformation delete-stack --stack-name ${STACK_NAME:-tutorial-opensearch-XXXX}"
     echo ""
     echo "⚠ IMPORTANT: Keeping these resources will incur ongoing AWS charges!"
-    echo "   Estimated cost: ~$0.038/hour (~$0.91/day)"
 fi
 
 # Clean up temporary files (handled by trap)

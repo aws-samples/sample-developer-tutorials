@@ -55,7 +55,12 @@ handle_error() {
 cleanup_resources() {
     echo "Cleaning up resources..."
     
-    if [ -n "${BROKER_ID:-}" ]; then
+    # Prefer CloudFormation stack deletion (handles broker + dependencies)
+    if [ -n "${STACK_NAME:-}" ]; then
+        echo "Deleting CloudFormation stack: $STACK_NAME"
+        aws cloudformation delete-stack --stack-name "$STACK_NAME" 2>/dev/null
+        echo "Stack deletion initiated."
+    elif [ -n "${BROKER_ID:-}" ]; then
         echo "Deleting Amazon MQ broker: $BROKER_ID"
         if ! aws mq delete-broker --broker-id "$BROKER_ID" 2>/dev/null; then
             echo "Warning: Failed to delete broker or broker already deleted"
@@ -132,64 +137,34 @@ echo "Creating Amazon MQ broker: $BROKER_NAME"
 echo "WARNING: Broker is being created with public accessibility for tutorial purposes only"
 echo "In production, use private subnets and proper network controls"
 
-BROKER_RESULT=$(aws mq create-broker \
-  --broker-name "$BROKER_NAME" \
-  --engine-type ACTIVEMQ \
-  --engine-version 5.18 \
-  --host-instance-type mq.t3.micro \
-  --deployment-mode SINGLE_INSTANCE \
-  --authentication-strategy SIMPLE \
-  --users "Username=$MQ_USERNAME,Password=$MQ_PASSWORD,ConsoleAccess=true" \
-  --publicly-accessible \
-  --auto-minor-version-upgrade \
-  --storage-type EFS \
-  --tags project=doc-smith,tutorial=amazon-mq-gs \
-  2>&1)
+# Deploy via CloudFormation (handles the 15-20 min creation wait)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+STACK_NAME="tutorial-mq-${RANDOM_ID}"
 
-# Check for errors
-if echo "$BROKER_RESULT" | grep -i "error" > /dev/null; then
-    handle_error "Failed to create broker: $BROKER_RESULT"
-fi
+echo "Deploying broker via CloudFormation. This typically takes 15-20 minutes..."
+aws cloudformation deploy \
+  --template-file "$SCRIPT_DIR/cfn-mq-broker.yaml" \
+  --stack-name "$STACK_NAME" \
+  --parameter-overrides \
+    BrokerName="$BROKER_NAME" \
+    MQUsername="$MQ_USERNAME" \
+    MQPassword="$MQ_PASSWORD" \
+  --tags project=doc-smith tutorial=amazon-mq-gs \
+  --no-fail-on-empty-changeset 2>&1 || handle_error "CloudFormation stack creation failed"
 
-# Extract broker ID using jq for safer parsing
-BROKER_ID=$(echo "$BROKER_RESULT" | jq -r '.BrokerId // empty')
+echo "Broker created successfully via CloudFormation."
+
+# Extract broker ID from stack
+BROKER_ID=$(aws cloudformation describe-stacks \
+  --stack-name "$STACK_NAME" \
+  --query 'Stacks[0].Outputs[?OutputKey==`BrokerId`].OutputValue' \
+  --output text)
+
 if [ -z "$BROKER_ID" ]; then
-    handle_error "Failed to extract broker ID from response"
+    handle_error "Failed to extract broker ID from CloudFormation outputs"
 fi
 
-echo "Broker creation initiated. Broker ID: $BROKER_ID"
-
-# Step 3: Wait for the broker to be in RUNNING state
-echo "Waiting for broker to be in RUNNING state. This may take 15-20 minutes..."
-MAX_ATTEMPTS=120
-ATTEMPT=0
-
-while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
-    BROKER_STATE=$(aws mq describe-broker --broker-id "$BROKER_ID" --query 'BrokerState' --output text 2>&1)
-    
-    if echo "$BROKER_STATE" | grep -i "error" > /dev/null; then
-        handle_error "Error checking broker state: $BROKER_STATE"
-    fi
-    
-    echo "Current broker state: $BROKER_STATE (Attempt $((ATTEMPT + 1))/$MAX_ATTEMPTS)"
-    
-    if [ "$BROKER_STATE" == "RUNNING" ]; then
-        echo "Broker is now in RUNNING state"
-        break
-    elif [ "$BROKER_STATE" == "CREATION_FAILED" ]; then
-        handle_error "Broker creation failed"
-    fi
-    
-    ATTEMPT=$((ATTEMPT + 1))
-    if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
-        echo "Waiting 60 seconds before checking again..."
-        sleep 60
-    fi
-done
-
-if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
-    handle_error "Broker did not reach RUNNING state within expected time"
-fi
+echo "Broker ID: $BROKER_ID"
 
 # Step 4: Get broker connection details
 echo "Retrieving broker connection details..."

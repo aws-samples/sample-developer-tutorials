@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: OpenSearch domain for the Getting Started tutorial
+
+Parameters:
+  DomainName:
+    Type: String
+    Description: Name for the OpenSearch domain
+  MasterUserName:
+    Type: String
+    Default: admin
+  MasterUserPassword:
+    Type: String
+    NoEcho: true
+
+Resources:
+  OpenSearchDomain:
+    Type: AWS::OpenSearchService::Domain
+    Properties:
+      DomainName: !Ref DomainName
+      EngineVersion: OpenSearch_2.11
+      ClusterConfig:
+        InstanceType: t3.small.search
+        InstanceCount: 1
+        ZoneAwarenessEnabled: false
+      EBSOptions:
+        EBSEnabled: true
+        VolumeType: gp3
+        VolumeSize: 10
+      NodeToNodeEncryptionOptions:
+        Enabled: true
+      EncryptionAtRestOptions:
+        Enabled: true
+      DomainEndpointOptions:
+        EnforceHTTPS: true
+        TLSSecurityPolicy: Policy-Min-TLS-1-2-2019-07
+      AdvancedSecurityOptions:
+        Enabled: true
+        InternalUserDatabaseEnabled: true
+        MasterUserOptions:
+          MasterUserName: !Ref MasterUserName
+          MasterUserPassword: !Ref MasterUserPassword
+      AccessPolicies:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action:
+              - 'es:ESHttpGet'
+              - 'es:ESHttpPut'
+              - 'es:ESHttpPost'
+              - 'es:ESHttpDelete'
+              - 'es:ESHttpHead'
+            Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${DomainName}/*'
+      Tags:
+        - Key: project
+          Value: doc-smith
+        - Key: tutorial
+          Value: opensearch-service-gs
+
+Outputs:
+  DomainEndpoint:
+    Value: !GetAtt OpenSearchDomain.DomainEndpoint
+  DomainArn:
+    Value: !GetAtt OpenSearchDomain.Arn
