@@ -383,6 +383,8 @@ fi
 
 # Track the created policy
 track_resource "IAM_POLICY" "$POLICY_ARN"
+aws iam tag-policy --policy-arn "$POLICY_ARN" \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-systems-manager-gs
 
 echo "Created policy: $POLICY_ARN" | tee -a "$LOG_FILE"
 
@@ -450,6 +452,8 @@ fi
 
 # Track the created role
 track_resource "IAM_ROLE" "$ROLE_NAME"
+aws iam tag-role --role-name "$ROLE_NAME" \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-systems-manager-gs
 
 echo "Created IAM role: $ROLE_NAME" | tee -a "$LOG_FILE"
 echo "Role ARN: $ROLE_ARN" | tee -a "$LOG_FILE"

@@ -130,6 +130,7 @@ ADMIN_ROLE_OUTPUT=$(aws iam create-role \
 
 check_error "$ADMIN_ROLE_OUTPUT" "create-role for admin"
 echo "$ADMIN_ROLE_OUTPUT"
+aws iam tag-role --role-name "$ADMIN_ROLE_NAME" --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-secrets-manager-gs
 
 # Attach the SecretsManagerReadWrite policy to the admin role
 echo "Attaching SecretsManagerReadWrite policy to admin role"
@@ -148,6 +149,7 @@ RUNTIME_ROLE_OUTPUT=$(aws iam create-role \
 
 check_error "$RUNTIME_ROLE_OUTPUT" "create-role for runtime"
 echo "$RUNTIME_ROLE_OUTPUT"
+aws iam tag-role --role-name "$RUNTIME_ROLE_NAME" --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-secrets-manager-gs
 
 # Wait for roles to be fully created
 echo "Waiting for IAM roles to be fully created..."
@@ -168,7 +170,8 @@ CREATE_SECRET_OUTPUT=$(aws secretsmanager create-secret \
     --name "$SECRET_NAME" \
     --description "API key for my application" \
     --secret-string "$SECRET_VALUE" \
-    --add-replica-regions 'Region=us-east-1' 2>&1)
+    --add-replica-regions 'Region=us-east-1' \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-secrets-manager-gs 2>&1)
 
 check_error "$CREATE_SECRET_OUTPUT" "create-secret"
 echo "$CREATE_SECRET_OUTPUT"

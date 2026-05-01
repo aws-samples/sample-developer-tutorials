@@ -155,6 +155,7 @@ log "Creating security group..."
 SECURITY_GROUP_ID=$(aws ec2 create-security-group \
   --group-name "$SG_NAME" \
   --description "Security group for EC2 tutorial" \
+  --tag-specifications 'ResourceType=security-group,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=ec2-basics}]' \
   --query "GroupId" \
   --output text)
 
@@ -224,6 +225,7 @@ INSTANCE_ID=$(aws ec2 run-instances \
   --security-group-ids "$SECURITY_GROUP_ID" \
   --metadata-options "HttpTokens=required,HttpEndpoint=enabled" \
   --block-device-mappings "DeviceName=/dev/xvda,Ebs={Encrypted=true}" \
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=ec2-basics}]' 'ResourceType=volume,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=ec2-basics}]' \
   --count 1 \
   --query 'Instances[0].InstanceId' \
   --output text)
@@ -306,6 +308,7 @@ log "To connect to your instance, run: ssh -i $KEY_FILE ec2-user@$NEW_PUBLIC_IP"
 log "Allocating Elastic IP address..."
 ALLOCATION_RESULT=$(aws ec2 allocate-address \
   --domain vpc \
+  --tag-specifications 'ResourceType=elastic-ip,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=ec2-basics}]' \
   --query '[PublicIp,AllocationId]' \
   --output text)
 

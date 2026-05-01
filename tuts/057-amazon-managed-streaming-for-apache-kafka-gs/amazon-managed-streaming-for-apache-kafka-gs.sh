@@ -330,7 +330,8 @@ CLUSTER_RESPONSE=$(aws kafka create-cluster \
     --broker-node-group-info "{\"InstanceType\": \"kafka.t3.small\", \"ClientSubnets\": [\"${SUBNET_ARRAY[0]}\", \"${SUBNET_ARRAY[1]}\", \"${SUBNET_ARRAY[2]}\"], \"SecurityGroups\": [\"$DEFAULT_SG\"]}" \
     --kafka-version "3.6.0" \
     --number-of-broker-nodes 3 \
-    --encryption-info "{\"EncryptionInTransit\": {\"InCluster\": true, \"ClientBroker\": \"TLS\"}}" 2>&1)
+    --encryption-info "{\"EncryptionInTransit\": {\"InCluster\": true, \"ClientBroker\": \"TLS\"}}" \
+    --tags project=doc-smith,tutorial=amazon-managed-streaming-for-apache-kafka-gs 2>&1)
 
 # Check if the command was successful
 if [ $? -ne 0 ]; then
@@ -444,6 +445,9 @@ if [ -z "$POLICY_ARN" ]; then
     handle_error "Failed to extract policy ARN from response: $POLICY_RESPONSE"
 fi
 
+aws iam tag-policy --policy-arn "$POLICY_ARN" \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=amazon-managed-streaming-for-apache-kafka-gs
+
 echo "IAM policy created. ARN: $POLICY_ARN"
 
 # Create IAM role for EC2
@@ -460,6 +464,8 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "IAM role created: $ROLE_NAME"
+aws iam tag-role --role-name "$ROLE_NAME" \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=amazon-managed-streaming-for-apache-kafka-gs
 
 # Attach policy to role
 echo "Attaching policy to role"
@@ -545,7 +551,8 @@ echo "Creating security group for client: $SG_NAME"
 CLIENT_SG_RESPONSE=$(aws ec2 create-security-group \
     --group-name "$SG_NAME" \
     --description "Security group for MSK client" \
-    --vpc-id "$DEFAULT_VPC_ID" 2>&1)
+    --vpc-id "$DEFAULT_VPC_ID" \
+    --tag-specifications 'ResourceType=security-group,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=amazon-managed-streaming-for-apache-kafka-gs}]' 2>&1)
 
 # Check if the command was successful
 if [ $? -ne 0 ]; then
@@ -606,7 +613,7 @@ echo "Ingress rule added to MSK security group"
 # Create key pair
 KEY_NAME="MSKKeyPair-${RANDOM_SUFFIX}"
 echo "Creating key pair: $KEY_NAME"
-KEY_RESPONSE=$(aws ec2 create-key-pair --key-name "$KEY_NAME" --query 'KeyMaterial' --output text 2>&1)
+KEY_RESPONSE=$(aws ec2 create-key-pair --key-name "$KEY_NAME" --tag-specifications 'ResourceType=key-pair,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=amazon-managed-streaming-for-apache-kafka-gs}]' --query 'KeyMaterial' --output text 2>&1)
 
 # Check if the command was successful
 if [ $? -ne 0 ]; then
@@ -646,7 +653,7 @@ INSTANCE_RESPONSE=$(aws ec2 run-instances \
     --security-group-ids "$CLIENT_SG_ID" \
     --subnet-id "$SELECTED_SUBNET_ID" \
     --iam-instance-profile "Name=$INSTANCE_PROFILE_NAME" \
-    --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=MSKTutorialClient-${RANDOM_SUFFIX}}]" 2>&1)
+    --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=MSKTutorialClient-${RANDOM_SUFFIX}},{Key=project,Value=doc-smith},{Key=tutorial,Value=amazon-managed-streaming-for-apache-kafka-gs}]" 2>&1)
 
 # Check if the command was successful
 if [ $? -ne 0 ]; then

@@ -93,6 +93,8 @@ ROLE_OUTPUT=$(aws iam create-role \
   --description "Role for Amazon Managed Grafana workspace")
 
 check_error "$ROLE_OUTPUT" "create-role"
+aws iam tag-role --role-name "$ROLE_NAME" \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=amazon-managed-grafana-gs
 echo "IAM role created successfully"
 
 # Extract role ARN
@@ -149,7 +151,7 @@ WORKSPACE_OUTPUT=$(aws grafana create-workspace \
   --workspace-role-arn "$ROLE_ARN" \
   --workspace-data-sources "CLOUDWATCH" "PROMETHEUS" "XRAY" \
   --grafana-version "10.4" \
-  --tags Environment=Development)
+  --tags Environment=Development,project=doc-smith,tutorial=amazon-managed-grafana-gs)
 
 check_error "$WORKSPACE_OUTPUT" "create-workspace"
 

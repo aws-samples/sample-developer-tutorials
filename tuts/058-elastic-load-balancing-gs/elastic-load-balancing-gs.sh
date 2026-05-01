@@ -143,6 +143,7 @@ SG_INFO=$(aws ec2 create-security-group \
     --group-name "${RESOURCE_PREFIX}-sg" \
     --description "Security group for ELB demo" \
     --vpc-id "$VPC_ID" \
+    --tag-specifications 'ResourceType=security-group,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=elastic-load-balancing-gs}]' \
     --query "GroupId" --output text 2>/dev/null || echo "")
 check_command "$SG_INFO"
 SECURITY_GROUP_ID="$SG_INFO"
@@ -165,6 +166,7 @@ LB_INFO=$(aws elbv2 create-load-balancer \
     --name "${RESOURCE_PREFIX}-lb" \
     --subnets "${SUBNETS[0]}" "${SUBNETS[1]}" \
     --security-groups "$SECURITY_GROUP_ID" \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=elastic-load-balancing-gs \
     --query "LoadBalancers[0].LoadBalancerArn" --output text 2>/dev/null || echo "")
 check_command "$LB_INFO"
 LOAD_BALANCER_ARN="$LB_INFO"
@@ -185,6 +187,7 @@ TG_INFO=$(aws elbv2 create-target-group \
     --port 80 \
     --vpc-id "$VPC_ID" \
     --target-type instance \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=elastic-load-balancing-gs \
     --query "TargetGroups[0].TargetGroupArn" --output text 2>/dev/null || echo "")
 check_command "$TG_INFO"
 TARGET_GROUP_ARN="$TG_INFO"
@@ -231,6 +234,7 @@ LISTENER_INFO=$(aws elbv2 create-listener \
     --protocol HTTP \
     --port 80 \
     --default-actions Type=forward,TargetGroupArn="$TARGET_GROUP_ARN" \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=elastic-load-balancing-gs \
     --query "Listeners[0].ListenerArn" --output text 2>/dev/null || echo "")
 check_command "$LISTENER_INFO"
 LISTENER_ARN="$LISTENER_INFO"

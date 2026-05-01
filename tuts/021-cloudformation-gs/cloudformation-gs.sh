@@ -284,6 +284,7 @@ if ! CREATE_RESULT=$(aws cloudformation create-stack \
     ParameterKey=InstanceType,ParameterValue=t2.micro \
     ParameterKey=MyIP,ParameterValue="$MY_IP_CIDR" \
   --capabilities CAPABILITY_IAM \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=cloudformation-gs \
   --region "$AWS_REGION" \
   --output text 2>&1); then
     handle_error "Stack creation failed: $CREATE_RESULT"

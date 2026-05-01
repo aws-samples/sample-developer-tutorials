@@ -161,7 +161,13 @@ EOF
 
 # Upload the lexicon
 echo "Uploading lexicon..." | tee -a "$LOG_FILE"
-log_cmd "aws polly put-lexicon --name '$LEXICON_NAME' --content file://'$LEXICON_FILE'" || true
+LEXICON_ARN=$(aws polly put-lexicon --name "$LEXICON_NAME" --content file://"$LEXICON_FILE" --query 'LexiconArn' --output text 2>&1) || true
+if [[ -n "$LEXICON_ARN" && "$LEXICON_ARN" != "" && ! "$LEXICON_ARN" =~ error ]]; then
+    echo "Lexicon uploaded with ARN: $LEXICON_ARN" | tee -a "$LOG_FILE"
+    aws polly tag-resource --resource-arn "$LEXICON_ARN" --tags Key=project,Value=doc-smith Key=tutorial,Value=amazon-polly-gs 2>&1 | tee -a "$LOG_FILE" || true
+else
+    echo "Lexicon uploaded." | tee -a "$LOG_FILE"
+fi
 
 # List available lexicons
 echo "Listing available lexicons..." | tee -a "$LOG_FILE"

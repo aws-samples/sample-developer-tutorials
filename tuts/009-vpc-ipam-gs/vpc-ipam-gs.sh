@@ -179,7 +179,8 @@ wait_for_cidr_provisioning() {
 echo "Creating IPAM..."
 IPAM_RESULT=$(aws ec2 create-ipam \
     --description "My IPAM" \
-    --operating-regions RegionName=us-east-1 RegionName=us-west-2)
+    --operating-regions RegionName=us-east-1 RegionName=us-west-2 \
+    --tag-specifications 'ResourceType=ipam,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-ipam-gs}]')
 
 if [ $? -ne 0 ]; then
     handle_error "Failed to create IPAM"
@@ -213,7 +214,8 @@ echo "Creating Top-level IPv4 Pool..."
 TOP_POOL_RESULT=$(aws ec2 create-ipam-pool \
     --ipam-scope-id "$PRIVATE_SCOPE_ID" \
     --address-family ipv4 \
-    --description "Top-level pool")
+    --description "Top-level pool" \
+    --tag-specifications 'ResourceType=ipam-pool,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-ipam-gs}]')
 
 if [ $? -ne 0 ]; then
     handle_error "Failed to create Top-level Pool"
@@ -252,7 +254,8 @@ REGIONAL_POOL_RESULT=$(aws ec2 create-ipam-pool \
     --source-ipam-pool-id "$TOP_POOL_ID" \
     --locale us-east-1 \
     --address-family ipv4 \
-    --description "Regional pool in us-east-1")
+    --description "Regional pool in us-east-1" \
+    --tag-specifications 'ResourceType=ipam-pool,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-ipam-gs}]')
 
 if [ $? -ne 0 ]; then
     handle_error "Failed to create Regional Pool"
@@ -291,7 +294,8 @@ DEV_POOL_RESULT=$(aws ec2 create-ipam-pool \
     --source-ipam-pool-id "$REGIONAL_POOL_ID" \
     --locale us-east-1 \
     --address-family ipv4 \
-    --description "Development pool")
+    --description "Development pool" \
+    --tag-specifications 'ResourceType=ipam-pool,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-ipam-gs}]')
 
 if [ $? -ne 0 ]; then
     handle_error "Failed to create Development Pool"
@@ -328,7 +332,7 @@ echo "Creating VPC using IPAM Pool CIDR..."
 VPC_RESULT=$(aws ec2 create-vpc \
     --ipv4-ipam-pool-id "$DEV_POOL_ID" \
     --ipv4-netmask-length 26 \
-    --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=IPAM-VPC}]')
+    --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=IPAM-VPC},{Key=project,Value=doc-smith},{Key=tutorial,Value=vpc-ipam-gs}]')
 
 if [ $? -ne 0 ]; then
     handle_error "Failed to create VPC"

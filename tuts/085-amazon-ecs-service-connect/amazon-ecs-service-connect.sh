@@ -130,7 +130,8 @@ setup_default_vpc_infrastructure() {
     SG_OUTPUT=$(aws ec2 create-security-group \
         --group-name "${ENV_PREFIX}-ecs-sg-${RANDOM_SUFFIX}" \
         --description "Security group for ECS Service Connect tutorial" \
-        --vpc-id "$VPC_ID" 2>&1)
+        --vpc-id "$VPC_ID" \
+        --tag-specifications 'ResourceType=security-group,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=amazon-ecs-service-connect}]' 2>&1)
     check_for_errors "$SG_OUTPUT" "create-security-group"
     SECURITY_GROUP_ID=$(echo "$SG_OUTPUT" | grep -o '"GroupId": "[^"]*"' | cut -d'"' -f4)
     track_resource "SG:$SECURITY_GROUP_ID"
@@ -157,7 +158,7 @@ create_log_groups() {
     log "Creating CloudWatch log groups..."
     
     # Create log group for nginx container
-    aws logs create-log-group --log-group-name "/ecs/service-connect-nginx" 2>&1 | grep -v "ResourceAlreadyExistsException" || {
+    aws logs create-log-group --log-group-name "/ecs/service-connect-nginx" --tags project=doc-smith,tutorial=amazon-ecs-service-connect 2>&1 | grep -v "ResourceAlreadyExistsException" || {
         if [ ${PIPESTATUS[0]} -eq 0 ]; then
             log "Log group /ecs/service-connect-nginx created"
             track_resource "LOG_GROUP:/ecs/service-connect-nginx"
@@ -167,7 +168,7 @@ create_log_groups() {
     }
     
     # Create log group for service connect proxy
-    aws logs create-log-group --log-group-name "/ecs/service-connect-proxy" 2>&1 | grep -v "ResourceAlreadyExistsException" || {
+    aws logs create-log-group --log-group-name "/ecs/service-connect-proxy" --tags project=doc-smith,tutorial=amazon-ecs-service-connect 2>&1 | grep -v "ResourceAlreadyExistsException" || {
         if [ ${PIPESTATUS[0]} -eq 0 ]; then
             log "Log group /ecs/service-connect-proxy created"
             track_resource "LOG_GROUP:/ecs/service-connect-proxy"
@@ -184,7 +185,7 @@ create_ecs_cluster() {
     CLUSTER_OUTPUT=$(aws ecs create-cluster \
         --cluster-name "$CLUSTER_NAME" \
         --service-connect-defaults namespace="$NAMESPACE_NAME" \
-        --tags key=Environment,value=tutorial 2>&1)
+        --tags key=Environment,value=tutorial key=project,value=doc-smith key=tutorial,value=amazon-ecs-service-connect 2>&1)
     check_for_errors "$CLUSTER_OUTPUT" "create-cluster"
     
     track_resource "CLUSTER:$CLUSTER_NAME"
@@ -228,6 +229,7 @@ create_iam_roles() {
             --role-name ecsTaskExecutionRole \
             --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy >/dev/null 2>&1
         track_resource "ROLE:ecsTaskExecutionRole"
+        aws iam tag-role --role-name ecsTaskExecutionRole --tags Key=project,Value=doc-smith Key=tutorial,Value=amazon-ecs-service-connect
         log "Created ecsTaskExecutionRole"
         sleep 10
     fi
@@ -259,6 +261,7 @@ EOF
             --assume-role-policy-document file:///tmp/ecs-task-trust-policy.json >/dev/null
         
         track_resource "IAM_ROLE:ecsTaskRole"
+        aws iam tag-role --role-name ecsTaskRole --tags Key=project,Value=doc-smith Key=tutorial,Value=amazon-ecs-service-connect
         log "Created ecsTaskRole"
         
         # Wait for role to be available
@@ -363,6 +366,14 @@ create_ecs_service() {
         {
             "key": "Environment",
             "value": "tutorial"
+        },
+        {
+            "key": "project",
+            "value": "doc-smith"
+        },
+        {
+            "key": "tutorial",
+            "value": "amazon-ecs-service-connect"
         }
     ]
 }

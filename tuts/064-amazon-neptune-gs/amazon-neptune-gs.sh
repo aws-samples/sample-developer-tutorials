@@ -83,7 +83,7 @@ echo "Security Group Name: $SG_NAME" | tee -a "$LOG_FILE"
 
 # Step 1: Create VPC
 echo "Creating VPC..." | tee -a "$LOG_FILE"
-VPC_OUTPUT=$(aws ec2 create-vpc --cidr-block 10.0.0.0/16 --tag-specifications "ResourceType=vpc,Tags=[{Key=Name,Value=$VPC_NAME}]" --output json)
+VPC_OUTPUT=$(aws ec2 create-vpc --cidr-block 10.0.0.0/16 --tag-specifications "ResourceType=vpc,Tags=[{Key=Name,Value=$VPC_NAME},{Key=project,Value=doc-smith},{Key=tutorial,Value=amazon-neptune-gs}]" --output json)
 check_error "$VPC_OUTPUT" $? "Failed to create VPC"
 
 VPC_ID=$(echo "$VPC_OUTPUT" | grep -o '"VpcId": "[^"]*' | cut -d'"' -f4)
@@ -95,7 +95,7 @@ log_cmd "aws ec2 modify-vpc-attribute --vpc-id $VPC_ID --enable-dns-hostnames"
 
 # Step 2: Create Internet Gateway and attach to VPC
 echo "Creating Internet Gateway..." | tee -a "$LOG_FILE"
-IGW_OUTPUT=$(aws ec2 create-internet-gateway --output json)
+IGW_OUTPUT=$(aws ec2 create-internet-gateway --tag-specifications 'ResourceType=internet-gateway,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=amazon-neptune-gs}]' --output json)
 check_error "$IGW_OUTPUT" $? "Failed to create Internet Gateway"
 
 IGW_ID=$(echo "$IGW_OUTPUT" | grep -o '"InternetGatewayId": "[^"]*' | cut -d'"' -f4)
@@ -116,15 +116,15 @@ AZ2=$(echo "$AZ_OUTPUT" | grep -o '"ZoneName": "[^"]*' | cut -d'"' -f4 | head -2
 AZ3=$(echo "$AZ_OUTPUT" | grep -o '"ZoneName": "[^"]*' | cut -d'"' -f4 | head -3 | tail -1)
 
 # Create 3 subnets in different AZs
-SUBNET1_OUTPUT=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block 10.0.1.0/24 --availability-zone $AZ1 --output json)
+SUBNET1_OUTPUT=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block 10.0.1.0/24 --availability-zone $AZ1 --tag-specifications 'ResourceType=subnet,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=amazon-neptune-gs}]' --output json)
 check_error "$SUBNET1_OUTPUT" $? "Failed to create subnet 1"
 SUBNET1_ID=$(echo "$SUBNET1_OUTPUT" | grep -o '"SubnetId": "[^"]*' | cut -d'"' -f4)
 
-SUBNET2_OUTPUT=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block 10.0.2.0/24 --availability-zone $AZ2 --output json)
+SUBNET2_OUTPUT=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block 10.0.2.0/24 --availability-zone $AZ2 --tag-specifications 'ResourceType=subnet,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=amazon-neptune-gs}]' --output json)
 check_error "$SUBNET2_OUTPUT" $? "Failed to create subnet 2"
 SUBNET2_ID=$(echo "$SUBNET2_OUTPUT" | grep -o '"SubnetId": "[^"]*' | cut -d'"' -f4)
 
-SUBNET3_OUTPUT=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block 10.0.3.0/24 --availability-zone $AZ3 --output json)
+SUBNET3_OUTPUT=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block 10.0.3.0/24 --availability-zone $AZ3 --tag-specifications 'ResourceType=subnet,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=amazon-neptune-gs}]' --output json)
 check_error "$SUBNET3_OUTPUT" $? "Failed to create subnet 3"
 SUBNET3_ID=$(echo "$SUBNET3_OUTPUT" | grep -o '"SubnetId": "[^"]*' | cut -d'"' -f4)
 
@@ -133,7 +133,7 @@ echo "Created subnets: $SUBNET1_ID, $SUBNET2_ID, $SUBNET3_ID" | tee -a "$LOG_FIL
 
 # Step 4: Create route table and add route to Internet Gateway
 echo "Creating route table..." | tee -a "$LOG_FILE"
-ROUTE_TABLE_OUTPUT=$(aws ec2 create-route-table --vpc-id $VPC_ID --output json)
+ROUTE_TABLE_OUTPUT=$(aws ec2 create-route-table --vpc-id $VPC_ID --tag-specifications 'ResourceType=route-table,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=amazon-neptune-gs}]' --output json)
 check_error "$ROUTE_TABLE_OUTPUT" $? "Failed to create route table"
 
 ROUTE_TABLE_ID=$(echo "$ROUTE_TABLE_OUTPUT" | grep -o '"RouteTableId": "[^"]*' | cut -d'"' -f4)
@@ -149,7 +149,7 @@ log_cmd "aws ec2 associate-route-table --route-table-id $ROUTE_TABLE_ID --subnet
 
 # Step 5: Create security group
 echo "Creating security group..." | tee -a "$LOG_FILE"
-SG_OUTPUT=$(aws ec2 create-security-group --group-name $SG_NAME --description "Security group for Neptune" --vpc-id $VPC_ID --output json)
+SG_OUTPUT=$(aws ec2 create-security-group --group-name $SG_NAME --description "Security group for Neptune" --vpc-id $VPC_ID --tag-specifications 'ResourceType=security-group,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=amazon-neptune-gs}]' --output json)
 check_error "$SG_OUTPUT" $? "Failed to create security group"
 
 SECURITY_GROUP_ID=$(echo "$SG_OUTPUT" | grep -o '"GroupId": "[^"]*' | cut -d'"' -f4)
@@ -162,19 +162,19 @@ log_cmd "aws ec2 authorize-security-group-ingress --group-id $SECURITY_GROUP_ID 
 
 # Step 6: Create DB subnet group
 echo "Creating DB subnet group..." | tee -a "$LOG_FILE"
-DB_SUBNET_GROUP_OUTPUT=$(aws neptune create-db-subnet-group --db-subnet-group-name $DB_SUBNET_GROUP --db-subnet-group-description "Subnet group for Neptune" --subnet-ids $SUBNET1_ID $SUBNET2_ID $SUBNET3_ID --output json)
+DB_SUBNET_GROUP_OUTPUT=$(aws neptune create-db-subnet-group --db-subnet-group-name $DB_SUBNET_GROUP --db-subnet-group-description "Subnet group for Neptune" --subnet-ids $SUBNET1_ID $SUBNET2_ID $SUBNET3_ID --tags Key=project,Value=doc-smith Key=tutorial,Value=amazon-neptune-gs --output json)
 check_error "$DB_SUBNET_GROUP_OUTPUT" $? "Failed to create DB subnet group"
 echo "DB subnet group created: $DB_SUBNET_GROUP" | tee -a "$LOG_FILE"
 
 # Step 7: Create Neptune DB cluster
 echo "Creating Neptune DB cluster..." | tee -a "$LOG_FILE"
-DB_CLUSTER_OUTPUT=$(aws neptune create-db-cluster --db-cluster-identifier $DB_CLUSTER_ID --engine neptune --vpc-security-group-ids $SECURITY_GROUP_ID --db-subnet-group-name $DB_SUBNET_GROUP --output json)
+DB_CLUSTER_OUTPUT=$(aws neptune create-db-cluster --db-cluster-identifier $DB_CLUSTER_ID --engine neptune --vpc-security-group-ids $SECURITY_GROUP_ID --db-subnet-group-name $DB_SUBNET_GROUP --tags Key=project,Value=doc-smith Key=tutorial,Value=amazon-neptune-gs --output json)
 check_error "$DB_CLUSTER_OUTPUT" $? "Failed to create Neptune DB cluster"
 echo "Neptune DB cluster created: $DB_CLUSTER_ID" | tee -a "$LOG_FILE"
 
 # Step 8: Create Neptune DB instance
 echo "Creating Neptune DB instance..." | tee -a "$LOG_FILE"
-DB_INSTANCE_OUTPUT=$(aws neptune create-db-instance --db-instance-identifier $DB_INSTANCE_ID --db-instance-class db.r5.large --engine neptune --db-cluster-identifier $DB_CLUSTER_ID --output json)
+DB_INSTANCE_OUTPUT=$(aws neptune create-db-instance --db-instance-identifier $DB_INSTANCE_ID --db-instance-class db.r5.large --engine neptune --db-cluster-identifier $DB_CLUSTER_ID --tags Key=project,Value=doc-smith Key=tutorial,Value=amazon-neptune-gs --output json)
 check_error "$DB_INSTANCE_OUTPUT" $? "Failed to create Neptune DB instance"
 echo "Neptune DB instance created: $DB_INSTANCE_ID" | tee -a "$LOG_FILE"
 

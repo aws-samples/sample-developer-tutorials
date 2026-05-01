@@ -265,6 +265,10 @@ ROLE_ARN="$ROLE_OUTPUT"
 CREATED_RESOURCES+=("iam-role:${ROLE_NAME}")
 echo "Role ARN: ${ROLE_ARN}"
 
+aws iam tag-role \
+    --role-name "$ROLE_NAME" \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=lambda-gettingstarted
+
 echo ""
 echo "Attaching AWSLambdaBasicExecutionRole policy..."
 aws iam attach-role-policy \
@@ -313,6 +317,7 @@ CREATE_OUTPUT=$(aws lambda create-function \
     --handler "$HANDLER" \
     --architectures x86_64 \
     --zip-file "fileb://${TEMP_DIR}/function.zip" \
+    --tags project=doc-smith,tutorial=lambda-gettingstarted \
     --query '[FunctionName, FunctionArn, Runtime, State]' \
     --output text 2>&1)
 
@@ -418,6 +423,10 @@ else
 fi
 
 CREATED_RESOURCES+=("log-group:${LOG_GROUP_NAME}")
+
+aws logs tag-log-group \
+    --log-group-name "$LOG_GROUP_NAME" \
+    --tags project=doc-smith,tutorial=lambda-gettingstarted
 
 ###############################################################################
 # Summary and cleanup

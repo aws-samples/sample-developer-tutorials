@@ -113,6 +113,10 @@ if [ "$BUCKET_IS_SHARED" = false ]; then
     echo "$CREATE_BUCKET_OUTPUT"
     check_error $CREATE_BUCKET_STATUS "$CREATE_BUCKET_OUTPUT" "aws s3 mb s3://$BUCKET_NAME"
     
+    aws s3api put-bucket-tagging \
+        --bucket "$BUCKET_NAME" \
+        --tagging 'TagSet=[{Key=project,Value=doc-smith},{Key=tutorial,Value=amazon-textract-gs}]'
+    
     # Apply security settings to bucket
     aws s3api put-bucket-versioning --bucket "$BUCKET_NAME" --versioning-configuration Status=Enabled 2>&1 || true
     aws s3api put-bucket-encryption --bucket "$BUCKET_NAME" --server-side-encryption-configuration '{"Rules": [{"ApplyServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}]}' 2>&1 || true

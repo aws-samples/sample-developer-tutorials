@@ -205,7 +205,7 @@ echo "Creating application with name: $APP_NAME"
 
 # Step 1: Create an application
 echo "Executing: aws pinpoint create-app --create-application-request Name=${APP_NAME}"
-CREATE_APP_OUTPUT=$(aws pinpoint create-app --create-application-request "Name=${APP_NAME}" 2>&1)
+CREATE_APP_OUTPUT=$(aws pinpoint create-app --create-application-request "Name=${APP_NAME},tags={project=doc-smith,tutorial=aws-end-user-messaging-gs}" 2>&1)
 
 if ! check_error "$CREATE_APP_OUTPUT" "create-app"; then
     exit 1

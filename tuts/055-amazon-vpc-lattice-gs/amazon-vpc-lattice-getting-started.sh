@@ -135,7 +135,7 @@ echo "Random ID for this session: ${RANDOM_ID}" | tee -a "$LOG_FILE"
 echo -e "\n=== Step 1: Creating a VPC Lattice service network ===" | tee -a "$LOG_FILE"
 echo "Creating service network: $SERVICE_NETWORK_NAME" | tee -a "$LOG_FILE"
 
-SERVICE_NETWORK_OUTPUT=$(log_command "aws vpc-lattice create-service-network --name '$SERVICE_NETWORK_NAME' --output json")
+SERVICE_NETWORK_OUTPUT=$(log_command "aws vpc-lattice create-service-network --name '$SERVICE_NETWORK_NAME' --tags Key=project,Value=doc-smith Key=tutorial,Value=amazon-vpc-lattice-gs --output json")
 check_error $?
 
 # Extract the service network ID using jq for safety
@@ -158,7 +158,7 @@ check_error $?
 echo -e "\n=== Step 2: Creating a VPC Lattice service ===" | tee -a "$LOG_FILE"
 echo "Creating service: $SERVICE_NAME" | tee -a "$LOG_FILE"
 
-SERVICE_OUTPUT=$(log_command "aws vpc-lattice create-service --name '$SERVICE_NAME' --output json")
+SERVICE_OUTPUT=$(log_command "aws vpc-lattice create-service --name '$SERVICE_NAME' --tags Key=project,Value=doc-smith Key=tutorial,Value=amazon-vpc-lattice-gs --output json")
 check_error $?
 
 # Extract the service ID using jq for safety

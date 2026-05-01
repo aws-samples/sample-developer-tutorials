@@ -76,9 +76,13 @@ if [ ${#TOPIC_NAME} -gt 256 ]; then
     handle_error "Topic name exceeds maximum length of 256 characters"
 fi
 
-# Step 1: Create an SNS topic with cost optimization: no tags
+# Step 1: Create an SNS topic
 echo "Creating SNS topic: $TOPIC_NAME"
-TOPIC_RESULT=$(aws sns create-topic --name "$TOPIC_NAME" --region "$AWS_REGION" --output json) || handle_error "Failed to create SNS topic"
+TOPIC_RESULT=$(aws sns create-topic \
+    --name "$TOPIC_NAME" \
+    --region "$AWS_REGION" \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=amazon-simple-notification-service-gs \
+    --output json) || handle_error "Failed to create SNS topic"
 
 # Extract the topic ARN using jq for reliable parsing
 TOPIC_ARN=$(echo "$TOPIC_RESULT" | jq -r '.TopicArn // empty') || handle_error "Failed to parse topic result"
@@ -120,6 +124,14 @@ SUBSCRIPTION_ARN=$(echo "$SUBSCRIPTION_RESULT" | jq -r '.SubscriptionArn // empt
 echo "Subscription created: $SUBSCRIPTION_ARN"
 echo "A confirmation email has been sent to $EMAIL_ADDRESS"
 echo ""
+
+# Tag the subscription
+if [ "$SUBSCRIPTION_ARN" != "PendingConfirmation" ] && [ "$SUBSCRIPTION_ARN" != "pending confirmation" ]; then
+    aws sns tag-resource \
+        --resource-arn "$SUBSCRIPTION_ARN" \
+        --tags Key=project,Value=doc-smith Key=tutorial,Value=amazon-simple-notification-service-gs \
+        --region "$AWS_REGION" 2>/dev/null || echo "Warning: Failed to tag subscription"
+fi
 
 # Step 3: List subscriptions to verify
 echo "Listing subscriptions for topic: $TOPIC_ARN"

@@ -137,6 +137,13 @@ create_database() {
         exit 1
     fi
     
+    ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
+    aws glue tag-resource \
+        --resource-arn "arn:aws:glue:${AWS_REGION}:${ACCOUNT_ID}:database/${DB_NAME}" \
+        --tags-to-add Key=project,Value=doc-smith Key=tutorial,Value=glue-gs \
+        --region "$AWS_REGION" \
+        2>/dev/null || true
+    
     DATABASE_CREATED=true
     CREATED_RESOURCES+=("database:$DB_NAME")
     echo "Database $DB_NAME created successfully."
@@ -223,6 +230,7 @@ create_table() {
 
     prepare_table_input
 
+    local TABLE_ARN
     if ! aws glue create-table \
         --database-name "$DB_NAME" \
         --table-input "file://${TABLE_INPUT_FILE}" \
@@ -232,6 +240,12 @@ create_table() {
         rm -f "$TABLE_INPUT_FILE"
         exit 1
     fi
+    
+    aws glue tag-resource \
+        --resource-arn "arn:aws:glue:${AWS_REGION}:${ACCOUNT_ID}:table/${DB_NAME}/${TABLE_NAME}" \
+        --tags-to-add Key=project,Value=doc-smith Key=tutorial,Value=glue-gs \
+        --region "$AWS_REGION" \
+        2>/dev/null || true
     
     CREATED_RESOURCES+=("table:$TABLE_NAME")
     echo "Table $TABLE_NAME created successfully."

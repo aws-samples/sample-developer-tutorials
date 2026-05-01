@@ -111,7 +111,8 @@ fi
 SECRET_RESULT=$(aws secretsmanager create-secret \
   --name "$SECRET_NAME" \
   --description "Amazon MQ broker credentials for $BROKER_NAME" \
-  --secret-string "$CREDENTIALS_JSON" 2>&1)
+  --secret-string "$CREDENTIALS_JSON" \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=amazon-mq-gs 2>&1)
 
 # Check for errors
 if echo "$SECRET_RESULT" | grep -i "error" > /dev/null; then
@@ -142,6 +143,7 @@ BROKER_RESULT=$(aws mq create-broker \
   --publicly-accessible \
   --auto-minor-version-upgrade \
   --storage-type EFS \
+  --tags project=doc-smith,tutorial=amazon-mq-gs \
   2>&1)
 
 # Check for errors

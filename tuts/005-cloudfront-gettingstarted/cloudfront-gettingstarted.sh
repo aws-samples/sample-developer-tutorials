@@ -179,6 +179,8 @@ if [ "$BUCKET_IS_SHARED" != "true" ]; then
         handle_error "Failed to create S3 bucket"
     fi
     
+    aws s3api put-bucket-tagging --bucket "$BUCKET_NAME" --tagging 'TagSet=[{Key=project,Value=doc-smith},{Key=tutorial,Value=cloudfront-gettingstarted}]'
+    
     # Batch bucket configuration calls for efficiency
     aws s3api put-bucket-versioning --bucket "$BUCKET_NAME" --versioning-configuration Status=Enabled &
     aws s3api put-public-access-block \
@@ -334,6 +336,9 @@ fi
 
 echo "Created CloudFront distribution with ID: $DISTRIBUTION_ID"
 echo "CloudFront domain name: $DOMAIN_NAME"
+
+# Tag the CloudFront distribution
+aws cloudfront tag-resource --resource "arn:aws:cloudfront::$ACCOUNT_ID:distribution/$DISTRIBUTION_ID" --tags 'Items=[{Key=project,Value=doc-smith},{Key=tutorial,Value=cloudfront-gettingstarted}]'
 
 # Step 6: Update S3 bucket policy
 echo "Updating S3 bucket policy..."

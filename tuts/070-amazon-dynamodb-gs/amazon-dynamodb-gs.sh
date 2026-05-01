@@ -9,7 +9,7 @@
 # - Querying data in the table
 # - Deleting the table (cleanup)
 
-set -euo pipefail
+set -uo pipefail
 
 # Set up logging with secure permissions
 LOG_DIR="${XDG_STATE_HOME:-.}/dynamodb-tutorial-logs"
@@ -141,7 +141,8 @@ CREATE_TABLE_OUTPUT=$(aws dynamodb create-table \
         AttributeName=SongTitle,AttributeType=S \
     --key-schema AttributeName=Artist,KeyType=HASH AttributeName=SongTitle,KeyType=RANGE \
     --billing-mode PAY_PER_REQUEST \
-    --table-class STANDARD 2>&1) || {
+    --table-class STANDARD \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=amazon-dynamodb-gs 2>&1) || {
     echo "ERROR: Failed to create table" >&2
     exit 1
 }

@@ -156,7 +156,7 @@ if ! python3 -m json.tool trust-policy.json > /dev/null 2>&1; then
     exit 1
 fi
 
-ROLE_OUTPUT=$(log_cmd "aws iam create-role --role-name '$ROLE_NAME' --assume-role-policy-document file://trust-policy.json --output json")
+ROLE_OUTPUT=$(log_cmd "aws iam create-role --role-name '$ROLE_NAME' --assume-role-policy-document file://trust-policy.json --tags Key=project,Value=doc-smith Key=tutorial,Value=cloudwatch-streams --output json")
 check_error "$ROLE_OUTPUT" $? "Failed to create IAM role"
 
 ROLE_ARN=$(echo "$ROLE_OUTPUT" | python3 -c "import sys, json; print(json.load(sys.stdin)['Role']['Arn'])" 2>/dev/null)
@@ -210,12 +210,12 @@ fi
 
 # Create first Lambda function
 echo "Creating first Lambda function: $LAMBDA_FUNCTION1..." | tee -a "$LOG_FILE"
-LAMBDA1_OUTPUT=$(log_cmd "aws lambda create-function --function-name '$LAMBDA_FUNCTION1' --runtime python3.11 --role '$ROLE_ARN' --handler lambda_function.handler --zip-file fileb://lambda_function.zip --timeout 30 --memory-size 128")
+LAMBDA1_OUTPUT=$(log_cmd "aws lambda create-function --function-name '$LAMBDA_FUNCTION1' --runtime python3.11 --role '$ROLE_ARN' --handler lambda_function.handler --zip-file fileb://lambda_function.zip --timeout 30 --memory-size 128 --tags project=doc-smith,tutorial=cloudwatch-streams")
 check_error "$LAMBDA1_OUTPUT" $? "Failed to create first Lambda function"
 
 # Create second Lambda function
 echo "Creating second Lambda function: $LAMBDA_FUNCTION2..." | tee -a "$LOG_FILE"
-LAMBDA2_OUTPUT=$(log_cmd "aws lambda create-function --function-name '$LAMBDA_FUNCTION2' --runtime python3.11 --role '$ROLE_ARN' --handler lambda_function.handler --zip-file fileb://lambda_function.zip --timeout 30 --memory-size 128")
+LAMBDA2_OUTPUT=$(log_cmd "aws lambda create-function --function-name '$LAMBDA_FUNCTION2' --runtime python3.11 --role '$ROLE_ARN' --handler lambda_function.handler --zip-file fileb://lambda_function.zip --timeout 30 --memory-size 128 --tags project=doc-smith,tutorial=cloudwatch-streams")
 check_error "$LAMBDA2_OUTPUT" $? "Failed to create second Lambda function"
 
 # Invoke Lambda functions to generate some metrics

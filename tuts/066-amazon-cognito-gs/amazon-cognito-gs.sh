@@ -157,6 +157,11 @@ fi
 
 echo "User Pool created with ID: $USER_POOL_ID"
 
+USER_POOL_ARN=$(echo "$USER_POOL_OUTPUT" | jq -r '.UserPool.Arn // empty')
+aws cognito-idp tag-resource \
+  --resource-arn "$USER_POOL_ARN" \
+  --tags project=doc-smith,tutorial=amazon-cognito-gs
+
 # Wait for user pool to be ready
 echo "Waiting for user pool to be ready..."
 sleep 5

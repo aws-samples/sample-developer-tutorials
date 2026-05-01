@@ -133,7 +133,7 @@ VOLUME_ID=$(aws ec2 create-volume \
     --volume-type gp3 \
     --size 10 \
     --availability-zone "$AZ" \
-    --tag-specifications 'ResourceType=volume,Tags=[{Key=Name,Value=EBSTutorialVolume},{Key=Purpose,Value=Tutorial}]' \
+    --tag-specifications 'ResourceType=volume,Tags=[{Key=Name,Value=EBSTutorialVolume},{Key=Purpose,Value=Tutorial},{Key=project,Value=doc-smith},{Key=tutorial,Value=ebs-gs-volumes}]' \
     --query 'VolumeId' \
     --output text)
 
@@ -233,6 +233,7 @@ if [[ "$ATTACH_CHOICE" =~ ^[Yy]$ ]]; then
                 --group-name "$SG_NAME" \
                 --description "Security group for EBS tutorial" \
                 --vpc-id "$DEFAULT_VPC_ID" \
+                --tag-specifications 'ResourceType=security-group,Tags=[{Key=project,Value=doc-smith},{Key=tutorial,Value=ebs-gs-volumes}]' \
                 --query "GroupId" \
                 --output text)
             
@@ -258,7 +259,7 @@ if [[ "$ATTACH_CHOICE" =~ ^[Yy]$ ]]; then
                 --instance-type "$INSTANCE_TYPE" \
                 --subnet-id "$SUBNET_ID" \
                 --security-group-ids "$SG_ID" \
-                --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=EBSTutorialInstance},{Key=Purpose,Value=Tutorial}]' \
+                --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=EBSTutorialInstance},{Key=Purpose,Value=Tutorial},{Key=project,Value=doc-smith},{Key=tutorial,Value=ebs-gs-volumes}]' \
                 --query "Instances[0].InstanceId" \
                 --output text)
             

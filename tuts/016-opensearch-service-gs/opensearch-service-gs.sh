@@ -129,7 +129,7 @@ CREATE_OUTPUT=$(aws opensearch create-domain \
   --domain-endpoint-options "EnforceHTTPS=true,TLSSecurityPolicy=Policy-Min-TLS-1-2-2019-07" \
   --advanced-security-options "Enabled=true,InternalUserDatabaseEnabled=true,MasterUserOptions={MasterUserName=$MASTER_USER,MasterUserPassword=$MASTER_PASSWORD}" \
   --access-policies "$ACCESS_POLICY" \
-  --tags "Key=Environment,Value=Tutorial" "Key=Purpose,Value=OpenSearchGettingStarted" 2>&1)
+  --tags "Key=Environment,Value=Tutorial" "Key=Purpose,Value=OpenSearchGettingStarted" "Key=project,Value=doc-smith" "Key=tutorial,Value=opensearch-service-gs" 2>&1)
 
 # Check if domain creation was successful
 if [[ $? -ne 0 ]]; then

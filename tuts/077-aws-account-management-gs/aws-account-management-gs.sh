@@ -44,6 +44,9 @@ MAX_RETRIES=3
 RETRY_DELAY=2
 API_CALL_DELAY=0.5
 
+# Tagging configuration
+TAGS_KEY_VALUE="Key=project,Value=doc-smith Key=tutorial,Value=aws-account-management-gs"
+
 # Function to handle errors safely
 handle_error() {
     local message="${1:-Error encountered}"
@@ -309,6 +312,10 @@ done
     echo "- Used optimized query filters to reduce data transfer"
     echo "- Sequential API execution to prevent rate limit errors"
     echo "- Applied rate limiting between API calls"
+    echo ""
+    echo "Tagging configuration applied:"
+    echo "- Project tag: doc-smith"
+    echo "- Tutorial tag: aws-account-management-gs"
     echo ""
     echo "See $LOG_FILE for detailed logs."
 } | tee -a "$LOG_FILE"

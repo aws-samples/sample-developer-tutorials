@@ -147,6 +147,7 @@ create_result=$(aws wafv2 create-web-acl \
     --scope "CLOUDFRONT" \
     --default-action Allow={} \
     --visibility-config "SampledRequestsEnabled=true,CloudWatchMetricsEnabled=true,MetricName=$METRIC_NAME" \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=aws-waf-gs \
     --region us-east-1 2>&1) || handle_error "Failed to create Web ACL"
 
 if ! validate_json "$create_result"; then

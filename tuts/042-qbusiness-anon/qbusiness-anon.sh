@@ -122,6 +122,8 @@ chmod 600 "$TRUST_POLICY_FILE"
 ROLE_NAME="QBusinessServiceRole-${RANDOM_ID}"
 ROLE_OUTPUT=$(aws iam create-role --role-name "$ROLE_NAME" --assume-role-policy-document "file://$TRUST_POLICY_FILE" --output json 2>&1)
 check_error "$ROLE_OUTPUT" $? "Failed to create IAM role"
+aws iam tag-role --role-name "$ROLE_NAME" \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=qbusiness-anon
 
 # Extract role ARN using jq for safer JSON parsing
 if command -v jq &> /dev/null; then
@@ -153,6 +155,7 @@ APP_OUTPUT=$(aws qbusiness create-application \
   --identity-type ANONYMOUS \
   --role-arn "$ROLE_ARN" \
   --description "Amazon Q Business application with anonymous access" \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=qbusiness-anon \
   --output json 2>&1)
 check_error "$APP_OUTPUT" $? "Failed to create Amazon Q Business application"
 

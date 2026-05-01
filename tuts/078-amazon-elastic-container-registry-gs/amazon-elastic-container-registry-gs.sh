@@ -159,7 +159,7 @@ fi
 
 # Create ECR repository
 echo "Creating ECR repository..."
-REPO_RESULT=$(aws ecr create-repository --repository-name hello-repository)
+REPO_RESULT=$(aws ecr create-repository --repository-name hello-repository --tags key=project,value=doc-smith key=tutorial,value=amazon-elastic-container-registry-gs)
 if [[ -z "$REPO_RESULT" || "$REPO_RESULT" == *"error"* ]]; then
     handle_error "Failed to create ECR repository"
 fi

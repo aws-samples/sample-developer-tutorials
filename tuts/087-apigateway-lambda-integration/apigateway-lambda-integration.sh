@@ -127,6 +127,8 @@ aws iam create-role \
     exit 1
 }
 
+aws iam tag-role --role-name "$ROLE_NAME" --tags Key=project,Value=doc-smith Key=tutorial,Value=apigateway-lambda-integration
+
 # Attach execution policy
 aws iam attach-role-policy \
     --role-name "$ROLE_NAME" \
@@ -149,7 +151,8 @@ aws lambda create-function \
     --zip-file fileb://function.zip \
     --timeout 30 \
     --memory-size 128 \
-    --environment "Variables={LOG_LEVEL=INFO}" || {
+    --environment "Variables={LOG_LEVEL=INFO}" \
+    --tags project=doc-smith,tutorial=apigateway-lambda-integration || {
     echo "Error: Failed to create Lambda function" >&2
     exit 1
 }
@@ -161,6 +164,7 @@ API_RESPONSE=$(aws apigateway create-rest-api \
     --name "$API_NAME" \
     --endpoint-configuration types=REGIONAL \
     --description "API for Lambda proxy integration tutorial" \
+    --tags project=doc-smith,tutorial=apigateway-lambda-integration \
     --output json)
 
 API_ID=$(echo "$API_RESPONSE" | grep -o '"id": "[^"]*"' | head -1 | cut -d'"' -f4)

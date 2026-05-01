@@ -97,7 +97,7 @@ echo "=========================================="
 echo "Creating stream: $STREAM_NAME"
 
 # Create the Kinesis video stream
-if ! CREATE_STREAM_OUTPUT=$(aws kinesisvideo create-stream --stream-name "$STREAM_NAME" --data-retention-in-hours 24 --output json 2>&1); then
+if ! CREATE_STREAM_OUTPUT=$(aws kinesisvideo create-stream --stream-name "$STREAM_NAME" --data-retention-in-hours 24 --tags project=doc-smith,tutorial=amazon-kinesis-video-streams-gs --output json 2>&1); then
     handle_error "Failed to create stream: $CREATE_STREAM_OUTPUT"
 fi
 check_error "$CREATE_STREAM_OUTPUT" "create-stream"

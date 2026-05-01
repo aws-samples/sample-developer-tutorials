@@ -163,6 +163,7 @@ CLUSTER_RESULT=$(aws redshift create-cluster \
   --db-name "$DB_NAME" \
   --port 5439 \
   --encrypted \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=redshift-provisioned \
   2>&1) || handle_error "Failed to create Redshift cluster"
 
 echo "$CLUSTER_RESULT"
@@ -211,6 +212,10 @@ echo "$ROLE_RESULT"
 # Get the role ARN
 ROLE_ARN=$(aws iam get-role --role-name "$ROLE_NAME" --query 'Role.Arn' --output text)
 echo "Role ARN: $ROLE_ARN"
+
+# Tag the IAM role
+echo "Tagging IAM role: $ROLE_NAME"
+aws iam tag-role --role-name "$ROLE_NAME" --tags Key=project,Value=doc-smith Key=tutorial,Value=redshift-provisioned
 
 # Create policy document for S3 access with principle of least privilege
 echo "Creating S3 access policy"

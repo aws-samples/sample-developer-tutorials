@@ -180,7 +180,7 @@ NAMESPACE_ID=$(aws servicediscovery list-namespaces --query "Namespaces[?Name=='
 
 if [[ -z "$NAMESPACE_ID" || "$NAMESPACE_ID" == "None" ]]; then
   log_cmd "aws servicediscovery create-http-namespace --name cloudmap-tutorial --creator-request-id namespace-request-\$(date +%s)"
-  OPERATION_ID=$(aws servicediscovery create-http-namespace --name cloudmap-tutorial --creator-request-id "namespace-request-$(date +%s)" --query 'OperationId' --output text)
+  OPERATION_ID=$(aws servicediscovery create-http-namespace --name cloudmap-tutorial --creator-request-id "namespace-request-$(date +%s)" --tags Key=project,Value=doc-smith Key=tutorial,Value=cloudmap-custom-attributes --query 'OperationId' --output text)
 
   # Wait for namespace creation to complete
   echo "Waiting for namespace creation to complete..." | tee -a "$LOG_FILE"
@@ -202,7 +202,7 @@ echo "Step 2: Creating DynamoDB table..." | tee -a "$LOG_FILE"
 TABLE_EXISTS=$(aws dynamodb describe-table --table-name cloudmap 2>&1 || echo "NOT_EXISTS")
 
 if [[ $TABLE_EXISTS == *"ResourceNotFoundException"* || $TABLE_EXISTS == "NOT_EXISTS" ]]; then
-  log_cmd "aws dynamodb create-table --table-name cloudmap --attribute-definitions AttributeName=id,AttributeType=S --key-schema AttributeName=id,KeyType=HASH --billing-mode PAY_PER_REQUEST"
+  log_cmd "aws dynamodb create-table --table-name cloudmap --attribute-definitions AttributeName=id,AttributeType=S --key-schema AttributeName=id,KeyType=HASH --billing-mode PAY_PER_REQUEST --tags Key=project,Value=doc-smith Key=tutorial,Value=cloudmap-custom-attributes"
   
   # Wait for DynamoDB table to become active
   echo "Waiting for DynamoDB table to become active..." | tee -a "$LOG_FILE"
@@ -235,7 +235,7 @@ if [[ -z "$DATA_SERVICE_ID" ]]; then
   echo "Data service does not exist, creating it..." | tee -a "$LOG_FILE"
   # Create the service and capture the ID directly
   echo "$ aws servicediscovery create-service --name data-service --namespace-id $NAMESPACE_ID --creator-request-id data-service-request-\$(date +%s)" | tee -a "$LOG_FILE"
-  CREATE_OUTPUT=$(aws servicediscovery create-service --name data-service --namespace-id "$NAMESPACE_ID" --creator-request-id "data-service-request-$(date +%s)")
+  CREATE_OUTPUT=$(aws servicediscovery create-service --name data-service --namespace-id "$NAMESPACE_ID" --tags Key=project,Value=doc-smith Key=tutorial,Value=cloudmap-custom-attributes --creator-request-id "data-service-request-$(date +%s)")
   echo "$CREATE_OUTPUT" | tee -a "$LOG_FILE"
   
   # Extract the service ID using AWS CLI query
@@ -292,6 +292,7 @@ ROLE_EXISTS=$(aws iam get-role --role-name cloudmap-tutorial-role 2>&1 || echo "
 
 if [[ $ROLE_EXISTS == *"NoSuchEntity"* || $ROLE_EXISTS == "NOT_EXISTS" ]]; then
     log_cmd "aws iam create-role --role-name cloudmap-tutorial-role --assume-role-policy-document file://lambda-trust-policy.json"
+    aws iam tag-role --role-name cloudmap-tutorial-role --tags Key=project,Value=doc-smith Key=tutorial,Value=cloudmap-custom-attributes
 else
     echo "Role cloudmap-tutorial-role already exists, using existing role" | tee -a "$LOG_FILE"
 fi
@@ -375,7 +376,7 @@ if [[ -z "$APP_SERVICE_ID" ]]; then
   echo "App service does not exist, creating it..." | tee -a "$LOG_FILE"
   # Create the service and capture the ID directly
   echo "$ aws servicediscovery create-service --name app-service --namespace-id $NAMESPACE_ID --creator-request-id app-service-request-\$(date +%s)" | tee -a "$LOG_FILE"
-  CREATE_OUTPUT=$(aws servicediscovery create-service --name app-service --namespace-id "$NAMESPACE_ID" --creator-request-id "app-service-request-$(date +%s)")
+  CREATE_OUTPUT=$(aws servicediscovery create-service --name app-service --namespace-id "$NAMESPACE_ID" --tags Key=project,Value=doc-smith Key=tutorial,Value=cloudmap-custom-attributes --creator-request-id "app-service-request-$(date +%s)")
   echo "$CREATE_OUTPUT" | tee -a "$LOG_FILE"
   
   # Extract the service ID using AWS CLI query
@@ -448,7 +449,7 @@ log_cmd "zip writefunction.zip writefunction.py"
 # Create the Lambda function
 FUNCTION_EXISTS=$(aws lambda list-functions --query "Functions[?FunctionName=='writefunction'].FunctionName" --output text 2>/dev/null || echo "")
 if [[ -z "$FUNCTION_EXISTS" ]]; then
-  log_cmd "aws lambda create-function --function-name writefunction --runtime python3.12 --role $ROLE_ARN --handler writefunction.lambda_handler --zip-file fileb://writefunction.zip --architectures x86_64 --timeout 10"
+  log_cmd "aws lambda create-function --function-name writefunction --runtime python3.12 --role $ROLE_ARN --handler writefunction.lambda_handler --zip-file fileb://writefunction.zip --architectures x86_64 --timeout 10 --tags project=doc-smith,tutorial=cloudmap-custom-attributes"
 
   # Wait for the Lambda function to be active before updating
   echo "Waiting for Lambda function to become active..." | tee -a "$LOG_FILE"
@@ -537,7 +538,7 @@ log_cmd "zip readfunction.zip readfunction.py"
 # Create the Lambda function
 FUNCTION_EXISTS=$(aws lambda list-functions --query "Functions[?FunctionName=='readfunction'].FunctionName" --output text 2>/dev/null || echo "")
 if [[ -z "$FUNCTION_EXISTS" ]]; then
-  log_cmd "aws lambda create-function --function-name readfunction --runtime python3.12 --role $ROLE_ARN --handler readfunction.lambda_handler --zip-file fileb://readfunction.zip --architectures x86_64 --timeout 10"
+  log_cmd "aws lambda create-function --function-name readfunction --runtime python3.12 --role $ROLE_ARN --handler readfunction.lambda_handler --zip-file fileb://readfunction.zip --architectures x86_64 --timeout 10 --tags project=doc-smith,tutorial=cloudmap-custom-attributes"
 
   # Wait for the Lambda function to be active before updating
   echo "Waiting for Lambda function to become active..." | tee -a "$LOG_FILE"
