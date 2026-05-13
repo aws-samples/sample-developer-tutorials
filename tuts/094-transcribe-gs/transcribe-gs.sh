@@ -1,25 +1,22 @@
 #!/bin/bash
 set -e
+SUFFIX=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
+VOCAB="vocab-${SUFFIX}"
 
-REGION='us-east-1'
-ROLE_ARN='arn:aws:iam::559823168634:role/doc-babu-transcribe-role'
-SUFFIX=$(date +%s | sha256sum | base64 | head -c 6 ; shuf -i 100-999 -n 1)
-VOCABULARY_NAME="CustomVocabulary${SUFFIX}"
-VOCABULARY_FILE_KEY='/test-files/sample.json'
-VOCABULARY_BUCKET='your-bucket-name'  # Replace with your actual S3 bucket name
-VOCABULARY_FILE_URI="s3://${VOCABULARY_BUCKET}/${VOCABULARY_FILE_KEY##*/}"
+echo "Creating vocabulary: $VOCAB"
+aws transcribe create-vocabulary   --vocabulary-name "$VOCAB"   --language-code en-US   --phrases "AWS" "DynamoDB" "CloudFormation" "Kubernetes" "Bedrock"
 
-echo "Uploading vocabulary file to S3..."
-# aws s3 cp ${VOCABULARY_FILE_KEY} s3://${VOCABULARY_BUCKET}/${VOCABULARY_FILE_KEY##*/} || true
+echo "Waiting for vocabulary to be ready..."
+for i in $(seq 1 20); do
+  STATE=$(aws transcribe get-vocabulary --vocabulary-name "$VOCAB" --query 'VocabularyState' --output text)
+  if [ "$STATE" = "READY" ] || [ "$STATE" = "FAILED" ]; then break; fi
+  sleep 3
+done
+echo "State: $STATE"
 
-echo "Creating custom vocabulary..."
-aws transcribe create-vocabulary \
-    --vocabulary-name "${VOCABULARY_NAME}" \
-    --language-code 'en-US' \
-    --vocabulary-file-uri "${VOCABULARY_FILE_URI}" || true
+echo "Listing vocabularies..."
+aws transcribe list-vocabularies --query 'Vocabularies[].VocabularyName' --output text
 
-echo "Deleting custom vocabulary..."
-aws transcribe delete-vocabulary --vocabulary-name "${VOCABULARY_NAME}" || true
-
-echo "Custom vocabulary deleted."
+echo "Deleting vocabulary..."
+aws transcribe delete-vocabulary --vocabulary-name "$VOCAB"
 echo "PASS"
