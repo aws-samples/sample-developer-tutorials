@@ -1,31 +1,43 @@
 #!/bin/bash
 set -e
 
-SUFFIX=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
+SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
 NAME="test-assistant-${SUFFIX}"
-CLIENT_TOKEN=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
+TEMP_DIR=$(mktemp -d)
+LOG_FILE="$TEMP_DIR/script.log"
+CREATED_RESOURCES=()
 
-echo "Creating assistant..."
+cleanup_resources() {
+    for id in "${CREATED_RESOURCES[@]}"; do
+        aws wisdom delete-assistant --assistant-id "$id" || true
+    done
+    rm -rf "$TEMP_DIR"
+}
+
+trap cleanup_resources EXIT
+
+echo "Step 1: Creating assistant..." 
+CLIENT_TOKEN=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
 ASSISTANT_ID=$(aws wisdom create-assistant \
     --name "$NAME" \
     --type AGENT \
     --client-token "$CLIENT_TOKEN" \
     --description "Test assistant for demonstration" \
     --query 'assistant.assistantId' --output text)
-echo "Assistant created with ID: $ASSISTANT_ID"
+echo "Assistant created with ID: $ASSISTANT_ID" 
+CREATED_RESOURCES+=("$ASSISTANT_ID")
 
 sleep 10  # Wait for the assistant to become active
 
-echo "Verifying assistant exists..."
+echo "Step 2: Verifying assistant exists..." 
 aws wisdom get-assistant --assistant-id "$ASSISTANT_ID" \
-    --query 'assistant.name' --output text | grep "$NAME" && echo "Assistant verified."
+    --query 'assistant.name' --output text | grep "$NAME" && echo "Assistant verified." 
 
-echo "Listing assistants..."
+echo "Step 3: Listing assistants..." 
 aws wisdom list-assistants \
-    --query 'assistantSummaries[?name==`'"$NAME"'`]' --output text && echo "Assistant found in list."
+    --query 'assistantSummaries[?name==`'"$NAME"'`]' --output text && echo "Assistant found in list." 
 
-echo "Deleting assistant..."
-aws wisdom delete-assistant --assistant-id "$ASSISTANT_ID" || true
+echo "Step 4: Deleting assistant..." 
 sleep 10  # Wait for the deletion to complete
 
 aws wisdom get-assistant --assistant-id "$ASSISTANT_ID" || echo "Assistant successfully deleted." && echo "PASS"

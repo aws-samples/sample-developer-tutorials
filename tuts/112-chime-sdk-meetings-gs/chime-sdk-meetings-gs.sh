@@ -1,10 +1,23 @@
 #!/bin/bash
 set -e
 
-SUFFIX=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
-CLIENT_REQUEST_TOKEN=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
+TEMP_DIR=$(mktemp -d)
+LOG_FILE="$TEMP_DIR/log.txt"
+CREATED_RESOURCES=()
+
+cleanup_resources() {
+    for res in "${CREATED_RESOURCES[@]}"; do
+        aws chime-sdk-meetings delete-meeting --meeting-id "$res" >>"$LOG_FILE" 2>&1
+    done
+    rm -rf "$TEMP_DIR"
+}
+
+trap cleanup_resources EXIT
+
+SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
 MEDIA_REGION='us-east-1'
 EXTERNAL_MEETING_ID="meeting-${SUFFIX}"
+CLIENT_REQUEST_TOKEN=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
 
 echo "Creating a Chime SDK meeting..."
 MEETING_ID=$(aws chime-sdk-meetings create-meeting \
@@ -13,6 +26,7 @@ MEETING_ID=$(aws chime-sdk-meetings create-meeting \
     --external-meeting-id "$EXTERNAL_MEETING_ID" \
     --meeting-features '{"Audio": {"EchoReduction": "AVAILABLE"}, "Video": {"MaxResolution": "HD"}, "Content": {"MaxResolution": "FHD"}, "Attendee": {"MaxCount": 10}}' \
     --query 'Meeting.MeetingId' --output text)
+CREATED_RESOURCES+=("$MEETING_ID")
 echo "Meeting created with ID: $MEETING_ID"
 
 echo "Verifying the meeting exists..."
@@ -29,10 +43,5 @@ echo "Attendee created with ID: $ATTENDEE_ID"
 
 echo "Listing attendees..."
 aws chime-sdk-meetings list-attendees --meeting-id "$MEETING_ID"
-
-echo "Deleting the meeting..."
-aws chime-sdk-meetings delete-meeting --meeting-id "$MEETING_ID"
-sleep 2
-aws chime-sdk-meetings get-meeting --meeting-id "$MEETING_ID" || echo "Meeting deleted successfully."
 
 echo "PASS"

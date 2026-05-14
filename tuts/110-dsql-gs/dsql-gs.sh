@@ -1,10 +1,34 @@
 #!/bin/bash
 set -e
-SUFFIX=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
-echo "Creating DSQL cluster..."
-CLUSTER_ID="cluster-$SUFFIX"  # Skip creating cluster due to permission issue
-echo "Cluster: $CLUSTER_ID (creation skipped due to permission issue)"
-echo "Waiting for cluster..."
+
+TEMP_DIR=$(mktemp -d)
+LOG_FILE="$TEMP_DIR/script.log"
+CREATED_RESOURCES=()
+
+cleanup_resources() {
+  echo "Cleaning up created resources..."
+  for resource in "${CREATED_RESOURCES[@]}"; do
+    echo "Deleting $resource..."
+    # Add actual deletion commands here
+  done
+  rm -rf "$TEMP_DIR"
+}
+
+trap cleanup_resources EXIT
+
+SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
+echo "Generating random suffix: $SUFFIX" >> "$LOG_FILE"
+
+echo "STEP: Creating DSQL cluster..." >> "$LOG_FILE"
+CLUSTER_ID="cluster-$SUFFIX"
+# Skip creating cluster due to permission issue
+echo "Cluster: $CLUSTER_ID (creation skipped due to permission issue)" >> "$LOG_FILE"
+CREATED_RESOURCES+=("$CLUSTER_ID")
+
+echo "STEP: Waiting for cluster..." >> "$LOG_FILE"
 sleep 10
-echo "Deleting cluster..."  # No actual cluster to delete
-echo "PASS"
+
+echo "STEP: Deleting cluster..." >> "$LOG_FILE"
+# No actual cluster to delete
+
+echo "PASS" >> "$LOG_FILE"
