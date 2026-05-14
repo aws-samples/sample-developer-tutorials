@@ -1,36 +1,26 @@
 #!/bin/bash
 set -e
-
-REGION="us-east-1"
-SUFFIX=$(date +%s | sha256sum | base64 | head -c 6)
-DOMAIN_NAME="test-domain-${SUFFIX}"
-ITEM_NAME="item-$(date +%s)"
-
-echo "Creating domain..."
-aws sdb create-domain --domain-name "$DOMAIN_NAME" || true
-
-sleep 5  # Wait for domain to become active
-
-echo "Verifying domain exists..."
-DOMAINS=$(aws sdb list-domains --query 'Domains[].DomainName' --output text)
-if [[! "$DOMAINS" == *"$DOMAIN_NAME"* ]]; then
-    echo "Domain not found"
-    exit 1
-fi
-
-echo "Putting attributes..."
-aws sdb put-attributes --domain-name "$DOMAIN_NAME" --item-name "$ITEM_NAME" --attributes '{"attr1":"value1","attr2":"value2"}' || true
-
-echo "Deleting domain..."
-aws sdb delete-domain --domain-name "$DOMAIN_NAME" || true
-
-sleep 5  # Wait for domain to be deleted
-
-echo "Verifying domain deleted..."
-DOMAINS=$(aws sdb list-domains --query 'Domains[].DomainName' --output text)
-if [[ "$DOMAINS" == *"$DOMAIN_NAME"* ]]; then
-    echo "Domain not deleted"
-    exit 1
-fi
-
-echo "PASS"
+SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
+TEMP_DIR=$(mktemp -d)
+declare -a CREATED_RESOURCES=()
+cleanup_resources() {
+    for ((i=${#CREATED_RESOURCES[@]}-1; i>=0; i--)); do
+        IFS=: read -r type id <<< "${CREATED_RESOURCES[$i]}"
+        case $type in
+            domain) aws sdb delete-domain --domain-name "$id" 2>/dev/null || true ;;
+        esac
+    done
+    rm -rf "$TEMP_DIR"
+}
+trap cleanup_resources EXIT
+DOMAIN="test-domain-$SUFFIX"
+echo "=== Creating Domain ==="
+aws sdb create-domain --domain-name "$DOMAIN"
+CREATED_RESOURCES+=("domain:$DOMAIN")
+echo "=== Putting Attributes ==="
+aws sdb put-attributes --domain-name "$DOMAIN" --item-name "item1" --attributes "Name=color,Value=red" "Name=size,Value=large"
+echo "=== Getting Attributes ==="
+aws sdb get-attributes --domain-name "$DOMAIN" --item-name "item1" --query 'Attributes[].Value' --output text
+echo "=== Listing Domains ==="
+aws sdb list-domains --query 'DomainNames' --output text
+echo "=== Tutorial Complete ==="

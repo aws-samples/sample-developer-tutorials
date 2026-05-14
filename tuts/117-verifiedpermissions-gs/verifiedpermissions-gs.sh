@@ -1,51 +1,24 @@
 #!/bin/bash
 set -e
-
-SUFFIX=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
-POLICY_STORE_NAME="policy-store-${SUFFIX}"
-CLIENT_TOKEN=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
-
-echo "Creating Policy Store..."
-POLICY_STORE_ID=$(aws verifiedpermissions create-policy-store \
-    --client-token "$CLIENT_TOKEN" \
-    --validation-settings '{"mode": "STRICT"}' \
-    --description 'Test Policy Store' \
-    --deletion-protection 'DISABLED' \
-    --query 'policyStoreId' --output text)
-
-echo "Policy Store created with ID: $POLICY_STORE_ID"
-
-echo "Verifying Policy Store exists..."
-while true; do
-    if aws verifiedpermissions get-policy-store --policy-store-id "$POLICY_STORE_ID" &>/dev/null; then
-        echo "Policy Store verified."
-        break
-    else
-        echo "Policy Store not yet available, waiting..."
-        sleep 5
-    fi
-done
-
-echo "Listing Policy Stores to confirm creation..."
-LIST_RESPONSE=$(aws verifiedpermissions list-policy-stores --query 'policyStores[?policyStoreId==`'$POLICY_STORE_ID'`]' --output json)
-if echo "$LIST_RESPONSE" | grep -q '"policyStoreId":"'"$POLICY_STORE_ID"'"'; then
-    echo "Policy Store listed successfully."
-else
-    echo "Policy Store not found in list."
-fi
-
-echo "Deleting Policy Store..."
-aws verifiedpermissions delete-policy-store --policy-store-id "$POLICY_STORE_ID" || true
-
-echo "Verifying Policy Store deletion..."
-while true; do
-    if ! aws verifiedpermissions get-policy-store --policy-store-id "$POLICY_STORE_ID" &>/dev/null; then
-        echo "Policy Store successfully deleted."
-        break
-    else
-        echo "Policy Store still exists, waiting..."
-        sleep 5
-    fi
-done
-
-echo "PASS"
+SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
+TEMP_DIR=$(mktemp -d)
+declare -a CREATED_RESOURCES=()
+cleanup_resources() {
+    for ((i=${#CREATED_RESOURCES[@]}-1; i>=0; i--)); do
+        IFS=: read -r type id <<< "${CREATED_RESOURCES[$i]}"
+        case $type in
+            store) aws verifiedpermissions delete-policy-store --policy-store-id "$id" 2>/dev/null || true ;;
+        esac
+    done
+    rm -rf "$TEMP_DIR"
+}
+trap cleanup_resources EXIT
+echo "=== Creating Policy Store ==="
+STORE_ID=$(aws verifiedpermissions create-policy-store --validation-settings '{"mode":"OFF"}' --query 'policyStoreId' --output text)
+echo "Store: $STORE_ID"
+CREATED_RESOURCES+=("store:$STORE_ID")
+echo "=== Getting Policy Store ==="
+aws verifiedpermissions get-policy-store --policy-store-id "$STORE_ID" --query 'createdDate' --output text
+echo "=== Listing Policy Stores ==="
+aws verifiedpermissions list-policy-stores --query 'policyStores[].policyStoreId' --output text
+echo "=== Tutorial Complete ==="
