@@ -1,31 +1,21 @@
 #!/bin/bash
 set -e
-
-SUFFIX=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
-VARIABLE_NAME="var_${SUFFIX}"
-DETECTOR_ID="det_${SUFFIX}"
-
-# Create a fraud detection variable
-VARIABLE_ARN=$(aws frauddetector create-variable \
-    --name "${VARIABLE_NAME}" \
-    --data-type STRING \
-    --data-source EVENT \
-    --default-value UNKNOWN \
-    --description "Test variable for fraud detection" \
-    --query 'variable.arn' --output text)
-
-echo "Variable created: ${VARIABLE_ARN}"
-
-# Clean up variable
-aws frauddetector delete-variable --name "${VARIABLE_NAME}" || true
-
-echo "Variable deleted"
-
-# Other CLI commands (example, adjust as needed)
-aws frauddetector create-batch-import-job --job-id "job_${SUFFIX}" --input-path "s3://your-bucket/input/" --output-path "s3://your-bucket/output/" --iam-role-arn "arn:aws:iam::123456789012:role/service-role/YourRole" --event-type-name "your-event-type" || true
-aws frauddetector create-batch-prediction-job --job-id "pred_${SUFFIX}" --detector-name "your-detector" --detector-version 1 --event-type-name "your-event-type" --output-path "s3://your-bucket/prediction-output/" --iam-role-arn "arn:aws:iam::123456789012:role/service-role/YourRole" || true
-aws frauddetector create-detector-version --detector-id "${DETECTOR_ID}" --rules '[{"detectorId":"'${DETECTOR_ID}'","ruleId":"rule_1","ruleVersion":"1"}]' --status DRAFT || true
-aws frauddetector create-list --name "list_${SUFFIX}" --elements '["element1","element2"]' || true
-aws frauddetector create-model --model-id "model_${SUFFIX}" --model-type ONLINE_FRAUD_INSIGHTS --event-type-name "your-event-type" || true
-
-echo "PASS"
+SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
+TEMP_DIR=$(mktemp -d)
+declare -a CREATED_RESOURCES=()
+cleanup_resources() {
+    for ((i=${#CREATED_RESOURCES[@]}-1; i>=0; i--)); do
+        IFS=: read -r type id <<< "${CREATED_RESOURCES[$i]}"
+        case $type in
+            var) aws frauddetector delete-variable --name "$id" 2>/dev/null || true ;;
+        esac
+    done
+    rm -rf "$TEMP_DIR"
+}
+trap cleanup_resources EXIT
+echo "=== Creating Variable ==="
+aws frauddetector create-variable --name "var_$SUFFIX" --data-type STRING --data-source EVENT --default-value "0.0" --variable-type IP_ADDRESS
+CREATED_RESOURCES+=("var:var_$SUFFIX")
+echo "=== Getting Variables ==="
+aws frauddetector get-variables --name "var_$SUFFIX" --query 'variables[0].name' --output text
+echo "=== Tutorial Complete ==="

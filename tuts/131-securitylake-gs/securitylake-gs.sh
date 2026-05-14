@@ -1,21 +1,11 @@
 #!/bin/bash
 set -e
-
-SUFFIX=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
-
-echo "Creating AWS Log Source..."
-aws securitylake create-aws-log-source --log-source-name "log-source-$SUFFIX" || true
-
-echo "Creating Custom Log Source..."
-aws securitylake create-custom-log-source --source-name "custom-log-source-$SUFFIX" || true
-
-echo "Creating Data Lake..."
-aws securitylake create-data-lake --configuration '{ "regions": ["us-east-1"] }' || true
-
-echo "Creating Data Lake Exception Subscription..."
-aws securitylake create-data-lake-exception-subscription --subscription-name "exception-subscription-$SUFFIX" || true
-
-echo "Creating Data Lake Organization Configuration..."
-aws securitylake create-data-lake-organization-configuration --auto-enable-new-account | true
-
-echo "PASS"
+TEMP_DIR=$(mktemp -d)
+declare -a CREATED_RESOURCES=()
+cleanup_resources() { rm -rf "$TEMP_DIR"; }
+trap cleanup_resources EXIT
+echo "=== Listing Data Lakes ==="
+aws securitylake list-data-lakes --query 'dataLakes[].dataLakeArn' --output text || echo "No data lakes"
+echo "=== Listing Sources ==="
+aws securitylake list-log-sources --query 'account' --output text 2>/dev/null || echo "No sources"
+echo "=== Tutorial Complete ==="
