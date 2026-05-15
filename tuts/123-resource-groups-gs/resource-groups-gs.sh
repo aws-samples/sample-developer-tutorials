@@ -20,6 +20,7 @@ trap cleanup_resources EXIT
 echo "=== Creating group ==="
 aws resource-groups create-group \
     --name "$GROUP_NAME" \
+    --tags Key=project,Value=doc-smith Key=tutorial,Value=resource-groups-gs \
     --resource-query '{"Type":"TAG_FILTERS_1_0","Query":"{\"ResourceTypeFilters\":[\"AWS::AllSupported\"],\"TagFilters\":[{\"Key\":\"project\",\"Values\":[\"doc-smith\"]}]}"}' \
     --generate-cli-skeleton > "$LOG_FILE"
 CREATED_RESOURCES+=("$GROUP_NAME")

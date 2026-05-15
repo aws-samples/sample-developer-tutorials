@@ -20,13 +20,16 @@ EXTERNAL_MEETING_ID="meeting-${SUFFIX}"
 CLIENT_REQUEST_TOKEN=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
 
 echo "Creating a Chime SDK meeting..."
-MEETING_ID=$(aws chime-sdk-meetings create-meeting \
+MEETING_RESPONSE=$(aws chime-sdk-meetings create-meeting \
     --client-request-token "$CLIENT_REQUEST_TOKEN" \
     --media-region "$MEDIA_REGION" \
     --external-meeting-id "$EXTERNAL_MEETING_ID" \
     --meeting-features '{"Audio": {"EchoReduction": "AVAILABLE"}, "Video": {"MaxResolution": "HD"}, "Content": {"MaxResolution": "FHD"}, "Attendee": {"MaxCount": 10}}' \
-    --query 'Meeting.MeetingId' --output text)
+    --output json)
+MEETING_ID=$(echo "$MEETING_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['Meeting']['MeetingId'])")
+MEETING_ARN=$(echo "$MEETING_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['Meeting']['MeetingArn'])")
 CREATED_RESOURCES+=("$MEETING_ID")
+aws chime-sdk-meetings tag-resource --resource-arn "$MEETING_ARN" --tags Key=project,Value=doc-smith Key=tutorial,Value=chime-sdk-meetings-gs
 echo "Meeting created with ID: $MEETING_ID"
 
 echo "Verifying the meeting exists..."

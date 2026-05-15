@@ -21,7 +21,7 @@ CONTENT="{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"integer\"}}}"
 SCHEMA_TYPE="JSONSchemaDraft4"
 
 echo "Step 1: Creating Registry..." 
-aws schemas create-registry --registry-name "$REGISTRY_NAME" --description "Test Registry" > /dev/null
+aws schemas create-registry --registry-name "$REGISTRY_NAME" --description "Test Registry" --tags Key=project,Value=doc-smith Key=tutorial,Value=schemas-gs > /dev/null
 CREATED_RESOURCES+=("$REGISTRY_NAME")
 echo "Registry Created" 
 
@@ -32,7 +32,7 @@ aws schemas describe-registry --registry-name "$REGISTRY_NAME" > /dev/null
 echo "Registry Described" 
 
 echo "Step 3: Creating Schema..." 
-aws schemas create-schema --registry-name "$REGISTRY_NAME" --schema-name "$SCHEMA_NAME" --content "$CONTENT" --description "Test Schema" --type "$SCHEMA_TYPE" > /dev/null
+aws schemas create-schema --registry-name "$REGISTRY_NAME" --schema-name "$SCHEMA_NAME" --content "$CONTENT" --description "Test Schema" --type "$SCHEMA_TYPE" --tags Key=project,Value=doc-smith Key=tutorial,Value=schemas-gs > /dev/null
 echo "Schema Created" 
 
 sleep 2
@@ -55,4 +55,4 @@ echo "Step 7: Deleting Registry..."
 aws schemas delete-registry --registry-name "$REGISTRY_NAME" > /dev/null
 echo "Registry Deleted" 
 
-echo "PASS" 
+echo "PASS"

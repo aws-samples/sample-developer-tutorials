@@ -17,13 +17,13 @@ cleanup_resources() {
 trap cleanup_resources EXIT
 
 echo "Creating Keyspace..." >> "$LOG_FILE"
-aws keyspaces create-keyspace --keyspace-name "$KS_NAME" --query 'Path' --output text >> "$LOG_FILE"
+aws keyspaces create-keyspace --keyspace-name "$KS_NAME" --tags Key=project,Value=doc-smith Key=tutorial,Value=keyspaces-gs --query 'Path' --output text >> "$LOG_FILE"
 sleep 5
 echo "Keyspace created" >> "$LOG_FILE"
 CREATED_RESOURCES+=("$KS_NAME")
 
 echo "Creating Table..." >> "$LOG_FILE"
-aws keyspaces create-table --keyspace-name "$KS_NAME" --table-name "users" --schema-definition '{"allColumns":[{"name":"id","type":"text"},{"name":"name","type":"text"}],"partitionKeys":[{"name":"id"}]}' --query 'Path' --output text >> "$LOG_FILE"
+aws keyspaces create-table --keyspace-name "$KS_NAME" --table-name "users" --schema-definition '{"allColumns":[{"name":"id","type":"text"},{"name":"name","type":"text"}],"partitionKeys":[{"name":"id"}]}' --tags Key=project,Value=doc-smith Key=tutorial,Value=keyspaces-gs --query 'Path' --output text >> "$LOG_FILE"
 sleep 10
 echo "Table created" >> "$LOG_FILE"
 

@@ -31,6 +31,8 @@ EXECUTION_PLAN_ID=$(aws kendra-ranking create-rescore-execution-plan \
     --query 'Id' --output text)
 echo "Created Rescore Execution Plan with ID: $EXECUTION_PLAN_ID" 
 CREATED_RESOURCES+=("$EXECUTION_PLAN_ID")
+ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
+aws kendra-ranking tag-resource --resource-arn "arn:aws:kendra-ranking:us-east-1:${ACCOUNT_ID}:rescore-execution-plan/${EXECUTION_PLAN_ID}" --tags Key=project,Value=doc-smith Key=tutorial,Value=kendra-ranking-gs
 
 sleep 10  # Wait for the execution plan to become active
 

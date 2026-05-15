@@ -26,6 +26,8 @@ ASSISTANT_ID=$(aws wisdom create-assistant \
     --query 'assistant.assistantId' --output text)
 echo "Assistant created with ID: $ASSISTANT_ID" 
 CREATED_RESOURCES+=("$ASSISTANT_ID")
+ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
+aws wisdom tag-resource --resource-arn "arn:aws:wisdom:us-east-1:${ACCOUNT_ID}:assistant/${ASSISTANT_ID}" --tags Key=project,Value=doc-smith Key=tutorial,Value=wisdom-gs
 
 sleep 10  # Wait for the assistant to become active
 

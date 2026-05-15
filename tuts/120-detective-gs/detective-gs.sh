@@ -18,6 +18,7 @@ trap cleanup_resources EXIT
 
 echo "Step 1: Creating Detective graph..." 
 GRAPH_ARN=$(aws detective create-graph --query 'GraphArn' --output text)
+aws detective tag-resource --resource-arn "$GRAPH_ARN" --tags Key=project,Value=doc-smith Key=tutorial,Value=detective-gs
 echo "Graph: $GRAPH_ARN" 
 CREATED_RESOURCES+=("$GRAPH_ARN")
 
@@ -27,4 +28,4 @@ aws detective list-graphs --query 'GraphList[0].Arn' --output text
 echo "Step 3: Deleting graph..." 
 aws detective delete-graph --graph-arn "$GRAPH_ARN" || true
 
-echo "PASS" 
+echo "PASS"

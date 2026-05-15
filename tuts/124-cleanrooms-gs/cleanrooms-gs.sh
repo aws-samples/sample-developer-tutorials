@@ -15,6 +15,8 @@ cleanup_resources() {
 trap cleanup_resources EXIT
 echo "=== Creating Collaboration ==="
 COLLAB_ID=$(aws cleanrooms create-collaboration --name "collab-$SUFFIX" --description "Test" --members '[]' --creator-member-abilities CAN_QUERY CAN_RECEIVE_RESULTS --creator-display-name "DocBabu" --query-log-status DISABLED --query 'collaboration.id' --output text)
+COLLAB_ARN=$(aws cleanrooms get-collaboration --collaboration-identifier "$COLLAB_ID" --query 'collaboration.arn' --output text)
+aws cleanrooms tag-resource --resource-arn "$COLLAB_ARN" --tags project=doc-smith,tutorial=cleanrooms-gs
 echo "Collaboration: $COLLAB_ID"
 CREATED_RESOURCES+=("collab:$COLLAB_ID")
 echo "=== Getting Collaboration ==="

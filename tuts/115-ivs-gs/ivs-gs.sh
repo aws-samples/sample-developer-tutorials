@@ -19,6 +19,7 @@ trap cleanup_resources EXIT
 CHANNEL_NAME="test-channel-${SUFFIX}"
 echo "Creating IVS channel..." >> "$LOG_FILE"
 CHANNEL_ARN=$(aws ivs create-channel --name "$CHANNEL_NAME" --latency-mode NORMAL --type STANDARD --query 'channel.arn' --output text)
+aws ivs tag-resource --resource-arn "$CHANNEL_ARN" --tags Key=project,Value=doc-smith Key=tutorial,Value=ivs-gs
 
 if [ -n "$CHANNEL_ARN" ]; then
     echo "Channel created: $CHANNEL_ARN" >> "$LOG_FILE"

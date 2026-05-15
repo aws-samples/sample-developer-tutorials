@@ -15,6 +15,8 @@ cleanup_resources() {
 trap cleanup_resources EXIT
 echo "=== Creating Policy Store ==="
 STORE_ID=$(aws verifiedpermissions create-policy-store --validation-settings '{"mode":"OFF"}' --query 'policyStoreId' --output text)
+ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
+aws verifiedpermissions tag-resource --resource-arn "arn:aws:verifiedpermissions::${ACCOUNT_ID}:policy-store/${STORE_ID}" --tags Key=project,Value=doc-smith Key=tutorial,Value=verifiedpermissions-gs
 echo "Store: $STORE_ID"
 CREATED_RESOURCES+=("store:$STORE_ID")
 echo "=== Getting Policy Store ==="
