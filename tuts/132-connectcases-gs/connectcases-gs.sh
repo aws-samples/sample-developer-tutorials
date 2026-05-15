@@ -22,6 +22,8 @@ echo "Step 1: Creating domain..."
 DOMAIN_ID=$(aws connectcases create-domain --name "$DOMAIN_NAME" --query 'domainId' --output text)
 echo "Domain created with ID: $DOMAIN_ID" 
 CREATED_RESOURCES+=("$DOMAIN_ID")
+DOMAIN_ARN=$(aws connectcases get-domain --domain-id "$DOMAIN_ID" --query 'domainArn' --output text)
+aws connectcases tag-resource --arn "$DOMAIN_ARN" --tags '{"project":"doc-smith","tutorial":"connectcases-gs"}'
 
 echo "PASS" 
 

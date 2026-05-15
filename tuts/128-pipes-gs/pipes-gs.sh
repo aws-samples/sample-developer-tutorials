@@ -15,12 +15,14 @@ cleanup_resources() {
 }
 trap cleanup_resources EXIT
 echo "=== Creating SQS Queue ==="
-QUEUE_URL=$(aws sqs create-queue --queue-name "pipe-queue-$SUFFIX" --query 'QueueUrl' --output text)
+QUEUE_URL=$(aws sqs create-queue --tags '{"project":"doc-smith","tutorial":"pipes-gs"}' --queue-name "pipe-queue-$SUFFIX" --query 'QueueUrl' --output text)
 echo "Queue: $QUEUE_URL"
 CREATED_RESOURCES+=("queue:$QUEUE_URL")
 echo "=== Creating Log Group ==="
-aws logs create-log-group --log-group-name "/aws/pipes/pipe-$SUFFIX"
-CREATED_RESOURCES+=("loggroup:/aws/pipes/pipe-$SUFFIX")
+LOG_GROUP_NAME="/aws/pipes/pipe-$SUFFIX"
+aws logs create-log-group --log-group-name "$LOG_GROUP_NAME"
+aws logs tag-resource --resource-arn "arn:aws:logs:us-east-1:559823168634:log-group:$LOG_GROUP_NAME" --tags '{"project":"doc-smith","tutorial":"pipes-gs"}'
+CREATED_RESOURCES+=("loggroup:$LOG_GROUP_NAME")
 echo "=== Listing Pipes ==="
 aws pipes list-pipes --query 'Pipes[].Name' --output text || echo "No pipes"
 echo "=== Tutorial Complete ==="

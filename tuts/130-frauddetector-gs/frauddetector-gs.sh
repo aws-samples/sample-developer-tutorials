@@ -16,6 +16,8 @@ trap cleanup_resources EXIT
 echo "=== Creating Variable ==="
 aws frauddetector create-variable --name "var_$SUFFIX" --data-type STRING --data-source EVENT --default-value "0.0" --variable-type IP_ADDRESS
 CREATED_RESOURCES+=("var:var_$SUFFIX")
+ARN=$(aws frauddetector get-variables --name "var_$SUFFIX" --query 'variables[0].arn' --output text)
+aws frauddetector tag-resource --resource-arn "$ARN" --tags Key=project,Value=doc-smith Key=tutorial,Value=frauddetector-gs
 echo "=== Getting Variables ==="
 aws frauddetector get-variables --name "var_$SUFFIX" --query 'variables[0].name' --output text
 echo "=== Tutorial Complete ==="

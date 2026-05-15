@@ -17,13 +17,13 @@ trap cleanup_resources EXIT
 
 # Create Application
 APPLICATION_NAME="appconfig-app-${SUFFIX}"
-APPLICATION_ID=$(aws appconfig create-application --name "${APPLICATION_NAME}" --description "Test Application" --query 'Id' --output text)
+APPLICATION_ID=$(aws appconfig create-application --name "${APPLICATION_NAME}" --description "Test Application" --tags '{"project": "doc-smith", "tutorial": "appconfig-gs"}' --query 'Id' --output text)
 echo "Created Application: ${APPLICATION_NAME}" >> "${LOG_FILE}"
 CREATED_RESOURCES+=("${APPLICATION_ID}")
 
 # Create Environment
 ENVIRONMENT_NAME="appconfig-env-${SUFFIX}"
-ENVIRONMENT_ID=$(aws appconfig create-environment --application-id "${APPLICATION_ID}" --name "${ENVIRONMENT_NAME}" --description "Test Environment" --query 'Id' --output text)
+ENVIRONMENT_ID=$(aws appconfig create-environment --application-id "${APPLICATION_ID}" --name "${ENVIRONMENT_NAME}" --description "Test Environment" --tags '{"project": "doc-smith", "tutorial": "appconfig-gs"}' --query 'Id' --output text)
 echo "Created Environment: ${ENVIRONMENT_NAME}" >> "${LOG_FILE}"
 CREATED_RESOURCES+=("${ENVIRONMENT_ID}")
 

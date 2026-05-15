@@ -26,6 +26,7 @@ trap cleanup_resources EXIT
 # Step 1: Create Workload
 echo "Step 1: Creating Workload" 
 WORKLOAD_ID=$(aws wellarchitected create-workload \
+  --tags '{"project": "doc-smith", "tutorial": "wellarchitected-gs"}' \
   --workload-name "workload-${SUFFIX}" \
   --environment "PREPRODUCTION" \
   --lenses "wellarchitected" \

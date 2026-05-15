@@ -22,6 +22,7 @@ CLIENT_TOKEN=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || t
 
 echo "Step 1: Creating sequence store"
 SEQUENCE_STORE_ID=$(aws omics create-sequence-store \
+    --tags '{"project": "doc-smith", "tutorial": "omics-gs"}' \
     --name "${NAME}" \
     --description "${DESCRIPTION}" \
     --client-token "${CLIENT_TOKEN}" \

@@ -22,8 +22,10 @@ echo "Creating Schema Mapping..." >> "$LOG_FILE"
 aws entityresolution create-schema-mapping \
     --schema-name "$SCHEMA_NAME" \
     --description "Test schema for entity resolution" \
-    --mapped-input-fields '[{"fieldName": "uniqueId", "type": "UNIQUE_ID"}, {"fieldName": "firstName", "type": "NAME_FIRST"}, {"fieldName": "lastName", "type": "NAME_LAST"}, {"fieldName": "email", "type": "EMAIL_ADDRESS"}]' || true
+    --mapped-input-fields '[{"fieldName": "uniqueId", "type": "UNIQUE_ID"}, {"fieldName": "firstName", "type": "NAME_FIRST"}, {"fieldName": "lastName", "type": "NAME_LAST"}, {"fieldName": "email", "type": "EMAIL_ADDRESS"}]' \
+    --tags '{"project": "doc-smith", "tutorial": "entityresolution-gs"}' || true
 CREATED_RESOURCES+=("$SCHEMA_NAME")
+
 
 echo "Verifying Schema Mapping..." >> "$LOG_FILE"
 aws entityresolution get-schema-mapping \

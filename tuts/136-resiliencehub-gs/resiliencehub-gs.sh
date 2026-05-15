@@ -14,7 +14,7 @@ cleanup_resources() {
 }
 trap cleanup_resources EXIT
 echo "=== Creating App ==="
-APP_ARN=$(aws resiliencehub create-app --name "app-$SUFFIX" --query 'app.appArn' --output text)
+APP_ARN=$(aws resiliencehub create-app --name "app-$SUFFIX" --tags '{"project": "doc-smith", "tutorial": "resiliencehub-gs"}' --query 'app.appArn' --output text)
 echo "App: $APP_ARN"
 CREATED_RESOURCES+=("app:$APP_ARN")
 echo "=== Describing App ==="

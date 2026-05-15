@@ -35,11 +35,11 @@ echo "PASS"
 
 # Create Environment Template
 echo "### Creating Environment Template..." 
-aws proton create-environment-template --name "$TEMPLATE_NAME" || true
+aws proton create-environment-template --name "$TEMPLATE_NAME" --tags Key=project,Value=doc-smith Key=tutorial,Value=proton-gs || true
 CREATED_RESOURCES+=("$TEMPLATE_NAME")
 echo "Environment Template Created" 
 echo "PASS" 
 
 # Clean up
 echo "### Cleaning up..." 
-echo "Cleanup Complete" 
+echo "Cleanup Complete"

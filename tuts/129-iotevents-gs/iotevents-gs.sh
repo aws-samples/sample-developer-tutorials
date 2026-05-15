@@ -60,7 +60,8 @@ DETECTOR_MODEL_DEFINITION='{
 aws iotevents create-detector-model \
   --detector-model-name "$DETECTOR_MODEL_NAME" \
   --detector-model-definition "$DETECTOR_MODEL_DEFINITION" \
-  --role-arn "$ROLE_ARN" && echo "Created detector model: $DETECTOR_MODEL_NAME" >> "$LOG_FILE"
+  --role-arn "$ROLE_ARN" \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=iotevents-gs && echo "Created detector model: $DETECTOR_MODEL_NAME" >> "$LOG_FILE"
 CREATED_RESOURCES+=("$DETECTOR_MODEL_NAME")
 
 echo "Describing detector model..."

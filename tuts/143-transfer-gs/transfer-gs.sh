@@ -15,7 +15,7 @@ cleanup_resources() {
 trap cleanup_resources EXIT
 
 echo "Creating server..."
-SERVER_ID=$(aws transfer create-server --endpoint-type PUBLIC --identity-provider-type SERVICE_MANAGED --protocols SFTP --query 'ServerId' --output text)
+SERVER_ID=$(aws transfer create-server --endpoint-type PUBLIC --identity-provider-type SERVICE_MANAGED --protocols SFTP --tags Key=project,Value=doc-smith Key=tutorial,Value=transfer-gs --query 'ServerId' --output text)
 CREATED_RESOURCES+=("$SERVER_ID")
 echo "Created server: $SERVER_ID" 
 
@@ -38,4 +38,4 @@ aws transfer list-servers --query 'Servers[].ServerId' --output text || true
 
 echo "Deleting server..."
 aws transfer delete-server --server-id "$SERVER_ID" || true
-echo "Deleted. PASS" 
+echo "Deleted. PASS"

@@ -25,6 +25,7 @@ PRICING_RULE_TYPE="MARKUP"
 MODIFIER_PERCENTAGE=10.0
 
 PRICING_RULE_ARN=$(aws billingconductor create-pricing-rule \
+    --tags '{"project": "doc-smith", "tutorial": "billingconductor-gs"}' \
     --name "${PRICING_RULE_NAME}" \
     --description "${PRICING_RULE_DESCRIPTION}" \
     --scope "${PRICING_RULE_SCOPE}" \

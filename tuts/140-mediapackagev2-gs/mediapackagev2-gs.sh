@@ -25,7 +25,7 @@ aws mediapackagev2 create-channel-group \
     --channel-group-name "$CHANNEL_GROUP_NAME" \
     --client-token "$CLIENT_TOKEN" \
     --description "Test Channel Group" \
-    --tags Environment=Test 2>>"$LOG_FILE"
+    --tags '{"project": "doc-smith", "tutorial": "mediapackagev2-gs", "Environment": "Test"}' 2>>"$LOG_FILE"
 CREATED_RESOURCES+=("$CHANNEL_GROUP_NAME")
 
 # Verify Channel Group Creation

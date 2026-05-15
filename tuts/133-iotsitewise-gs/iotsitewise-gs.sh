@@ -23,6 +23,7 @@ ASSET_MODEL_ID=$(aws iotsitewise create-asset-model \
     --asset-model-type ASSET_MODEL \
     --asset-model-properties '[{"name": "property1", "dataType": "STRING", "type": {"attribute": {}}, "unit": "none"}]' \
     --client-token "$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 36 | head -n 1)" \
+    --tags '{"project": "doc-smith", "tutorial": "iotsitewise-gs"}' \
     --query 'assetModelId' --output text)
 CREATED_RESOURCES+=("${ASSET_MODEL_ID}")
 echo "Asset Model created: ${ASSET_MODEL_NAME}"
