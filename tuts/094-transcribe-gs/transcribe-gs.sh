@@ -9,7 +9,7 @@ echo ""
 
 if [ -t 1 ]; then 
     REGION='us-east-1'
-    SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
+SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
     TEMP_DIR=$(mktemp -d)
     LOG_FILE="${TEMP_DIR}/log.txt"
     declare -a CREATED_RESOURCES=()
@@ -35,8 +35,9 @@ if [ -t 1 ]; then
     VOCABULARY_FILE_KEY='/test-files/a.txt'
     VOCABULARY_BUCKET='your-bucket-name'
     VOCABULARY_FILE_URI="s3://${VOCABULARY_BUCKET}/${VOCABULARY_FILE_KEY##*/}"
-    # aws transcribe create-vocabulary --vocabulary-name "${VOCABULARY_NAME}" --language-code 'en-US' --vocabulary-file-uri "${VOCABULARY_FILE_URI}"
+    VOCABULARY_ARN=$(aws transcribe create-vocabulary --vocabulary-name "${VOCABULARY_NAME}" --language-code 'en-US' --vocabulary-file-uri "${VOCABULARY_FILE_URI}" --query 'VocabularyArn' --output text)
     CREATED_RESOURCES+=("vocabulary:$VOCABULARY_NAME")
+    aws transcribe tag-resource --resource-arn "$VOCABULARY_ARN" --tags Key=project,Value=doc-smith Key=tutorial,Value=transcribe-gs
     echo "Result: Custom vocabulary named ${VOCABULARY_NAME} has been created."
     echo ""
 

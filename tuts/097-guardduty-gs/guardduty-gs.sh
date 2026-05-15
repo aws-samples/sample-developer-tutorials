@@ -35,7 +35,7 @@ echo ""
 if [ -z "$DETECTOR_ID" ]; then
     echo "=== Step 2: Creating detector ==="
     echo "Since no detector was found, we create a new one. This enables GuardDuty in your account."
-    DETECTOR_ID=$(aws guardduty create-detector --enable --query 'DetectorId' --output text)
+    DETECTOR_ID=$(aws guardduty create-detector --enable --tags Key=project,Value=doc-smith Key=tutorial,Value=guardduty-gs --query 'DetectorId' --output text)
     echo "Detector created: $DETECTOR_ID" 
     CREATED_RESOURCES+=("detector:$DETECTOR_ID")
 else
@@ -47,7 +47,7 @@ echo "=== Step 3: Creating filter ==="
 echo "Filters in GuardDuty allow you to focus on specific types of findings."
 echo "We create a filter to capture unauthorized access attempts via SSH brute force."
 FILTER_NAME="filter-${SUFFIX}"
-aws guardduty create-filter --detector-id $DETECTOR_ID --name $FILTER_NAME --finding-criteria '{"Criterion":{"type":{"Eq":["UnauthorizedAccess:EC2/SSHBruteForce"]}}}' || true
+aws guardduty create-filter --detector-id $DETECTOR_ID --tags Key=project,Value=doc-smith Key=tutorial,Value=guardduty-gs --name $FILTER_NAME --finding-criteria '{"Criterion":{"type":{"Eq":["UnauthorizedAccess:EC2/SSHBruteForce"]}}}' || true
 echo "Filter created: $FILTER_NAME" 
 CREATED_RESOURCES+=("filter:$DETECTOR_ID:$FILTER_NAME")
 echo ""
@@ -56,7 +56,7 @@ echo "=== Step 4: Creating IP set ==="
 echo "IP sets in GuardDuty help you define a list of trusted or malicious IP addresses."
 echo "We create an IP set to specify a list of IPs to monitor."
 IP_SET_NAME="ip-set-${SUFFIX}"
-aws guardduty create-ip-set --detector-id $DETECTOR_ID --name $IP_SET_NAME --format TXT --location /test-files/ip-set.txt --activate || true
+aws guardduty create-ip-set --detector-id $DETECTOR_ID --tags Key=project,Value=doc-smith Key=tutorial,Value=guardduty-gs --name $IP_SET_NAME --format TXT --location /test-files/ip-set.txt --activate || true
 IP_SET_ID=$(aws guardduty list-ip-sets --detector-id $DETECTOR_ID --query "IpSetIds[?contains(Name, \`$IP_SET_NAME\`)]" --output text)
 echo "IP set created: $IP_SET_NAME" 
 CREATED_RESOURCES+=("ip-set:$DETECTOR_ID:$IP_SET_ID")
@@ -66,7 +66,7 @@ echo "=== Step 5: Creating threat intel set ==="
 echo "Threat intel sets in GuardDuty allow you to upload your own threat intelligence."
 echo "We create a threat intel set to include a list of known malicious IP addresses."
 THREAT_INTEL_SET_NAME="threat-intel-set-${SUFFIX}"
-aws guardduty create-threat-intel-set --detector-id $DETECTOR_ID --name $THREAT_INTEL_SET_NAME --format TXT --location /test-files/threat-intel-set.txt --activate || true
+aws guardduty create-threat-intel-set --detector-id $DETECTOR_ID --tags Key=project,Value=doc-smith Key=tutorial,Value=guardduty-gs --name $THREAT_INTEL_SET_NAME --format TXT --location /test-files/threat-intel-set.txt --activate || true
 THREAT_INTEL_SET_ID=$(aws guardduty list-threat-intel-sets --detector-id $DETECTOR_ID --query "ThreatIntelSetIds[?contains(Name, \`$THREAT_INTEL_SET_NAME\`)]" --output text)
 echo "Threat intel set created: $THREAT_INTEL_SET_NAME" 
 CREATED_RESOURCES+=("threat-intel-set:$DETECTOR_ID:$THREAT_INTEL_SET_ID")

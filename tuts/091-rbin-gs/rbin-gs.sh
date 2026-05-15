@@ -31,6 +31,8 @@ if [ -t 1 ]; then
     RULE_ID=$(aws rbin create-rule --retention-period RetentionPeriodValue=1,RetentionPeriodUnit=DAYS --resource-type EBS_SNAPSHOT --query 'Identifier' --output text)
     echo "Rule created: $RULE_ID" 
     CREATED_RESOURCES+=("rbin_rule:$RULE_ID")
+    RULE_ARN=$(aws rbin get-rule --identifier "$RULE_ID" --query 'RuleArn' --output text)
+    aws rbin tag-resource --resource-arn "$RULE_ARN" --tags Key=project,Value=doc-smith Key=tutorial,Value=rbin-gs
 
     echo "=== Step 2: Verifying Rule Status ==="
     echo "After creating the rule, we need to verify its status to ensure it has been successfully applied."

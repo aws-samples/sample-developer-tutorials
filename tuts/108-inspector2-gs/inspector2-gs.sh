@@ -33,6 +33,7 @@ echo ""
 
 if [ "$STATUS"!= "ENABLED" ]; then
     echo "Skipping enable step due to insufficient permissions or other constraints."
+    exit 0
 fi
 
 echo "=== Step 2: Creating a Filter ==="

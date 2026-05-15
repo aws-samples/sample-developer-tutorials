@@ -6,7 +6,7 @@ echo "This tutorial demonstrates how to create and delete an AWS Route53 Hosted 
 echo "We will generate a unique suffix, create a temporary directory for logging, and ensure all resources are cleaned up at the end."
 
 if [ -t 1 ]; then 
-    SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
+SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
     TEMP_DIR=$(mktemp -d)
     LOG_FILE="${TEMP_DIR}/log.txt"
     declare -a CREATED_RESOURCES=()
@@ -36,6 +36,7 @@ if [ -t 1 ]; then
     echo "A Hosted Zone in Route53 is a collection of DNS records."
     echo "Creating a hosted zone allows you to route traffic to your resources using DNS."
     HOSTED_ZONE_ID=$(aws route53 create-hosted-zone --name "example-${SUFFIX}.com." --caller-reference $(date +%s) --query 'HostedZone.Id' --output text)
+    aws route53 tag-resource --resource-arn "arn:aws:route53:::hostedzone/${HOSTED_ZONE_ID#*/}" --tags Key=project,Value=doc-smith Key=tutorial,Value=route53-gs
     echo "Created Hosted Zone: ${HOSTED_ZONE_ID}"
     CREATED_RESOURCES+=("hosted-zone:$HOSTED_ZONE_ID")
     echo ""

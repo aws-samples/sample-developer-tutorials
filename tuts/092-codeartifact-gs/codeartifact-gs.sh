@@ -38,7 +38,7 @@ echo "=== Step 1: Create a Temporary Domain ==="
 echo "Creating a temporary domain is essential for organizing and managing your CodeArtifact repositories."
 echo "Each domain can contain multiple repositories, and domains help in applying policies and permissions."
 DOMAIN_NAME="dom$SUFFIX"
-aws codeartifact create-domain --domain "$DOMAIN_NAME"
+aws codeartifact create-domain --domain "$DOMAIN_NAME" --tags key=project,value=doc-smith key=tutorial,value=codeartifact-gs
 echo "Result: Domain $DOMAIN_NAME created"
 CREATED_RESOURCES+=("domain:$DOMAIN_NAME")
 echo ""
@@ -46,7 +46,7 @@ echo ""
 echo "=== Step 2: Create a Temporary Repository ==="
 echo "Repositories within a domain store your package versions. Creating a repository allows you to upload and manage packages."
 REPO_NAME="repo$SUFFIX"
-aws codeartifact create-repository --domain "$DOMAIN_NAME" --repository "$REPO_NAME"
+aws codeartifact create-repository --domain "$DOMAIN_NAME" --repository "$REPO_NAME" --tags key=project,value=doc-smith key=tutorial,value=codeartifact-gs
 echo "Result: Repository $REPO_NAME created in domain $DOMAIN_NAME"
 CREATED_RESOURCES+=("repo:$REPO_NAME")
 echo ""

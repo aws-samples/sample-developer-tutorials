@@ -13,7 +13,7 @@ if [ -t 1 ]; then
   SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
   TEMP_DIR=$(mktemp -d)
   LOG_FILE="$TEMP_DIR/script.log"
-  exec > >(tee -a "$LOG_FILE") 2>&1
+  exec &> >(tee -a "$LOG_FILE")
 fi
 
 CREATED_RESOURCES=()
@@ -40,6 +40,7 @@ echo "We use a unique suffix to ensure the component name is unique."
 echo ""
 COMPONENT_ARN=$(aws imagebuilder create-component --name "component-$SUFFIX" --version "1.0.0" --platform "Linux" --description "Test Component" --change-description "Initial creation" --type "BUILD" --uri "s3://my-bucket/component.yaml" --kms-key-id "alias/aws/s3" --query 'componentBuildVersionArn' --output text || true)
 CREATED_RESOURCES+=("$COMPONENT_ARN")
+aws imagebuilder tag-resource --resource-arn "$COMPONENT_ARN" --tags Key=project,Value=doc-smith Key=tutorial,Value=imagebuilder-gs || true
 echo "Result: Component created with ARN $COMPONENT_ARN"
 echo ""
 
@@ -47,22 +48,8 @@ echo "=== Step 3: Creating Container Recipe ==="
 echo "A container recipe specifies the base image, components, and other settings for building a container image."
 echo "We use the ARN of the component created in the previous step."
 echo ""
-aws imagebuilder create-container-recipe --name "container-recipe-$SUFFIX" --version "1.0.0" --components "$COMPONENT_ARN" --platform "Docker" --target-repository "my-ecr-repo" --kms-key-id "alias/aws/s3" || true
+CONTAINER_RECIPE_ARN=$(aws imagebuilder create-container-recipe --name "container-recipe-$SUFFIX" --version "1.0.0" --components "$COMPONENT_ARN" --platform "Docker" --target-repository "my-ecr-repo" --kms-key-id "alias/aws/s3" --query 'containerRecipeArn' --output text || true)
+CREATED_RESOURCES+=("$CONTAINER_RECIPE_ARN")
+aws imagebuilder tag-resource --resource-arn "$CONTAINER_RECIPE_ARN" --tags Key=project,Value=doc-smith Key=tutorial,Value=imagebuilder-gs || true
 echo "Result: Container recipe created."
-echo ""
-
-echo "=== Step 4: Creating Distribution Configuration ==="
-echo "A distribution configuration defines where and how the built images are distributed, such as to an AMI or ECR repository."
-echo "We use a unique suffix to ensure the distribution configuration name is unique."
-echo ""
-aws imagebuilder create-distribution-configuration --name "distribution-$SUFFIX" --description "Test Distribution" --distributions '[{"region":"us-east-1","ami":{"name":"AMI-'$SUFFIX'"}}]' --kms-key-id "alias/aws/s3" || true
-echo "Result: Distribution configuration created."
-echo ""
-
-echo "=== Step 5: Creating Image Recipe ==="
-echo "An image recipe specifies the base image, components, and other settings for building an image."
-echo "We use the ARN of the component created in the previous step."
-echo ""
-aws imagebuilder create-image-recipe --name "image-recipe-$SUFFIX" --version "1.0.0" --components "$COMPONENT_ARN" --platform "Linux" --parent-image "arn:aws:imagebuilder:us-east-1:aws:image/ubuntu-server-lts/x.x.x" --kms-key-id "alias/aws/s3" || true
-echo "Result: Image recipe created."
 echo ""

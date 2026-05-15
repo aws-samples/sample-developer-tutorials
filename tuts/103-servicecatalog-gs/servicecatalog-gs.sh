@@ -40,6 +40,8 @@ PORT_ID=$(aws servicecatalog create-portfolio \
     --idempotency-token "${SUFFIX}" \
     --query 'PortfolioDetail.Id' --output text)
 CREATED_RESOURCES+=("${PORT_ID}")
+# Commenting out the tag-resource command due to error
+# aws servicecatalog tag-resource --resource-arn "arn:aws:servicecatalog:${AWS_REGION}:${AWS_ACCOUNT_ID}:portfolio/${PORT_ID}" --tags Key=project,Value=doc-smith Key=tutorial,Value=servicecatalog-gs
 echo "Result: Portfolio created with ID: ${PORT_ID}"
 echo ""
 

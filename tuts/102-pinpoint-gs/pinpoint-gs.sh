@@ -45,6 +45,7 @@ echo "The application name is unique to avoid conflicts with existing applicatio
 echo ""
 APP_NAME="my-app-${SUFFIX}"
 APP_ID=$(aws pinpoint create-app --create-application-request '{"Name":"'${APP_NAME}'"}' --query 'ApplicationResponse.Id' --output text)
+aws pinpoint tag-resource --resource-arn "arn:aws:pinpoint:${REGION}:${AWS_ACCOUNT_ID}:${APP_ID}" --tags Key=project,Value=doc-smith Key=tutorial,Value=pinpoint-gs
 echo "Pinpoint application created with ID: ${APP_ID}"
 CREATED_RESOURCES+=("pinpoint-app:${APP_ID}")
 echo ""

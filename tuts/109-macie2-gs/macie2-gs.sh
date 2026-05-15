@@ -38,6 +38,8 @@ echo "=== Step 3: Create Allow List ==="
 echo "An allow list helps Macie ignore specific data patterns that are known to be safe."
 echo "This step creates an allow list to exclude certain regex patterns from Macie scans."
 allow_list_response=$(aws macie2 create-allow-list --criteria '{"regex":{"regexString":"example"}}' --description "Example Allow List $SUFFIX")
+allow_list_id=$(echo "$allow_list_response" | jq -r '.id')
+aws macie2 tag-resource --resource-arn "arn:aws:macie2:us-east-1:123456789012:allow-list/$allow_list_id" --tags Key=project,Value=doc-smith Key=tutorial,Value=macie2-gs
 echo "Result: Allow List Created"
 CREATED_RESOURCES+=("allow-list")
 echo ""
@@ -46,6 +48,7 @@ echo "=== Step 4: Create Classification Job ==="
 echo "A classification job scans your S3 buckets for sensitive data and generates findings."
 echo "This step creates a classification job to scan a specified S3 bucket for sensitive data."
 classification_job_response=$(aws macie2 create-classification-job --job-name "ExampleJob$SUFFIX" --s3-job-definition '{"bucketDefinitions":[{"bucketName":"example-bucket"}]}' --query 'jobId' --output text)
+aws macie2 tag-resource --resource-arn "arn:aws:macie2:us-east-1:123456789012:classification-job/$classification_job_response" --tags Key=project,Value=doc-smith Key=tutorial,Value=macie2-gs
 echo "Result: Classification Job Created with ID: $classification_job_response"
 CREATED_RESOURCES+=("classification-job")
 echo ""
@@ -54,6 +57,7 @@ echo "=== Step 5: Create Custom Data Identifier ==="
 echo "A custom data identifier allows you to define specific patterns of sensitive data that Macie should detect."
 echo "This step creates a custom data identifier to recognize a specific regex pattern in your data."
 custom_data_identifier_response=$(aws macie2 create-custom-data-identifier --name "ExampleIdentifier$SUFFIX" --regex "example" --description "Example Custom Data Identifier" --query 'id' --output text)
+aws macie2 tag-resource --resource-arn "arn:aws:macie2:us-east-1:123456789012:custom-data-identifier/$custom_data_identifier_response" --tags Key=project,Value=doc-smith Key=tutorial,Value=macie2-gs
 echo "Result: Custom Data Identifier Created with ID: $custom_data_identifier_response"
 CREATED_RESOURCES+=("custom-data-identifier")
 echo ""

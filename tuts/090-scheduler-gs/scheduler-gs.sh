@@ -44,7 +44,7 @@ echo "A schedule group helps in managing and categorizing related schedules."
 echo ""
 GROUP_NAME="group-${SUFFIX}"
 echo "Creating schedule group: ${GROUP_NAME}"
-GROUP_ARN=$(aws scheduler create-schedule-group --name ${GROUP_NAME} --query 'ScheduleGroupArn' --output text)
+GROUP_ARN=$(aws scheduler create-schedule-group --name ${GROUP_NAME} --tags Key=project,Value=doc-smith Key=tutorial,Value=scheduler-gs --query 'ScheduleGroupArn' --output text)
 echo "Schedule group created: ${GROUP_ARN}"
 CREATED_RESOURCES+=("group:${GROUP_NAME}")
 echo ""
@@ -55,7 +55,7 @@ echo "This is crucial for automating repetitive tasks in your AWS environment."
 echo ""
 SCHEDULE_NAME="schedule-${SUFFIX}"
 echo "Creating schedule: ${SCHEDULE_NAME}"
-SCHEDULE_ARN=$(aws scheduler create-schedule --name ${SCHEDULE_NAME} --schedule-expression 'rate(5 minutes)' --target '{"Arn": "arn:aws:lambda:us-east-1:123456789012:function:MyFunction", "RoleArn": "arn:aws:iam::559823168634:role/doc-babu-scheduler-role"}' --flexible-time-window '{"Mode": "OFF"}' --query 'ScheduleArn' --output text)
+SCHEDULE_ARN=$(aws scheduler create-schedule --name ${SCHEDULE_NAME} --schedule-expression 'rate(5 minutes)' --target '{"Arn": "arn:aws:lambda:us-east-1:123456789012:function:MyFunction", "RoleArn": "arn:aws:iam::559823168634:role/doc-babu-scheduler-role"}' --flexible-time-window '{"Mode": "OFF"}' --tags Key=project,Value=doc-smith Key=tutorial,Value=scheduler-gs --query 'ScheduleArn' --output text)
 echo "Schedule created: ${SCHEDULE_ARN}"
 CREATED_RESOURCES+=("schedule:${SCHEDULE_NAME}")
 echo ""

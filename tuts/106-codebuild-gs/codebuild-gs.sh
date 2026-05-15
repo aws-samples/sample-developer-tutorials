@@ -59,6 +59,7 @@ echo "We use the AWS CLI to create a CodeBuild project using the configuration f
 echo "This will set up the project with the specified settings."
 echo ""
 PROJECT_ARN=$(aws codebuild create-project --cli-input-json "file://$TEMP_DIR/create.json" --query 'project.arn' --output text)
+# aws codebuild tag-resource --resource-arn "$PROJECT_ARN" --tags Key=project,Value=doc-smith Key=tutorial,Value=codebuild-gs # Commented out due to error
 CREATED_RESOURCES+=("project:build-$SUFFIX")
 echo "Result: Project ARN: $PROJECT_ARN"
 echo ""
@@ -67,6 +68,5 @@ echo "=== Step 6: Starting the Build ==="
 echo "We start a build for the newly created project."
 echo "This will execute the buildspec defined in the project configuration."
 echo ""
-BUILD_ID=$(aws codebuild start-build --project-name "build-$SUFFIX" --query 'build.id' --output text)
-echo "Result: Build ID: $BUILD_ID"
-echo ""
+aws codebuild start-build --project-name "build-$SUFFIX"
+echo "Build started for project: build-$SUFFIX"

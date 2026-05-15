@@ -33,8 +33,10 @@ echo "=== Step 2: Creating Organizational Unit (OU) ==="
 echo "Creating an OU allows us to group accounts together for easier management."
 echo "OUs help in applying policies at a granular level within the organization."
 echo ""
-echo "Skipping OU creation due to AccessDeniedException"
-echo "Result: AccessDeniedException"
+OU_ARN=$(aws organizations create-organizational-unit --parent-id "o-exampleorgid" --name "temp-ou-$SUFFIX" --query 'OrganizationalUnit.Arn' --output text)
+aws organizations tag-resource --resource-arn "$OU_ARN" --tags Key=project,Value=doc-smith Key=tutorial,Value=organizations-gs
+CREATED_RESOURCES+=("ou:$OU_ARN")
+echo "Result: OU created with ARN $OU_ARN"
 echo ""
 
 echo "=== Tutorial Complete ==="

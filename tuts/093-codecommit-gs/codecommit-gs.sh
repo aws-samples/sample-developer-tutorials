@@ -45,7 +45,8 @@ echo "We will now create a CodeCommit repository using the AWS CLI."
 echo "CodeCommit is a version control service that hosts secure Git-based repositories."
 echo ""
 REPO_NAME="test-repo-${SUFFIX}"
-aws codecommit create-repository --repository-name "${REPO_NAME}"
+REPO_ARN=$(aws codecommit create-repository --repository-name "${REPO_NAME}" --query 'repositoryMetadata.repositoryArn' --output text)
+aws codecommit tag-resource --resource-arn "$REPO_ARN" --tags Key=project,Value=doc-smith Key=tutorial,Value=codecommit-gs
 echo "Result: Repository ${REPO_NAME} created."
 echo ""
 

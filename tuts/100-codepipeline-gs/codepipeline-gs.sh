@@ -9,7 +9,7 @@ echo ""
 
 # Redirect output to log file if running in a terminal
 if [ -t 1 ]; then 
-  SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
+SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
   TEMP_DIR=$(mktemp -d)
   LOG_FILE="${TEMP_DIR}/log.txt"
   declare -a CREATED_RESOURCES=()
@@ -34,7 +34,8 @@ if [ -t 1 ]; then
   echo ""
 
   PIPELINE_NAME="pipeline-${SUFFIX}"
-  aws codepipeline create-pipeline --cli-input-json "{\"pipeline\":{\"name\": \"${PIPELINE_NAME}\",\"roleArn\": \"arn:aws:iam::559823168634:role/doc-babu-codepipeline-role\",\"artifactStores\":{\"$REGION\":{\"type\":\"S3\",\"location\":\"my-bucket\"}},\"stages\": [{\"name\": \"Source\",\"actions\": [{\"name\": \"SourceAction\",\"actionTypeId\": {\"category\": \"Source\",\"owner\": \"AWS\",\"provider\": \"S3\",\"version\": \"1\"},\"outputArtifacts\": [{\"name\": \"MyApp\"}],\"configuration\": {\"S3Bucket\":\"my-bucket\",\"S3ObjectKey\": \"path/to/my/app.zip\"},\"runOrder\": 1}]},{\"name\": \"Build\",\"actions\": [{\"name\": \"BuildAction\",\"actionTypeId\": {\"category\": \"Build\",\"owner\": \"AWS\",\"provider\": \"CodeBuild\",\"version\": \"1\"},\"inputArtifacts\": [{\"name\": \"MyApp\"}],\"outputArtifacts\": [{\"name\": \"BuildOutput\"}],\"configuration\": {\"ProjectName\": \"my-codebuild-project\"},\"runOrder\": 1}]}]}}"
+  PIPELINE_ARN=$(aws codepipeline create-pipeline --cli-input-json "{\"pipeline\":{\"name\": \"${PIPELINE_NAME}\",\"roleArn\": \"arn:aws:iam::559823168634:role/doc-babu-codepipeline-role\",\"artifactStores\":{\"$REGION\":{\"type\":\"S3\",\"location\":\"my-bucket\"}},\"stages\": [{\"name\": \"Source\",\"actions\": [{\"name\": \"SourceAction\",\"actionTypeId\": {\"category\": \"Source\",\"owner\": \"AWS\",\"provider\": \"S3\",\"version\": \"1\"},\"outputArtifacts\": [{\"name\": \"MyApp\"}],\"configuration\": {\"S3Bucket\":\"my-bucket\",\"S3ObjectKey\": \"path/to/my/app.zip\"},\"runOrder\": 1}]},{\"name\": \"Build\",\"actions\": [{\"name\": \"BuildAction\",\"actionTypeId\": {\"category\": \"Build\",\"owner\": \"AWS\",\"provider\": \"CodeBuild\",\"version\": \"1\"},\"inputArtifacts\": [{\"name\": \"MyApp\"}],\"outputArtifacts\": [{\"name\": \"BuildOutput\"}],\"configuration\": {\"ProjectName\": \"my-codebuild-project\"},\"runOrder\": 1}]}]}}" --query 'pipeline.arn' --output text)
+  aws codepipeline tag-resource --resource-arn "$PIPELINE_ARN" --tags Key=project,Value=doc-smith Key=tutorial,Value=codepipeline-gs
   echo "Result: Pipeline ${PIPELINE_NAME} created."
   echo ""
 

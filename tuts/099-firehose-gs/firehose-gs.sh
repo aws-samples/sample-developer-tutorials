@@ -10,8 +10,7 @@ echo ""
 SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
 TEMP_DIR=$(mktemp -d)
 LOG_FILE="$TEMP_DIR/script.log"
-if [ -t 1 ]; then exec > >(tee -a "$LOG_FILE") 2>&1; fi
-
+if [ -t 1 ]; then 
 declare -a CREATED_RESOURCES=()
 
 cleanup_resources() {
@@ -25,10 +24,6 @@ cleanup_resources() {
 trap cleanup_resources EXIT
 
 REGION="${AWS_DEFAULT_REGION:-us-east-1}"
-if [ -z "$REGION" ]; then
-  echo "Region not configured. Please run 'aws configure' and set the region."
-  exit 1
-fi
 
 echo "=== Step 1: Creating Delivery Stream ==="
 echo "We are creating an AWS Firehose delivery stream to transport data to an S3 bucket."
@@ -37,6 +32,7 @@ echo ""
 STREAM="test-stream-${SUFFIX}"
 ROLE_ARN="arn:aws:iam::559823168634:role/doc-babu-firehose-role"
 aws firehose create-delivery-stream \
+  --tags Key=project,Value=doc-smith Key=tutorial,Value=firehose-gs \
   --delivery-stream-name "$STREAM" \
   --delivery-stream-type DirectPut \
   --extended-s3-destination-configuration "RoleARN=$ROLE_ARN,BucketARN=arn:aws:s3:::doc-babu-test-bucket,Prefix=firehose-${SUFFIX}/"
@@ -66,3 +62,4 @@ echo ""
 
 echo "Tutorial complete"
 echo "In this tutorial, you learned how to create an AWS Firehose delivery stream, wait for it to become active, and put a record into it. This process demonstrates the basic functionality of AWS Firehose for data transport."
+fi
