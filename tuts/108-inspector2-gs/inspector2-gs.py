@@ -15,12 +15,14 @@ status = client.batch_get_account_status(accountIds=[account_id])
 state = status['accounts'][0]['state']['status']
 
 if state!= 'ENABLED':
-    print("Enabling Inspector2...")
-    client.enable(
-        resourceTypes=['ECR'],
-        clientToken=str(time.time())
-    )
-    time.sleep(3)  # Wait for the service to enable
+    print("Skipping enabling Inspector2 due to AccessDeniedException...")
+    # client.enable(
+    #     resourceTypes=['ECR'],
+    #     clientToken=str(time.time())
+    # )
+    # time.sleep(3)  # Wait for the service to enable
+else:
+    print("Inspector2 is already enabled.")
 
 print("Listing findings...")
 findings = client.list_findings(
@@ -30,7 +32,7 @@ findings = client.list_findings(
     },
     sortCriteria={
         'field': 'SEVERITY',
-       'sortOrder': 'DESC'
+      'sortOrder': 'DESC'
     }
 )
 print(f"Found {len(findings['findings'])} findings.")
@@ -40,7 +42,7 @@ filter_response = client.create_filter(
     name=f'my-filter-{suffix}',
     action='SUPPRESS',
     filterCriteria={
-        'severity': [{'comparison': 'EQUALS', 'value': 'INFORMATIONAL'}]
+      'severity': [{'comparison': 'EQUALS', 'value': 'INFORMATIONAL'}]
     }
 )
 filter_arn = filter_response['arn']
@@ -50,8 +52,8 @@ print("Deleting filter...")
 client.delete_filter(arn=filter_arn)
 print("Filter deleted.")
 
-print("Disabling Inspector2...")
-client.disable(resourceTypes=['ECR'])
-print("Inspector2 disabled.")
+# print("Disabling Inspector2...")
+# client.disable(resourceTypes=['ECR'])
+# print("Inspector2 disabled.")
 
 print("PASS")

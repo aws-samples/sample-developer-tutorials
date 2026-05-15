@@ -20,7 +20,8 @@ try:
                 'SizeInMBs': 5,
                 'IntervalInSeconds': 300
             }
-        }
+        },
+        Tags=[{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'firehose-gs'}]
     )
 
     print("Waiting for stream to be created...")
@@ -32,12 +33,6 @@ try:
 
     print("Listing delivery streams...")
     client.list_delivery_streams()
-
-    print("Tagging delivery stream...")
-    client.tag_delivery_stream(
-        DeliveryStreamName=stream_name,
-        Tags=[{'Key': 'Name', 'Value': 'Test'}]
-    )
 
     print("Listing tags for delivery stream...")
     client.list_tags_for_delivery_stream(DeliveryStreamName=stream_name)
@@ -63,7 +58,7 @@ try:
     print("Untagging delivery stream...")
     client.untag_delivery_stream(
         DeliveryStreamName=stream_name,
-        TagKeys=['Name']
+        TagKeys=['Name', 'project', 'tutorial']
     )
 
     print("Deleting delivery stream...")

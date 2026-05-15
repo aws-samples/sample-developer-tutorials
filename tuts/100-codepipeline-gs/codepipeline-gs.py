@@ -28,13 +28,14 @@ try:
             },
         ],
         inputArtifactDetails={
-            'minimum': 0,
+           'minimum': 0,
            'maximum': 1
         },
         outputArtifactDetails={
-            'minimum': 0,
+           'minimum': 0,
            'maximum': 1
-        }
+        },
+        tags=[{'key': 'project', 'value': 'doc-smith'}, {'key': 'tutorial', 'value': 'codepipeline-gs'}]
     )
     print("Custom action created")
 
@@ -52,7 +53,7 @@ try:
                                 'category': 'Source',
                                 'owner': 'AWS',
                                 'provider': 'S3',
-                                'version': '1'
+                               'version': '1'
                             },
                             'outputArtifacts': [
                                 {
@@ -96,7 +97,8 @@ try:
                     ]
                 }
             ]
-        }
+        },
+        tags=[{'key': 'project', 'value': 'doc-smith'}, {'key': 'tutorial', 'value': 'codepipeline-gs'}]
     )
     print("Pipeline created")
 

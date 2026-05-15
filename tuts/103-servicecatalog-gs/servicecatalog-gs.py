@@ -14,7 +14,8 @@ create_portfolio_response = client.create_portfolio(
     DisplayName=f'my-portfolio-{suffix}',
     Description='This is a test portfolio',
     ProviderName='MyOrg',
-    IdempotencyToken=str(uuid.uuid4())
+    IdempotencyToken=str(uuid.uuid4()),
+    Tags=[{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'servicecatalog-gs'}]
 )
 port_id = create_portfolio_response['PortfolioDetail']['Id']
 print(f"Portfolio created with ID: {port_id}")

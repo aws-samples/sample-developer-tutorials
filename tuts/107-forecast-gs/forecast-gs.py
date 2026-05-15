@@ -13,7 +13,7 @@ domain = 'RETAIL'
 
 print(f"Creating Dataset Group with name: {dataset_group_name}")
 try:
-    r = client.create_dataset_group(DatasetGroupName=dataset_group_name, Domain=domain)
+    r = client.create_dataset_group(DatasetGroupName=dataset_group_name, Domain=domain, Tags=[{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'forecast-gs'}])
     dataset_group_arn = r['DatasetGroupArn']
     print(f"Dataset Group created with ARN: {dataset_group_arn}")
 

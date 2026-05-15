@@ -9,7 +9,7 @@ route53 = boto3.client('route53', region_name=region)
 
 def create_hosted_zone():
     try:
-        response = route53.create_hosted_zone(Name=f'example-{suffix}.com.', CallerReference=str(time.time()))
+        response = route53.create_hosted_zone(Name=f'example-{suffix}.com.', CallerReference=str(time.time()), Tags=[{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'route53-gs'}])
         hosted_zone_id = response['HostedZone']['Id']
         print(f"Created Hosted Zone: {hosted_zone_id}")
         return hosted_zone_id
@@ -25,7 +25,7 @@ def create_health_check():
             'Type': 'HTTP',
             'ResourcePath': '/',
             'FullyQualifiedDomainName': f'example-{suffix}.com.'
-        })
+        }, Tags=[{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'route53-gs'}])
         health_check_id = response['HealthCheck']['Id']
         print(f"Created Health Check: {health_check_id}")
         return health_check_id
@@ -56,6 +56,7 @@ def create_traffic_policy():
             ]
         }""")
         traffic_policy_id = response['TrafficPolicy']['Id']
+        route53.tag_resource(ResourceType='trafficpolicy', ResourceId=traffic_policy_id, Tags=[{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'route53-gs'}])
         print(f"Created Traffic Policy: {traffic_policy_id}")
         return traffic_policy_id
     except Exception as e:
@@ -66,6 +67,7 @@ def create_traffic_policy_instance(hosted_zone_id, traffic_policy_id):
     try:
         response = route53.create_traffic_policy_instance(HostedZoneId=hosted_zone_id, Name=f'instance-{suffix}.example.com.', TrafficPolicyId=traffic_policy_id, TTL=300)
         traffic_policy_instance_id = response['TrafficPolicyInstance']['Id']
+        route53.tag_resource(ResourceType='trafficpolicyinstance', ResourceId=traffic_policy_instance_id, Tags=[{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'route53-gs'}])
         print(f"Created Traffic Policy Instance: {traffic_policy_instance_id}")
     except Exception as e:
         print(f"Error creating traffic policy instance: {e}")

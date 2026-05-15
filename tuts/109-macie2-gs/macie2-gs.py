@@ -21,4 +21,18 @@ try:
 except Exception as e:
     print("Error listing findings: ", e)
 
+# Assuming we are creating a member to demonstrate tagging
+try:
+    member = client.create_member(
+        accountId='123456789012',
+        email='test@example.com',
+        Tags=[
+            {'Key': 'project', 'Value': 'doc-smith'},
+            {'Key': 'tutorial', 'Value':'macie2-gs'}
+        ]
+    )
+    print(f"Created member with ARN: {member['arn']}")
+except Exception as e:
+    print("Error creating member: ", e)
+
 print("PASS")

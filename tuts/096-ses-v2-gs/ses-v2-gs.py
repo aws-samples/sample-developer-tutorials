@@ -9,13 +9,13 @@ sesv2 = boto3.client('sesv2', region_name=region)
 def create_configuration_set():
     name = f'config-set-{suffix}'
     print(f"Creating Configuration Set: {name}")
-    sesv2.create_configuration_set(ConfigurationSetName=name)
+    sesv2.create_configuration_set(ConfigurationSetName=name, Tags=[{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'ses-v2-gs'}])
     print(f"Created Configuration Set: {name}")
 
 def create_contact_list():
     name = f'contact-list-{suffix}'
     print(f"Creating Contact List: {name}")
-    sesv2.create_contact_list(ContactListName=name)
+    sesv2.create_contact_list(ContactListName=name, Tags=[{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'ses-v2-gs'}])
     print(f"Created Contact List: {name}")
 
 def create_contact():
@@ -24,7 +24,8 @@ def create_contact():
     print(f"Creating Contact: {email_address} in {contact_list_name}")
     sesv2.create_contact(
         ContactListName=contact_list_name,
-        ContactEmailAddress=email_address
+        ContactEmailAddress=email_address,
+        Tags=[{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'ses-v2-gs'}]
     )
     print(f"Created Contact: {email_address}")
 
@@ -32,6 +33,7 @@ def create_email_identity():
     email = f'test{suffix}@example.com'
     print(f"Creating Email Identity: {email}")
     sesv2.create_email_identity(EmailIdentity=email)
+    sesv2.tag_resource(ResourceARN=f'arn:aws:ses:{region}:{boto3.client("sts").get_caller_identity()["Account"]}:identity/{email}', Tags=[{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'ses-v2-gs'}])
     print(f"Created Email Identity: {email}")
 
 def clean_up():

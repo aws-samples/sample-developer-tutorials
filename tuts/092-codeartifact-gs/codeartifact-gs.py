@@ -12,14 +12,15 @@ client = boto3.client('codeartifact', region_name=region)
 
 try:
     print("Creating domain...")
-    domain = client.create_domain(domain=domain_name)
+    domain = client.create_domain(domain=domain_name, tags=[{'key': 'project', 'value': 'doc-smith'}, {'key': 'tutorial', 'value': 'codeartifact-gs'}])
     print(f"Domain created: {domain_name}")
 
     print("Creating repository...")
     repository = client.create_repository(
         domain=domain_name,
         repository=repo_name,
-        externalConnections=['public:pypi']
+        externalConnections=['public:pypi'],
+        tags=[{'key': 'project', 'value': 'doc-smith'}, {'key': 'tutorial', 'value': 'codeartifact-gs'}]
     )
     print(f"Repository created: {repo_name}")
 
@@ -28,7 +29,8 @@ try:
         domain=domain_name,
         packageGroup=package_group_name,
         contactInfo='test@example.com',
-        description='Test package group'
+        description='Test package group',
+        tags=[{'key': 'project', 'value': 'doc-smith'}, {'key': 'tutorial', 'value': 'codeartifact-gs'}]
     )
     print(f"Package group created: {package_group_name}")
 

@@ -14,15 +14,18 @@ vocabulary_file_key = f'/test-files/your-vocabulary-file.txt'
 vocabulary_bucket = 'your-bucket-name'  # Replace with your actual S3 bucket name
 vocabulary_file_uri = f's3://{vocabulary_bucket}{vocabulary_file_key}'
 
+tags = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value': 'transcribe-gs'}]
+
 try:
     print("Uploading vocabulary file to S3...")
     s3.upload_file(f'..{vocabulary_file_key}', vocabulary_bucket, vocabulary_file_key[1:])
 
     print("Creating custom vocabulary...")
-    transcribe.create_vocabulary(
+    vocabulary_response = transcribe.create_vocabulary(
         VocabularyName=vocabulary_name,
         LanguageCode='en-US',
-        VocabularyFileUri=vocabulary_file_uri
+        VocabularyFileUri=vocabulary_file_uri,
+        Tags=tags
     )
 
     print("Waiting for vocabulary to be ready...")

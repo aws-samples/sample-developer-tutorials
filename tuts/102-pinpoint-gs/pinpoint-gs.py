@@ -12,7 +12,8 @@ print(f"Creating Pinpoint application with name: {app_name}")
 # Create a Pinpoint application
 r = client.create_app(
     CreateApplicationRequest={
-        'Name': app_name
+        'Name': app_name,
+        'tags': {'project': 'doc-smith', 'tutorial': 'pinpoint-gs'}
     }
 )
 app_id = r['ApplicationResponse']['Id']

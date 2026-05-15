@@ -10,9 +10,13 @@ suffix = str(int(time.time()))[-6:]
 
 root_id = 'r-abc123'  # Use a placeholder root ID due to permission issues
 
-print(f"Creating Organizational Unit with name 'my-ou-{suffix}'...")
+print(f"Creating Organizational Unit with name'my-ou-{suffix}'...")
 try:
-    r = client.create_organizational_unit(ParentId=root_id, Name=f'my-ou-{suffix}')
+    r = client.create_organizational_unit(
+        ParentId=root_id, 
+        Name=f'my-ou-{suffix}',
+        Tags=[{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'organizations-gs'}]
+    )
     ou_id = r['OrganizationalUnit']['Id']
     print(f"Created Organizational Unit with ID: {ou_id}")
 

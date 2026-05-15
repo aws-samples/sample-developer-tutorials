@@ -10,7 +10,10 @@ repo_name = f'test-repo-{suffix}'
 codecommit = boto3.client('codecommit', region_name=region)
 
 print("Creating repository...")
-repository = codecommit.create_repository(repositoryName=repo_name)
+repository = codecommit.create_repository(
+    repositoryName=repo_name,
+    tags={'project': 'doc-smith', 'tutorial': 'codecommit-gs'}
+)
 repository_arn = repository.get('repositoryMetadata', {}).get('repositoryArn')
 
 if repository_arn:

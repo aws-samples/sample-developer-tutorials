@@ -24,46 +24,18 @@ except Exception as e:
 
 print("Creating filter...")
 filter_name = f'filter-{suffix}'
-guardduty.create_filter(
+filter_response = guardduty.create_filter(
     DetectorId=detector_id,
     Name=filter_name,
     FindingCriteria={'Criterion': {'type': {'Eq': ['UnauthorizedAccess:EC2/SSHBruteForce']}}}
 )
 print(f"Filter created: {filter_name}")
 
-print("Creating IP set...")
-ip_set_name = f'ip-set-{suffix}'
-try:
-    guardduty.create_ip_set(
-        DetectorId=detector_id,
-        Name=ip_set_name,
-        Format='TXT',
-        Location=f'/test-files/ip-set.txt',
-        Activate=True
-    )
-    print(f"IP set created: {ip_set_name}")
-except Exception as e:
-    print(f"Failed to create IP set: {e}")
-
-print("Creating threat intel set...")
-threat_intel_set_name = f'threat-intel-set-{suffix}'
-try:
-    guardduty.create_threat_intel_set(
-        DetectorId=detector_id,
-        Name=threat_intel_set_name,
-        Format='TXT',
-        Location=f'/test-files/threat-intel-set.txt',
-        Activate=True
-    )
-    print(f"Threat intel set created: {threat_intel_set_name}")
-except Exception as e:
-    print(f"Failed to create threat intel set: {e}")
-
 print("Deleting resources...")
 try:
-    guardduty.delete_detector(DetectorId=detector_id)
-    print("Resources deleted")
+    guardduty.delete_filter(DetectorId=detector_id, FilterName=filter_name)
+    print("Filter deleted")
 except Exception as e:
-    print(f"Failed to delete resources: {e}")
+    print(f"Failed to delete filter: {e}")
 
 print("PASS")

@@ -11,7 +11,8 @@ def create_analyzer():
     print("Creating analyzer...")
     response = client.create_analyzer(
         type='ACCOUNT',
-        analyzerName=f'test-analyzer-{suffix}'
+        analyzerName=f'test-analyzer-{suffix}',
+        tags=[{'key': 'project', 'value': 'doc-smith'}, {'key': 'tutorial', 'value': 'access-analyzer-gs'}]
     )
     analyzer_arn = response['arn']
     print(f"Analyzer created: {analyzer_arn}")
@@ -30,7 +31,8 @@ def create_archive_rule(analyzer_arn):
                     ]
                 },
             ]
-        }
+        },
+        tags=[{'key': 'project', 'value': 'doc-smith'}, {'key': 'tutorial', 'value': 'access-analyzer-gs'}]
     )
     print(f"Archive rule created: {response['arn']}")
 

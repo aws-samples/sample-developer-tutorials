@@ -8,7 +8,7 @@ scheduler = boto3.client('scheduler', region_name=region)
 
 def create_schedule_group(name):
     try:
-        response = scheduler.create_schedule_group(Name=name)
+        response = scheduler.create_schedule_group(Name=name, Tags=[{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'scheduler-gs'}])
         print(f"Created Schedule Group: {name}")
         return response['ScheduleGroupArn']
     except Exception as e:
@@ -26,7 +26,8 @@ def create_schedule(group_arn, name):
             },
             ScheduleExpressionTimezone='America/New_York',
             State='ENABLED',
-            ScheduleGroupName=group_arn.split(':')[-1]
+            ScheduleGroupName=group_arn.split(':')[-1],
+            Tags=[{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'scheduler-gs'}]
         )
         print(f"Created Schedule: {name}")
         return response['ScheduleArn']

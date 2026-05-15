@@ -21,7 +21,8 @@ r = client.create_project(
         'image': 'aws/codebuild/standard:7.0',
         'computeType': 'BUILD_GENERAL1_SMALL'
     },
-    serviceRole='arn:aws:iam::559823168634:role/doc-babu-codebuild-role'
+    serviceRole='arn:aws:iam::559823168634:role/doc-babu-codebuild-role',
+    tags=[{'key':'project','value':'doc-smith'},{'key':'tutorial','value':'codebuild-gs'}]
 )
 
 print("Starting build...")

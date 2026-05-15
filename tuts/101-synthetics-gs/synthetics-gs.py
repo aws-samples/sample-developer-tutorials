@@ -15,7 +15,8 @@ def create_canary():
             Code={'S3Bucket':'my-canary-bucket', 'S3Key':'my-canary-script.zip'},
             ExecutionRoleArn=role_arn,
             RuntimeVersion='syn-nodejs-2.0',
-            Schedule={'Expression': 'rate(1 minute)'}
+            Schedule={'Expression': 'rate(1 minute)'},
+            Tags=[{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'synthetics-gs'}]
         )
         print(f"Canary {canary_name} created")
         return canary_name
@@ -27,6 +28,7 @@ def create_group():
     group_name = f'group-{suffix}'
     try:
         response = client.create_group(Name=group_name)
+        client.tag_resource(resourceArn=response['Group']['Arn'], tags=[{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'synthetics-gs'}])
         print(f"Group {group_name} created")
         return group_name
     except Exception as e:
