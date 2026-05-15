@@ -8,12 +8,15 @@ suffix = str(int(time.time()))[-6:]
 name = f'test-assistant-{suffix}'
 client_token = uuid.uuid4().hex[:8]
 
+tags = [{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'wisdom-gs'}]
+
 print("Creating assistant...")
 response = client.create_assistant(
     name=name,
     type='AGENT',
     clientToken=client_token,
-    description='Test assistant for demonstration'
+    description='Test assistant for demonstration',
+    tags=tags  # Added tags here
 )
 
 assistant_id = response['assistant']['assistantId']

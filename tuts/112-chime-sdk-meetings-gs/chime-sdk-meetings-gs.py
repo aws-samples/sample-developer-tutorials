@@ -9,6 +9,8 @@ client_request_token = uuid.uuid4().hex[:8]
 media_region = 'us-east-1'
 external_meeting_id = f'meeting-{suffix}'
 
+tags = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value': 'chime-sdk-meetings-gs'}]
+
 print("Creating a Chime SDK meeting...")
 response = client.create_meeting(
     ClientRequestToken=client_request_token,
@@ -19,7 +21,8 @@ response = client.create_meeting(
         'Video': {'MaxResolution': 'HD'},
         'Content': {'MaxResolution': 'FHD'},
         'Attendee': {'MaxCount': 10}
-    }
+    },
+    Tags=tags
 )
 meeting_id = response['Meeting']['MeetingId']
 print(f"Meeting created with ID: {meeting_id}")
@@ -37,6 +40,7 @@ print("Creating an attendee...")
 response = client.create_attendee(
     MeetingId=meeting_id,
     ExternalUserId=f'attendee-{suffix}',
+    Tags=tags
 )
 attendee_id = response['Attendee']['AttendeeId']
 print(f"Attendee created with ID: {attendee_id}")

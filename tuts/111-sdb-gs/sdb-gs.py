@@ -7,8 +7,10 @@ client = boto3.client('sdb', region_name='us-east-1')
 suffix = str(int(time.time()))[-6:]
 domain_name = f'test-domain-{suffix}'
 
+tags = [{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'sdb-gs'}]
+
 print("Creating domain...")
-client.create_domain(DomainName=domain_name)
+client.create_domain(DomainName=domain_name, Tags=tags)
 time.sleep(5)  # Wait for domain to become active
 
 print("Verifying domain exists...")

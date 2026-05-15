@@ -6,12 +6,14 @@ import uuid
 suffix = str(int(time.time()))[-6:]
 region_name = 'us-east-1'
 group_name = f'group-{suffix}'
+tags = [{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'resource-groups-gs'}]
 
 client = boto3.client('resource-groups', region_name=region_name)
 
 print("Creating group...")
 r = client.create_group(
     Name=group_name,
+    Tags={tag['Key']: tag['Value'] for tag in tags},
     ResourceQuery={
         'Type': 'TAG_FILTERS_1_0',
         'Query': json.dumps({

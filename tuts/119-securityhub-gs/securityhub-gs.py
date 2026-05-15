@@ -6,6 +6,7 @@ import uuid
 client = boto3.client('securityhub', region_name='us-east-1')
 suffix = str(int(time.time()))[-6:]
 unique_id = uuid.uuid4().hex[:8]
+tags = [{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'securityhub-gs'}]
 
 print("Enabling Security Hub...")
 # Skip enabling Security Hub due to AccessDeniedException

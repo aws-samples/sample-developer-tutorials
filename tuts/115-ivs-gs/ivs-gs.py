@@ -14,7 +14,7 @@ response = client.create_channel(
     insecureIngest=False,
     latencyMode='NORMAL',
     type='STANDARD',
-    tags={'environment': 'test'}
+    tags=[{'Key': 'environment', 'Value': 'test'}, {'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value': 'ivs-gs'}]
 )
 channel_arn = response.get('channel', {}).get('arn')
 

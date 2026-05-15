@@ -6,8 +6,10 @@ import uuid
 suffix = str(int(time.time()))[-6:]
 client = boto3.client('repostspace', region_name='us-east-1')
 
+tags = [{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'repostspace-gs'}]
+
 # Skip Space creation due to AccessDeniedException
-# r = client.create_space(name=f'space-{suffix}', tier='BASIC', description='Test space', subdomain=f'sub-{suffix}')
+# r = client.create_space(name=f'space-{suffix}', tier='BASIC', description='Test space', subdomain=f'sub-{suffix}', tags=tags)
 # space_id = r['spaceId']
 # print(f"Space created: {space_id}")
 

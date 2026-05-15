@@ -10,10 +10,13 @@ schema_name = f'test-schema-{suffix}'
 content = json.dumps({'type': 'object', 'properties': {'id': {'type': 'integer'}}})
 schema_type = 'JSONSchemaDraft4'
 
+tags = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value':'schemas-gs'}]
+
 print("Creating Registry...")
 response = client.create_registry(
     RegistryName=registry_name,
-    Description='Test Registry'
+    Description='Test Registry',
+    Tags=tags
 )
 print("Registry Created")
 
@@ -29,7 +32,8 @@ response = client.create_schema(
     SchemaName=schema_name,
     Content=content,
     Description='Test Schema',
-    Type=schema_type
+    Type=schema_type,
+    Tags=tags
 )
 print("Schema Created")
 

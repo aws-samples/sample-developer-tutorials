@@ -5,9 +5,11 @@ import uuid
 suffix = str(int(time.time()))[-6:]
 client = boto3.client('keyspaces', region_name='us-east-1')
 
+tags = [{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'keyspaces-gs'}]
+
 # Create Keyspace
 ks_name = f'ks_{suffix}'
-client.create_keyspace(keyspaceName=ks_name)
+client.create_keyspace(keyspaceName=ks_name, Tags=tags)
 time.sleep(5)
 print("Keyspace created")
 
@@ -21,7 +23,8 @@ client.create_table(
             {'name': 'name', 'type': 'text'}
         ],
         'partitionKeys': [{'name': 'id'}]
-    }
+    },
+    Tags=tags
 )
 time.sleep(10)
 print("Table created")

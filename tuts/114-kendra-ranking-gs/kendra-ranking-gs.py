@@ -9,7 +9,11 @@ suffix = str(int(time.time()))[-6:]
 name = f'test-execution-plan-{suffix}'
 description = 'Test execution plan for Kendra Intelligent Ranking'
 capacity_units = {'RescoreCapacityUnits': 1}
-tags = [{'Key': 'Environment', 'Value': 'Test'}]
+tags = [
+    {'Key': 'Environment', 'Value': 'Test'},
+    {'Key': 'project', 'Value': 'doc-smith'},
+    {'Key': 'tutorial', 'Value': 'kendra-ranking-gs'}
+]
 client_token = uuid.uuid4().hex[:8]
 
 print("Creating Rescore Execution Plan...")

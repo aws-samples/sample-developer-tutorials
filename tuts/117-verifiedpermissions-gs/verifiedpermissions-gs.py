@@ -8,14 +8,17 @@ suffix = str(int(time.time()))[-6:]
 policy_store_name = f'policy-store-{suffix}'
 client_token = uuid.uuid4().hex[:8]
 
+tags = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value':'verifiedpermissions-gs'}]
+
 print("Creating Policy Store...")
 create_response = client.create_policy_store(
     clientToken=client_token,
     validationSettings={
-        'mode': 'STRICT'
+       'mode': 'STRICT'
     },
     description='Test Policy Store',
-    deletionProtection='DISABLED'
+    deletionProtection='DISABLED',
+    tags=tags  # Added tags here
 )
 policy_store_id = create_response['policyStoreId']
 print(f"Policy Store created with ID: {policy_store_id}")

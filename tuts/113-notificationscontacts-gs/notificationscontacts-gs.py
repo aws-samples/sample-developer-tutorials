@@ -18,6 +18,11 @@ response = client.create_topic(
 topic_arn = response['TopicArn']
 print(f"Email contact created with ARN: {topic_arn}")
 
+# Add tagging
+tag_key_value_pairs = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value': 'notificationscontacts-gs'}]
+for tag in tag_key_value_pairs:
+    client.tag_resource(ResourceArn=topic_arn, Tags=[tag])
+
 time.sleep(5)  # Wait for the contact to become active
 
 print("Listing topics...")

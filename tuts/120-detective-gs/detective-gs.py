@@ -6,7 +6,11 @@ import uuid
 client = boto3.client('detective', region_name='us-east-1')
 suffix = str(int(time.time()))[-6:]
 graph_name = f'test-graph-{suffix}'
-tags = {'Name': graph_name}
+tags = [
+    {'Key': 'Name', 'Value': graph_name},
+    {'Key': 'project', 'Value': 'doc-smith'},
+    {'Key': 'tutorial', 'Value': 'detective-gs'}
+]
 client_token = uuid.uuid4().hex[:8]
 
 print("Creating Amazon Detective behavior graph...")
