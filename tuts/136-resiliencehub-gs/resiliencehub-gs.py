@@ -6,6 +6,7 @@ import uuid
 client = boto3.client('resiliencehub', region_name='us-east-1')
 suffix = str(int(time.time()))[-6:]
 client_token = uuid.uuid4().hex[:8]
+tags = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value':'resiliencehub-gs'}]
 
 # Create App
 app_name = f"test-app-{suffix}"
@@ -16,7 +17,8 @@ create_app_response = client.create_app(
     permissionModel={
         'type': 'LegacyIAMUser'
     },
-    clientToken=client_token
+    clientToken=client_token,
+    tags=tags
 )
 if 'appArn' in create_app_response:
     app_arn = create_app_response['appArn']

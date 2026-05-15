@@ -9,6 +9,11 @@ suffix = str(int(time.time()))[-6:]
 asset_model_name = f'asset-model-{suffix}'
 client_token = str(uuid.uuid4())
 
+tags = [
+    {'Key': 'project', 'Value': 'doc-smith'},
+    {'Key': 'tutorial', 'Value': 'iotsitewise-gs'}
+]
+
 # Create Asset Model
 create_asset_model_response = client.create_asset_model(
     assetModelName=asset_model_name,
@@ -23,7 +28,8 @@ create_asset_model_response = client.create_asset_model(
             'unit': 'none'
         }
     ],
-    clientToken=client_token
+    clientToken=client_token,
+    tags=tags
 )
 asset_model_id = create_asset_model_response['assetModelId']
 

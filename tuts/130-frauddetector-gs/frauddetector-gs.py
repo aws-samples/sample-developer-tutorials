@@ -8,6 +8,7 @@ client = boto3.client('frauddetector', region_name='us-east-1')
 suffix = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=6))
 variable_name = f'var_{suffix}'
 detector_id = f'det_{suffix}'
+tags = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value': 'frauddetector-gs'}]
 
 # Create a fraud detection variable
 create_variable_response = client.create_variable(
@@ -16,7 +17,7 @@ create_variable_response = client.create_variable(
     dataSource='EVENT',
     defaultValue='UNKNOWN',
     description='Test variable for fraud detection',
-    tags=[{'key': 'test', 'value': 'true'}]
+    tags=tags
 )
 print("Variable created:", json.dumps(create_variable_response, indent=2))
 

@@ -8,6 +8,11 @@ suffix = str(int(time.time()))[-6:]
 schema_name = f"test-schema-{suffix}"
 idempotency_token = uuid.uuid4().hex[:8]
 
+tags = [
+    {'Key': 'project', 'Value': 'doc-smith'},
+    {'Key': 'tutorial', 'Value': 'entityresolution-gs'}
+]
+
 # Create Schema Mapping
 print("Creating Schema Mapping...")
 response = client.create_schema_mapping(
@@ -31,7 +36,7 @@ response = client.create_schema_mapping(
             'type':'EMAIL_ADDRESS'
         }
     ],
-    tags={'environment': 'test'}
+    tags=tags
 )
 print("Schema Mapping Created:", response)
 

@@ -5,12 +5,14 @@ import uuid
 
 client = boto3.client('appconfig', region_name='us-east-1')
 suffix = str(int(time.time()))[-6:]
+tags = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value': 'appconfig-gs'}]
 
 # Create Application
 application_name = f"appconfig-app-{suffix}"
 application_response = client.create_application(
     Name=application_name,
-    Description="Test Application"
+    Description="Test Application",
+    Tags=tags
 )
 application_id = application_response['Id']
 
@@ -21,7 +23,8 @@ environment_name = f"appconfig-env-{suffix}"
 environment_response = client.create_environment(
     ApplicationId=application_id,
     Name=environment_name,
-    Description="Test Environment"
+    Description="Test Environment",
+    Tags=tags
 )
 environment_id = environment_response['Id']
 
@@ -37,7 +40,8 @@ location_uri = "ssm-parameter://appconfig-test-parameter"
 #     Name=config_profile_name,
 #     Description="Test Configuration Profile",
 #     LocationUri=location_uri,
-#     RetrievalRoleArn="arn:aws:iam::559823168634:role/doc-babu-appconfig-role"
+#     RetrievalRoleArn="arn:aws:iam::559823168634:role/doc-babu-appconfig-role",
+#     Tags=tags
 # )
 # config_profile_id = config_profile_response['Id']
 

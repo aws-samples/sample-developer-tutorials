@@ -7,6 +7,10 @@ client = boto3.client('mediapackagev2', region_name='us-east-1')
 suffix = str(int(time.time()))[-6:]
 channel_group_name = f'test-channel-group-{suffix}'
 client_token = uuid.uuid4().hex[:8]
+tags = [
+    {'Key': 'project', 'Value': 'doc-smith'},
+    {'Key': 'tutorial', 'Value':'mediapackagev2-gs'}
+]
 
 # Create Channel Group
 print("Creating Channel Group...")
@@ -14,7 +18,7 @@ response = client.create_channel_group(
     ChannelGroupName=channel_group_name,
     ClientToken=client_token,
     Description="Test Channel Group",
-    Tags={"Environment": "Test"}
+    Tags=tags
 )
 print("Channel Group Created")
 

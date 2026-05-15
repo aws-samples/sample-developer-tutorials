@@ -3,12 +3,14 @@ import time
 
 client = boto3.client('securitylake', region_name='us-east-1')
 suffix = str(int(time.time()))[-6:]
+tags = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value':'securitylake-gs'}]
 
 print("Getting Data Lake sources...")
 # Skipping get_data_lake_sources due to UnauthorizedException
 # get_data_lake_sources_response = client.get_data_lake_sources(
 #     accounts=['559823168634'],
-#     maxResults=10
+#     maxResults=10,
+#     tags=tags  # Added tags here
 # )
 # print(f"Data Lake sources: {get_data_lake_sources_response}")
 
@@ -16,7 +18,8 @@ print("Getting Data Lake sources...")
 print("Deleting Data Lake...")
 # Skipping delete_data_lake due to potential UnauthorizedException
 # delete_data_lake_response = client.delete_data_lake(
-#     regions=['us-east-1']
+#     regions=['us-east-1'],
+#     tags=tags  # Added tags here
 # )
 print("Data Lake deletion skipped due to permissions issue")
 

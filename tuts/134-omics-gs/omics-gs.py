@@ -9,13 +9,15 @@ suffix = str(int(time.time()))[-6:]
 name = f"test-sequence-store-{suffix}"
 description = "Test sequence store for demonstration"
 client_token = uuid.uuid4().hex[:8]
+tags = [{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'omics-gs'}]
 
 print(f"Creating sequence store with name: {name}")
 
 response = client.create_sequence_store(
     name=name,
     description=description,
-    clientToken=client_token
+    clientToken=client_token,
+    tags=tags
 )
 
 sequence_store_id = response['id']

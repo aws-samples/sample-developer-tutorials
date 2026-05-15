@@ -6,11 +6,13 @@ import uuid
 client = boto3.client('connectcases', region_name='us-east-1')
 suffix = str(int(time.time()))[-6:]
 domain_name = f'test-domain-{suffix}'
+tags = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value': 'connectcases-gs'}]
 
 # Create Domain
 print("Creating domain...")
 response = client.create_domain(
     name=domain_name,
+    tags=tags
 )
 domain_id = response['domainId']
 print(f"Domain created with ID: {domain_id}")

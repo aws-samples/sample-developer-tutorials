@@ -1,10 +1,12 @@
 import boto3, json, time
 suffix = str(int(time.time()))[-6:]
 client = boto3.client('transfer', region_name='us-east-1')
+tags = [{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'transfer-gs'}]
 r = client.create_server(
     EndpointType='PUBLIC',
     IdentityProviderType='SERVICE_MANAGED',
-    Protocols=['SFTP'])
+    Protocols=['SFTP'],
+    Tags=tags)
 server_id = r['ServerId']
 print(f"Created server: {server_id}")
 # Wait for ONLINE

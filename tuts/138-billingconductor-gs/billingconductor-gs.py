@@ -6,6 +6,7 @@ import uuid
 client = boto3.client('billingconductor', region_name='us-east-1')
 suffix = str(int(time.time()))[-6:]
 client_token = uuid.uuid4().hex[:8]
+tags = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value': 'billingconductor-gs'}]
 
 # Create Pricing Rule
 pricing_rule_name = f"TestPricingRule{suffix}"
@@ -20,7 +21,8 @@ response = client.create_pricing_rule(
     Description=pricing_rule_description,
     Scope=pricing_rule_scope,
     Type=pricing_rule_type,
-    ModifierPercentage=modifier_percentage
+    ModifierPercentage=modifier_percentage,
+    Tags=tags
 )
 
 pricing_rule_arn = response['Arn']

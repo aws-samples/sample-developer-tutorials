@@ -9,6 +9,8 @@ resource_name = f"lf-resource-{suffix}"
 resource_arn = f"arn:aws:lakeformation:us-east-1:559823168634:resource/{resource_name}"
 role_arn = "arn:aws:iam::559823168634:role/doc-babu-lakeformation-role"
 
+tags = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value': 'lakeformation-gs'}]
+
 print("Listing resources to verify existing resources...")
 response = client.list_resources()
 resources = response.get('ResourceInfoList', [])
@@ -17,5 +19,14 @@ if existing_resource_found:
     print("Existing resource found. No need to register.")
 else:
     print("No existing resource found. Proceeding with verification.")
+
+    print("Registering resource with tags...")
+    client.register_resource(
+        ResourceArn=resource_arn,
+        RoleArn=role_arn,
+        UseServiceLinkedRole=False,
+        HybridAccessEnabled=False,
+        Tags=tags
+    )
 
 print("PASS")

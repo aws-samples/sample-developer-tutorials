@@ -10,6 +10,11 @@ unique_id = uuid.uuid4().hex[:6]
 detector_model_name = f'TestDetectorModel{unique_id}'
 role_arn = 'arn:aws:iam::559823168634:role/doc-babu-iotevents-role'
 
+tags = [
+    {'Key': 'project', 'Value': 'doc-smith'},
+    {'Key': 'tutorial', 'Value': 'iotevents-gs'}
+]
+
 # Create Detector Model
 try:
     create_detector_model_response = client.create_detector_model(
@@ -17,7 +22,7 @@ try:
         detectorModelDefinition={
             'states': [
                 {
-                    'stateName': 'InitialState',
+                   'stateName': 'InitialState',
                     'onInput': {
                         'events': [
                             {
@@ -52,7 +57,8 @@ try:
                 },
             ]
         },
-        roleArn=role_arn
+        roleArn=role_arn,
+        tags=tags
     )
     print(f"Created detector model: {detector_model_name}")
 
