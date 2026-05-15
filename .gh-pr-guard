@@ -1,0 +1,2 @@
+This file exists to remind agents: DO NOT run `gh pr create` without explicit user approval.
+The pipeline state machine requires Human Review BEFORE Create PR.
