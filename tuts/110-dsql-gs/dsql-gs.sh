@@ -25,6 +25,10 @@ CLUSTER_ID="cluster-$SUFFIX"
 echo "Cluster: $CLUSTER_ID (creation skipped due to permission issue)" >> "$LOG_FILE"
 CREATED_RESOURCES+=("$CLUSTER_ID")
 
+# Assuming the cluster creation command is here, add tagging after it
+# aws dsql create-cluster --cluster-id "$CLUSTER_ID" --query 'Cluster.ClusterArn' --output text
+# aws dsql tag-resource --resource-arn "$CLUSTER_ID" --tags Key=project,Value=doc-smith Key=tutorial,Value=dsql-gs
+
 echo "STEP: Waiting for cluster..." >> "$LOG_FILE"
 sleep 10
 

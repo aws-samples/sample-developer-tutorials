@@ -20,6 +20,8 @@ echo "Getting monitor..." {LOG_FILE}"
 echo "Skipping 'aws networkmonitor get-monitor' due to permission issue" {LOG_FILE}"
 
 echo "Listing monitors..." {LOG_FILE}"
-aws networkmonitor list-monitors --query 'monitors[0].monitorName' --output text
+MONITOR_NAME=$(aws networkmonitor list-monitors --query'monitors[0].monitorName' --output text)
+MONITOR_ARN=$(aws networkmonitor get-monitor --monitor-name "$MONITOR_NAME" --query 'monitor.monitorArn' --output text)
+aws networkmonitor tag-resource --resource-arn "$MONITOR_ARN" --tags Key=project,Value=doc-smith Key=tutorial,Value=networkmonitor-gs
 
 echo "PASS" {LOG_FILE}"

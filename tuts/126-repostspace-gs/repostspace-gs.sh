@@ -24,4 +24,9 @@ echo -e "\n--- Step 1: Access Check ---" >> "$LOG_FILE"
 echo "Access denied to create re:Post space. Skipping space creation step." >> "$LOG_FILE"
 echo "PASS" >> "$LOG_FILE"
 
+# Example of how to add resource tagging after a create command
+# ARN_VAR=$(aws repostspace create-space --name "example-space" --query 'space.spaceId' --output text)
+# aws repostspace tag-resource --resource-arn "$ARN_VAR" --tags Key=project,Value=doc-smith Key=tutorial,Value=repostspace-gs
+# CREATED_RESOURCES+=("$ARN_VAR")
+
 echo "Script completed"
