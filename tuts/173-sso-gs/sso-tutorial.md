@@ -1,58 +1,131 @@
-# Tutorial for Getting Started with AWS SSO
+# Tutorial: Using AWS SSO with Boto3
 
 ## Prerequisites
-- An AWS account
-- Python installed
-- Boto3 library installed
-- AWS SSO configured
+
+- Python installed on your machine
+- Boto3 library installed (`$ pip install boto3`)
+- AWS SSO setup with necessary permissions
+- SSO start URL, client ID, and client secret
 
 ## Steps
 
-1. **Set up your environment**:
-    Ensure you have Python and Boto3 installed. You can install Boto3 using pip:
-    ```sh
-    pip install boto3
-    ```
+### 1. Initialize a session using Amazon SSO credentials
 
-2. **Configure AWS CLI with SSO**:
-    Follow the [official AWS documentation](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html) to configure the AWS CLI with SSO.
+```python
+import boto3
+import uuid
+import time
 
-3. **Python Script to Interact with AWS SSO**:
-    Create a Python script to list accounts, roles, and retrieve role credentials.
+sso = boto3.client('sso')
+sso_oidc = boto3.client('sso-oidc')
+```
 
-    ```python
-    import boto3
-    import time
-    import random
+### 2. Get the SSO token
 
-    suffix = str(int(time.time()))[-6:] + str(random.randint(1, 100))
-    client = boto3.client('sso', region_name='us-east-1')
+```python
+def get_sso_token(region, start_url, client_id, client_secret):
+    device_code_response = sso_oidc.start_device_authorization(
+        clientId=client_id,
+        clientSecret=client_secret,
+        startUrl=start_url
+    )
+    device_code = device_code_response['deviceCode']
+    user_code = device_code_response['userCode']
+    verification_uri = device_code_response['verificationUriComplete']
+    
+    print(f"Navigate to {verification_uri} and enter code {user_code}")
+    
+    interval = int(device_code_response['interval'])
+    max_attempts = int(device_code_response['expiresIn']) // interval
 
-    try:
-        accounts = client.list_accounts()
-        print("List Accounts:", accounts)
-        
-        account_id = accounts['accountList'][0]['accountId']
-        roles = client.list_account_roles(accountId=account_id)
-        print("List Account Roles:", roles)
-        
-        role_credentials = client.get_role_credentials(
-            accountId=account_id,
-            roleName=roles['roleList'][0]['roleName'],
-            accessToken="dummy-token"  # Replace with actual token in real use
-        )
-        print("Get Role Credentials:", role_credentials)
-        
-        print("PASS")
-    except Exception as e:
-        print("Error:", e)
-    ```
+    for _ in range(max_attempts):
+        try:
+            access_token_response = sso_oidc.create_token(
+                grantType='urn:ietf:params:oauth:grant-type:device_code',
+                deviceCode=device_code,
+                clientId=client_id,
+                clientSecret=client_secret
+            )
+            return access_token_response['accessToken']
+        except sso_oidc.exceptions.AuthorizationPendingException:
+            time.sleep(interval)
+    
+    raise Exception("Failed to obtain access token")
+```
 
-4. **Run the Script**:
-    Execute the script to see the output of listed accounts, roles, and role credentials.
+### 3. Get role credentials
+
+```python
+def get_role_credentials(access_token, account_id, role_name, region):
+    sso = boto3.client('sso', region_name=region)
+    role_credentials = sso.get_role_credentials(
+        roleName=role_name,
+        accountId=account_id,
+        accessToken=access_token
+    )
+    print("GetRoleCredentials status: SUCCESS")
+    return role_credentials
+```
+
+### 4. List account roles
+
+```python
+def list_account_roles(access_token, account_id, region):
+    sso = boto3.client('sso', region_name=region)
+    account_roles = sso.list_account_roles(
+        accountId=account_id,
+        accessToken=access_token
+    )
+    print("ListAccountRoles status: SUCCESS")
+    return account_roles
+```
+
+### 5. List accounts
+
+```python
+def list_accounts(access_token, region):
+    sso = boto3.client('sso', region_name=region)
+    accounts = sso.list_accounts(
+        accessToken=access_token
+    )
+    print("ListAccounts status: SUCCESS")
+    return accounts
+```
+
+### 6. Logout
+
+```python
+def logout(access_token, region):
+    sso = boto3.client('sso', region_name=region)
+    sso.logout(
+        accessToken=access_token
+    )
+    print("Logout status: SUCCESS")
+```
+
+### 7. Main execution
+
+```python
+if __name__ == "__main__":
+    start_url = 'https://your-sso-start-url'
+    region = 'your-region'
+    client_id = 'your-client-id'
+    client_secret = 'your-client-secret'
+    account_id = '123456789012'
+    role_name = 'your-role-name'
+
+    access_token = get_sso_token(region, start_url, client_id, client_secret)
+    role_credentials = get_role_credentials(access_token, account_id, role_name, region)
+    account_roles = list_account_roles(access_token, account_id, region)
+    accounts = list_accounts(access_token, region)
+    logout(access_token, region)
+```
 
 ## Clean up
-- No resources are created in this tutorial that require manual cleanup.
+
+Ensure you log out after completing your tasks to secure your session.
 
 ## Next steps
-- Explore more features of AWS SSO, such as [assigning access](https://docs.aws.amazon.com/singlesignon/latest/userguide/userassignments.html) and [managing permissions](https://docs.aws.amazon.com/singlesignon/latest/userguide/permissions.html).
+
+- Explore other AWS services using the obtained role credentials.
+- Automate more tasks using Boto3 and AWS SSO.

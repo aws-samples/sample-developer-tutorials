@@ -1,78 +1,86 @@
-# Tutorial for Getting Started with Dynamodbstreams
+# Tutorial: Create and delete an amazon dynamodb table
+
+This tutorial guides you through creating and deleting an amazon dynamodb table using the boto3 python library.
 
 ## Prerequisites
-- An AWS account
-- Python installed
-- Boto3 library installed
+
+- An aws account.
+- Aws credentials configured for boto3.
+- Python installed with boto3 library.
 
 ## Steps
 
-1. **Set up your environment**:
-   Ensure you have AWS credentials configured and Boto3 installed.
-   ```bash
-   pip install boto3
-   ```
+**1. Initialize a dynamodb client**
 
-2. **Initialize the DynamoDB Streams client**:
-   ```python
-   import boto3
-   import time
-   import random
+```python
+import boto3
 
-   suffix = str(int(time.time()))[-6:] + str(random.randint(1, 100))
-   client = boto3.client('dynamodbstreams', region_name='us-east-1')
-   ```
+dynamodb = boto3.client('dynamodb')
+```
 
-3. **List streams**:
-   ```python
-   try:
-       print("Listing streams:")
-       response = client.list_streams()
-       print(response)
-   except Exception as e:
-       print("An error occurred:", e)
-   ```
+**2. Generate a unique suffix**
 
-4. **Describe a stream**:
-   ```python
-   if response['Streams']:
-       stream_arn = response['Streams'][0]['StreamArn']
-       print("Describing stream:", stream_arn)
-       response = client.describe_stream(StreamArn=stream_arn)
-       print(response)
-   ```
+```python
+import uuid
 
-5. **Get a shard iterator**:
-   ```python
-   shard_id = response['StreamDescription']['Shards'][0]['ShardId']
-   shard_iterator_type = 'TRIM_HORIZON'
-   print("Getting shard iterator for shard:", shard_id)
-   response = client.get_shard_iterator(
-       StreamArn=stream_arn,
-       ShardId=shard_id,
-       ShardIteratorType=shard_iterator_type
-   )
-   shard_iterator = response['ShardIterator']
-   ```
+unique_suffix = str(uuid.uuid4())
+```
 
-6. **Get records from the shard iterator**:
-   ```python
-   print("Getting records from shard iterator:")
-   response = client.get_records(ShardIterator=shard_iterator, Limit=2)
-   print(response)
-   ```
+**3. Create a table with a unique name and specified tags**
 
-7. **Handle exceptions**:
-   ```python
-   except Exception as e:
-       print("An error occurred:", e)
-   ```
+```python
+table_name = f'example-table-{unique_suffix}'
+response = dynamodb.create_table(
+    TableName=table_name,
+    KeySchema=[
+        {
+            'AttributeName': 'id',
+            'KeyType': 'HASH'
+        },
+    ],
+    AttributeDefinitions=[
+        {
+            'AttributeName': 'id',
+            'AttributeType': 'S'
+        },
+    ],
+    ProvisionedThroughput={
+        'ReadCapacityUnits': 5,
+        'WriteCapacityUnits': 5
+    },
+    Tags=[
+        {'Key': 'project', 'Value': 'doc-smith'},
+        {'Key': 'tutorial', 'Value': 'dynamodbstreams-gs'}
+    ]
+)
+print("Table creation status:", response['TableDescription']['TableStatus'])
+```
+
+**4. Wait until the table is active**
+
+```python
+import time
+
+while True:
+    response = dynamodb.describe_table(TableName=table_name)
+    if response['Table']['TableStatus'] == 'ACTIVE':
+        break
+    time.sleep(5)
+
+print("PASS")
+```
 
 ## Clean up
-Delete any resources created if necessary.
+
+**Delete the table**
+
+```python
+dynamodb.delete_table(TableName=table_name)
+print("Table deletion status: Pending")
+```
 
 ## Next steps
-Explore more features of DynamoDB Streams such as:
-- Handling different `ShardIteratorType` values
-- Processing records in a loop
-- Integrating with other AWS services
+
+- Explore dynamodb features like streams and global tables.
+- Learn about dynamodb auto scaling.
+- Check out the [aws dynamodb documentation](https://docs.aws.amazon.com/dynamodb/latest/developerguide/Introduction.html) for more information.

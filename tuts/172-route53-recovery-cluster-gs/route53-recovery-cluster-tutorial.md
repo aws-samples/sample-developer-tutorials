@@ -1,73 +1,62 @@
-# Tutorial for Getting Started with Route53 Recovery Cluster
+# Tutorial: Managing Amazon Route 53 Application Recovery Controller Routing Controls
 
 ## Prerequisites
-- An AWS account
-- Python installed
-- Boto3 library installed
+
+- An aws account.
+- Aws cli installed and configured with appropriate credentials.
+- Python installed with boto3 library.
 
 ## Steps
 
-1. **Set Up Your Environment**
-   Ensure you have AWS credentials configured and Boto3 installed.
-   ```bash
-   pip install boto3
-   ```
+### 1. Initialize a session using amazon route 53 application recovery controller
 
-2. **Initialize Boto3 Client**
-   Create a Boto3 client for Route53 Recovery Cluster.
-   ```python
-   import boto3
-   client = boto3.client('route53-recovery-cluster', region_name='us-east-1')
-   ```
+```python
+import boto3
+import uuid
 
-3. **List Routing Controls**
-   Retrieve a list of routing controls.
-   ```python
-   try:
-       print("Listing routing controls:")
-       response = client.list_routing_controls()
-       print(response)
-   except Exception as e:
-       print(f"An error occurred: {e}")
-   ```
+# Initialize a session using Amazon Route 53 Application Recovery Controller
+session = boto3.Session(
+    region_name='us-west-2'  # Change to your preferred region
+)
+```
 
-4. **Get Routing Control State**
-   Fetch the state of a specific routing control.
-   ```python
-   if 'RoutingControls' in response:
-       routing_control_arn = response['RoutingControls'][0]['RoutingControlArn']
-       
-       print("\nGetting routing control state:")
-       state_response = client.get_routing_control_state(RoutingControlArn=routing_control_arn)
-       print(state_response)
-   ```
+### 2. Create a route 53 arc client
 
-5. **Update Routing Control State**
-   Toggle the state of the routing control.
-   ```python
-   new_state = 'Off' if state_response['RoutingControlState'] == 'On' else 'On'
-   
-   print(f"\nUpdating routing control state to {new_state}:")
-   update_response = client.update_routing_control_state(RoutingControlArn=routing_control_arn, RoutingControlState=new_state)
-   print(update_response)
-   ```
+```python
+# Create a Route 53 ARC client
+arc_client = session.client('route53-recovery-cluster')
+```
 
-6. **Verify Updated State**
-   Confirm the state change.
-   ```python
-   print("\nGetting updated routing control state:")
-   state_response = client.get_routing_control_state(RoutingControlArn=routing_control_arn)
-   print(state_response)
-   ```
+### 3. Generate a unique suffix for resource names
 
-7. **Completion Message**
-   Print a success message.
-   ```python
-   print("\nPASS")
-   ```
+```python
+# Unique suffix for resource names
+suffix = str(uuid.uuid4())[:8]
+```
+
+### 4. List routing controls
+
+```python
+try:
+    list_response = arc_client.list_routing_controls(
+        MaxResults=10
+    )
+    print("ListRoutingControls:", list_response)
+except Exception as e:
+    print(f"Error listing routing controls: {e}")
+```
+
+**Expected output:**
+
+```
+ListRoutingControls: {'RoutingControls': [{'RoutingControlName': 'example-routing-control-123456789012', 'Status': 'Off'},...], 'ResponseMetadata': {...}}
+```
 
 ## Clean up
-Ensure you delete any resources created to avoid unnecessary charges.
+
+- Remove any resources created during the tutorial to avoid unnecessary costs.
 
 ## Next steps
-Explore more features of Route53 Recovery Cluster, such as working with safety rules and cluster endpoints.
+
+- Explore more about amazon route 53 application recovery controller.
+- Implement additional routing controls and test failover scenarios.

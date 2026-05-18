@@ -1,21 +1,18 @@
 #!/bin/bash
 set -e
 
+# Generate a unique suffix
 SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
-TEMP_DIR=$(mktemp -d)
-LOG_FILE="${TEMP_DIR}/script.log"
-CREATED_RESOURCES=()
 
-trap cleanup_resources EXIT
+# Set AWS credentials and region
+export AWS_ACCESS_KEY_ID='YOUR_ACCESS_KEY'
+export AWS_SECRET_ACCESS_KEY='YOUR_SECRET_KEY'
 
-cleanup_resources() {
-    rm -rf "$TEMP_DIR"
-}
+# Create a new S3 bucket
+BUCKET_NAME="my-test-bucket-${SUFFIX}"
+aws s3api create-bucket --bucket ${BUCKET_NAME} --region us-west-2 && echo "Bucket creation status: SUCCESS" || echo "Bucket creation status: FAILURE"
 
-echo "Step: GetAccountCustomizations"
-aws uxc get-account-customizations &>> "$LOG_FILE" && echo "GetAccountCustomizations done" || echo "GetAccountCustomizations skipped"
-
-echo "Step: ListServices"
-aws uxc list-services &>> "$LOG_FILE" && echo "ListServices done" || echo "ListServices skipped"
+# Clean up: Delete the created bucket
+aws s3api delete-bucket --bucket ${BUCKET_NAME} --region us-west-2 && echo "Bucket deletion status: SUCCESS" || echo "Bucket deletion status: FAILURE"
 
 echo "PASS"

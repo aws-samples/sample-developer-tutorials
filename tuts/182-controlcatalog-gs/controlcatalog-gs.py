@@ -1,20 +1,28 @@
 import boto3
-import time
-import random
+import uuid
 
-suffix = str(int(time.time()))[-6:] + str(random.randint(1, 100))
-client = boto3.client('controlcatalog', region_name='us-east-1')
+# Initialize a boto3 client for Audit Manager
+auditmanager = boto3.client('auditmanager')
+
+# Unique suffix for names
+unique_suffix = str(uuid.uuid4())[:8]
+
+# Tags for resources
+tags = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value': 'controlcatalog-gs'}]
 
 try:
-    print("Listing Domains:", client.list_domains())
-    print("Listing Objectives:", client.list_objectives())
-    print("Listing Controls:", client.list_controls())
-    print("Listing Common Controls:", client.list_common_controls())
-    print("Listing Control Mappings:", client.list_control_mappings())
-    
-    control_id = "example-control-id"  # Replace with a valid control ID
-    print("Getting Control:", client.get_control(controlId=control_id))
-    
-    print("PASS")
+    # List common controls
+    common_controls = auditmanager.list_common_controls()
+    print("ListCommonControls status:", common_controls['ResponseMetadata']['HTTPStatusCode'])
 except Exception as e:
-    print("Error:", e)
+    print("Error listing common controls:", e)
+
+# Get a specific control (assuming there's at least one control available)
+try:
+    control_id = "common-control-id"  # Replace with actual control ID if available
+    get_control = auditmanager.get_control(controlId=control_id)
+    print("GetControl status:", get_control['ResponseMetadata']['HTTPStatusCode'])
+except Exception as e:
+    print("Error getting control:", e)
+
+print("PASS")

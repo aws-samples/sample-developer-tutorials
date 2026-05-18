@@ -1,84 +1,117 @@
-# Tutorial for Getting Started with AWS Pricing
+# Amazon AWS Pricing Tutorial
 
 ## Prerequisites
-- An AWS account
-- Python installed
-- Boto3 library installed
+
+- An [AWS account](https://aws.amazon.com/)
+- [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) installed and configured
+- Python installed with `boto3` library
 
 ## Steps
 
-1. **Set up your environment**
+### 1. Initialize a session using Amazon AWS Pricing
 
-   Ensure you have AWS credentials configured and Boto3 installed.
+```python
+import boto3
+import uuid
 
-   ```bash
-   pip install boto3
-   ```
+# Initialize a session using Amazon AWS Pricing
+session = boto3.Session(
+    aws_access_key_id='YOUR_ACCESS_KEY',
+    aws_secret_access_key='YOUR_SECRET_KEY',
+    region_name='us-east-1'
+)
 
-2. **Import necessary libraries**
+client = session.client('pricing', region_name='us-east-1')
+```
 
-   ```python
-   import boto3
-   import time
-   import random
-   ```
+### 2. Describe services
 
-3. **Initialize the Pricing client**
+**DescribeServices operation**
 
-   ```python
-   suffix = str(int(time.time()))[-6:] + str(random.randint(1, 100))
-   client = boto3.client('pricing', region_name='us-east-1')
-   ```
+```bash
+$ response = client.describe_services(
+    ServiceCode='AmazonEC2',
+    FormatVersion='aws_v1'
+)
+$ print("Status:", response['ResponseMetadata']['HTTPStatusCode'])
+```
 
-4. **List Price Lists**
+### 3. Get attribute values
 
-   ```python
-   try:
-       print("Calling ListPriceLists...")
-       response = client.list_price_lists()
-       print(response)
-   ```
+**GetAttributeValues operation**
 
-5. **Describe Services**
+```bash
+$ response = client.get_attribute_values(
+    ServiceCode='AmazonEC2',
+    AttributeName='volumeType',
+    NextToken=''
+)
+$ print("Status:", response['ResponseMetadata']['HTTPStatusCode'])
+```
 
-   ```python
-       print("Calling DescribeServices...")
-       response = client.describe_services(ServiceCode='AmazonEC2')
-       print(response)
-   ```
+### 4. Get price list file url
 
-6. **Get Attribute Values**
+**GetPriceListFileUrl operation**
 
-   ```python
-       print("Calling GetAttributeValues...")
-       response = client.get_attribute_values(ServiceCode='AmazonEC2', AttributeName='volumeType')
-       print(response)
-   ```
+```bash
+$ response = client.get_price_list_file_url(
+    ServiceCode='AmazonEC2',
+    Region='us-east-1',
+    FileFormat='JSON'
+)
+$ print("Status:", response['ResponseMetadata']['HTTPStatusCode'])
+```
 
-7. **Get Price List File URL**
+### 5. Get products
 
-   ```python
-       print("Calling GetPriceListFileUrl...")
-       response = client.get_price_list_file_url(FileFormat='JSON', CompressionFormat='GZIP', ServiceCode='AmazonEC2')
-       print(response)
-   ```
+**GetProducts operation**
 
-8. **Get Products**
+```bash
+$ response = client.get_products(
+    ServicesCodes=['AmazonEC2'],
+    MaxResults=10,
+    Filters=[
+        {
+            'Type': 'TERM_MATCH',
+            'Field': 'volumeType',
+            'Value': 'gp2'
+        }
+    ]
+)
+$ print("Status:", response['ResponseMetadata']['HTTPStatusCode'])
+```
 
-   ```python
-       print("Calling GetProducts...")
-       response = client.get_products(ServiceCode='AmazonEC2', Filters=[{'Type': 'TERM_MATCH', 'Field': 'volumeType', 'Value': 'gp2'}])
-       print(response)
+### 6. List price lists
 
-       print("PASS")
-   except Exception as e:
-       print("Error:", e)
-   ```
+**ListPriceLists operation**
+
+```bash
+$ response = client.list_price_lists(
+    ServiceCode='AmazonEC2',
+    Region='us-east-1',
+    NextToken=''
+)
+$ print("Status:", response['ResponseMetadata']['HTTPStatusCode'])
+```
+
+### 7. Add tags to a resource
+
+```python
+# Adding tags to a resource (example, assuming resource ARN is known)
+resource_arn = 'arn:aws:pricing:us-east-1:123456789012:resource/example'
+client.tag_resource(
+    ResourceArn=resource_arn,
+    Tags=[
+        {'Key': 'project', 'Value': 'doc-smith'},
+        {'Key': 'tutorial', 'Value': 'pricing-gs'}
+    ]
+)
+```
 
 ## Clean up
 
-No resources are created in this tutorial that need deletion.
+Remove any resources or configurations created during this tutorial to avoid unnecessary costs.
 
 ## Next steps
 
-Explore more features of the AWS Pricing API by checking the [official documentation](https://docs.aws.amazon.com/aws-cost-management/latest/userguide/what-is-cost-management.html).
+Explore more AWS Pricing features and integrate them into your applications.

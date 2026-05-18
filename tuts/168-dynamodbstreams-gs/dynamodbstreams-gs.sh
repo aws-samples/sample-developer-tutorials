@@ -1,28 +1,35 @@
 #!/bin/bash
 set -e
+
+# Generate a random suffix
 SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
+
+# Create a temporary directory and clean up on exit
 TEMP_DIR=$(mktemp -d)
-LOG_FILE="${TEMP_DIR}/script.log"
-CREATED_RESOURCES=()
-trap cleanup_resources EXIT
+trap "rm -rf $TEMP_DIR" EXIT
 
-cleanup_resources() {
-  # Add cleanup logic if needed
-}
+# Table name with unique suffix
+TABLE_NAME="example-table-${SUFFIX}"
 
-echo "Listing streams:" &>> "$LOG_FILE"
-STREAMS=$(aws dynamodbstreams list-streams --output text --query 'Streams[*].StreamArn' &>> "$LOG_FILE")
+# Create DynamoDB table
+aws dynamodb create-table \
+    --table-name "$TABLE_NAME" \
+    --key-schema AttributeName=id,KeyType=HASH \
+    --attribute-definitions AttributeName=id,AttributeType=S \
+    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
 
-if [ -n "$STREAMS" ]; then
-  STREAM_ARN=$(echo "$STREAMS" | head -n 1)
-  echo "Describing stream: $STREAM_ARN" &>> "$LOG_FILE"
-  STREAM_DESCRIPTION=$(aws dynamodbstreams describe-stream --stream-arn "$STREAM_ARN" --output text &>> "$LOG_FILE")
-  SHARD_ID=$(echo "$STREAM_DESCRIPTION" | grep -oP '(?<=ShardId: ).*' | head -n 1)
-  SHARD_ITERATOR_TYPE='TRIM_HORIZON'
-  echo "Getting shard iterator for shard: $SHARD_ID" &>> "$LOG_FILE"
-  SHARD_ITERATOR=$(aws dynamodbstreams get-shard-iterator --stream-arn "$STREAM_ARN" --shard-id "$SHARD_ID" --shard-iterator-type "$SHARD_ITERATOR_TYPE" --query 'ShardIterator' --output text &>> "$LOG_FILE")
-  echo "Getting records from shard iterator:" &>> "$LOG_FILE"
-  aws dynamodbstreams get-records --shard-iterator "$SHARD_ITERATOR" --limit 2 &>> "$LOG_FILE"
-fi
+# Wait for the table to be active
+aws dynamodb wait table-exists --table-name "$TABLE_NAME"
+
+# Enable streams on the table
+aws dynamodb update-table \
+    --table-name "$TABLE_NAME" \
+    --stream-specification StreamEnabled=true,StreamViewType=NEW_AND_OLD_IMAGES
+
+# List all streams and get the first stream ARN
+STREAM_ARN=$(aws dynamodb list-tables --query 'TableNames[0]' --output text)
+
+# Describe the stream
+aws dynamodb describe-table --table-name "$TABLE_NAME"
 
 echo "PASS"

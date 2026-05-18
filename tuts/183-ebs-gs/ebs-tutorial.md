@@ -1,97 +1,97 @@
-# Tutorial for Getting Started with AWS EBS
+# Tutorial: Getting started with Amazon EBS
+
+This tutorial guides you through creating and managing an Amazon Elastic Block Store (EBS) volume and snapshot using the AWS SDK for Python (Boto3).
 
 ## Prerequisites
-- An AWS account
-- Python installed
-- Boto3 library installed
+
+- An AWS account.
+- Python installed on your local machine.
+- Boto3 library installed. You can install it using `$ pip install boto3`.
 
 ## Steps
 
-1. **Set up your environment**
-
-    Ensure you have the necessary libraries installed:
-    ```bash
-    pip install boto3
-    ```
-
-2. **Initialize the EBS client**
+1. **Initialize a session using Amazon EC2**
 
     ```python
     import boto3
-    import time
-    import random
 
-    suffix = str(int(time.time()))[-6:] + str(random.randint(1, 100))
-    client = boto3.client('ebs', region_name='us-east-1')
+    ec2 = boto3.client('ec2')
     ```
 
-3. **List snapshot blocks**
+2. **Create a unique suffix for resources**
 
     ```python
-    print("Listing snapshot blocks...")
-    response = client.list_snapshot_blocks(SnapshotId='snap-0123456789abcdef0')
-    print(response)
+    import uuid
+
+    suffix = str(uuid.uuid4())
     ```
 
-4. **Get a snapshot block**
+3. **Create and configure a volume in a valid availability zone**
 
     ```python
-    print("Getting snapshot block...")
-    response = client.get_snapshot_block(BlockIndex=0, BlockToken='token', SnapshotId='snap-0123456789abcdef0')
-    print(response)
+    valid_zones = [zone['ZoneName'] for zone in ec2.describe_availability_zones()['AvailabilityZones'] if zone['State'] == 'available' and zone['RegionName'] == 'us-west-2']
+    if valid_zones:
+        availability_zone = valid_zones[0]
+        volume_id = ec2.create_volume(
+            AvailabilityZone=availability_zone,
+            Size=1,
+            Encrypted=True,
+            TagSpecifications=[
+                {
+                    'ResourceType': 'volume',
+                    'Tags': [
+                        {'Key': 'project', 'Value': 'doc-smith'},
+                        {'Key': 'tutorial', 'Value': 'ebs-gs'}
+                    ]
+                },
+            ]
+        )['VolumeId']
     ```
 
-5. **List changed blocks**
+4. **Wait until the volume is available**
 
     ```python
-    print("Listing changed blocks...")
-    response = client.list_changed_blocks(FirstSnapshotId='snap-0123456789abcdef0', SecondSnapshotId='snap-0abcdef1234567890', BlockIndex=0)
-    print(response)
+    ec2.get_waiter('volume_available').wait(VolumeIds=[volume_id])
     ```
 
-6. **Start a snapshot**
+5. **Create and configure a snapshot**
 
     ```python
-    print("Starting snapshot...")
-    response = client.start_snapshot(VolumeSize=10, SnapshotDescription='MySnapshot'+suffix)
-    snapshot_id = response['SnapshotId']
-    print(response)
+    snapshot_id = ec2.create_snapshot(
+        VolumeId=volume_id,
+        Description='Test snapshot for EBS getting started'
+    )['SnapshotId']
     ```
 
-7. **Put a snapshot block**
+6. **Wait until the snapshot is completed**
 
     ```python
-    print("Putting snapshot block...")
-    with open('data.bin', 'rb') as f:
-        data = f.read()
-    response = client.put_snapshot_block(BlockData=data, BlockIndex=0, BlockToken=response['BlockToken'], SnapshotId=snapshot_id)
-    print(response)
+    ec2.get_waiter('snapshot_completed').wait(SnapshotIds=[snapshot_id])
     ```
 
-8. **Complete the snapshot**
+7. **Print statuses**
 
     ```python
-    print("Completing snapshot...")
-    response = client.complete_snapshot(SnapshotId=snapshot_id)
-    print(response)
-    ```
-
-9. **Verify the operation**
-
-    ```python
+    print(f"Volume created: {volume_id}")
+    print(f"Snapshot created: {snapshot_id}")
     print("PASS")
     ```
 
 ## Clean up
-Delete any resources created to avoid unnecessary charges.
 
-```python
-try:
-    print("Deleting snapshot...")
-    client.delete_snapshot(SnapshotId=snapshot_id)
-except:
-    pass
-```
+- Delete the snapshot.
+
+    ```python
+    ec2.delete_snapshot(SnapshotId=snapshot_id)
+    ```
+
+- Delete the volume.
+
+    ```python
+    ec2.delete_volume(VolumeId=volume_id)
+    ```
 
 ## Next steps
-Explore more features of the AWS EBS service, such as creating volumes from snapshots, modifying volume attributes, and more.
+
+- Explore more about [Amazon EBS](https://aws.amazon.com/ebs/).
+- Learn how to [optimize your EBS volumes](https://aws.amazon.com/ebs/details/).

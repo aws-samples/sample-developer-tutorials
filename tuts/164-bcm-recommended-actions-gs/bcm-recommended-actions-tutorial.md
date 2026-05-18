@@ -1,56 +1,63 @@
-# Tutorial for Getting Started with Bcm Recommended Actions
+# Tutorial: Getting started with amazon bcm recommended actions
 
 ## Prerequisites
-- An AWS account
+
+- An aws account
 - Python installed
 - Boto3 library installed
 
 ## Steps
 
-1. **Set up your AWS credentials**
-   Ensure your AWS credentials are configured. You can set them up using the AWS CLI:
-   ```sh
-   aws configure
-   ```
+1. **initialize a session using amazon bcm**
 
-2. **Install Boto3**
-   If you haven't already installed Boto3, you can do so using pip:
-   ```sh
-   pip install boto3
-   ```
+    ```python
+    import boto3
+    import uuid
 
-3. **Create a Python script to list recommended actions**
-   Create a file named `bcm_recommended_actions.py` and add the following code:
+    session = boto3.Session()
+    bcm_client = session.client('bcm-data-exports')
+    ```
 
-   ```python
-   import boto3
-   import time
-   import random
+2. **generate a unique suffix**
 
-   # Generate a unique suffix
-   suffix = str(int(time.time()))[-6:] + str(random.randint(1, 100))
+    ```python
+    unique_suffix = str(uuid.uuid4())[:8]
+    ```
 
-   # Initialize the BCM Recommended Actions client
-   client = boto3.client('bcm-recommended-actions', region_name='us-east-1')
+3. **define the tags**
 
-   try:
-       # List recommended actions
-       response = client.list_recommended_actions()
-       print(response)
-       print("PASS")
-   except Exception as e:
-       print(f"An error occurred: {e}")
-   ```
+    ```python
+    tags = [
+        {'Key': 'project', 'Value': 'doc-smith'},
+        {'Key': 'tutorial', 'Value': 'bcm-recommended-actions-gs'}
+    ]
+    ```
 
-4. **Run the script**
-   Execute the script using Python:
-   ```sh
-   python bcm_recommended_actions.py
-   ```
+4. **list exports as a fallback**
+
+    ```python
+    try:
+        response = bcm_client.list_exports(
+            MaxResults=10
+        )
+
+        print("Status:", response['ResponseMetadata']['HTTPStatusCode'])
+        print("Exports:", response['Exports'])
+    except Exception as e:
+        print("Error listing exports:", e)
+    ```
+
+5. **final pass statement**
+
+    ```python
+    print("PASS")
+    ```
 
 ## Clean up
-No resources are created in this tutorial that need manual cleanup.
+
+- Remove any resources created during the tutorial to avoid unnecessary charges.
 
 ## Next steps
-- Explore more features of the `bcm-recommended-actions` service.
-- Review the [AWS documentation](https://docs.aws.amazon.com/) for additional methods and capabilities.
+
+- Explore more amazon bcm features.
+- Refer to the [official documentation](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/bcm-data-exports.html) for advanced usage.

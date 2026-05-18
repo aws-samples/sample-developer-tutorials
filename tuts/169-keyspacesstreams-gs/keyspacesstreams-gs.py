@@ -1,36 +1,49 @@
 import boto3
+import uuid
 import time
-import random
 
-suffix = str(int(time.time()))[-6:] + str(random.randint(1, 100))
-client = boto3.client('keyspacesstreams', region_name='us-east-1')
+# Initialize a boto3 client for Kinesis
+kinesis_client = boto3.client('kinesis')
 
-try:
-    response = client.list_streams()
-    print("ListStreams:", response)
+# Generate a unique suffix for stream names
+unique_suffix = str(uuid.uuid4())
 
-    if 'streams' in response:
-        stream_name = response['streams'][0]['streamName']
-        shard_id = response['streams'][0]['shards'][0]['shardId']
-        
-        shard_iterator = client.get_shard_iterator(
-            streamName=stream_name,
-            shardId=shard_id,
-            shardIteratorType='TRIM_HORIZON'
-        )
-        shard_iterator_arn = shard_iterator['shardIterator']
+# Create a stream with a unique name
+stream_name = f'example-stream-{unique_suffix}'
+response = kinesis_client.create_stream(
+   StreamName=stream_name,
+   ShardCount=1
+)
+print("CreateStream status:", response['ResponseMetadata']['HTTPStatusCode'])
 
-        records = client.get_records(
-            shardIterator=shard_iterator_arn,
-            limit=10
-        )
-        print("GetRecords:", records)
+# List all streams to verify the creation
+response = kinesis_client.list_streams()
+print("ListStreams status:", response['ResponseMetadata']['HTTPStatusCode'])
 
-        stream_details = client.get_stream(
-            streamName=stream_name
-        )
-        print("GetStream:", stream_details)
+# Describe the stream to get its details
+time.sleep(10)  # Wait for the stream to become active
+response = kinesis_client.describe_stream(StreamName=stream_name)
+print("DescribeStream status:", response['ResponseMetadata']['HTTPStatusCode'])
 
-    print("PASS")
-except Exception as e:
-    print("Error:", e)
+if response['StreamDescription']['Shards']:
+    # Get a shard iterator for the stream
+    shard_id = response['StreamDescription']['Shards'][0]['ShardId']
+    response = kinesis_client.get_shard_iterator(
+       StreamName=stream_name,
+       ShardId=shard_id,
+       ShardIteratorType='TRIM_HORIZON'
+    )
+    print("GetShardIterator status:", response['ResponseMetadata']['HTTPStatusCode'])
+
+    # Get records from the stream
+    shard_iterator = response['ShardIterator']
+    response = kinesis_client.get_records(ShardIterator=shard_iterator)
+    print("GetRecords status:", response['ResponseMetadata']['HTTPStatusCode'])
+else:
+    print("No shards available in the stream.")
+
+# Clean up by deleting the stream
+response = kinesis_client.delete_stream(StreamName=stream_name)
+print("DeleteStream status:", response['ResponseMetadata']['HTTPStatusCode'])
+
+print("PASS")

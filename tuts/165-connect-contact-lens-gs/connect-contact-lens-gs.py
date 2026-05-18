@@ -1,20 +1,37 @@
 import boto3
-import time
-import random
+import uuid
 
-suffix = str(int(time.time()))[-6:] + str(random.randint(1, 100))
-client = boto3.client('connect', region_name='us-east-1')
+# Initialize a session using Amazon Connect in the region of your choice
+session = boto3.Session(region_name='us-west-2')
+connect_client = session.client('connect')
+
+# Unique suffix for resource names
+unique_suffix = str(uuid.uuid4())
+
+# Tags for resources
+tags = [
+    {'Key': 'project', 'Value': 'doc-smith'},
+    {'Key': 'tutorial', 'Value': 'connect-contact-lens-gs'}
+]
+
+# Assume instance_id and contact_id are predefined
+instance_id = 'your-instance-id'
+contact_id = 'your-contact-id'
 
 try:
-    instance_id = 'your-instance-id'
-    contact_id = 'your-contact-id'
-    
-    response = client.list_realtime_contact_analysis_segments(
+    # List Real-time Contact Analysis Segments
+    response = connect_client.list_realtime_contact_analysis_segments(
         InstanceId=instance_id,
         ContactId=contact_id
     )
-    
-    print(response)
+
+    # Print status
+    print("Status:", response['ResponseMetadata']['HTTPStatusCode'])
+
+    # Print segments
+    for segment in response['RealtimeContactAnalysisSegments']:
+        print(segment)
+
     print("PASS")
 except Exception as e:
-    print(f"An error occurred: {e}")
+    print("An error occurred:", e)

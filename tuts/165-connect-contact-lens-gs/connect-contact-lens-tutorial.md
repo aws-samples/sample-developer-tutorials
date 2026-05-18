@@ -1,64 +1,75 @@
-# Tutorial for Getting Started with Connect Contact Lens
+# Tutorial: Analyze Real-time Contact with Amazon Connect
 
 ## Prerequisites
-- An AWS account
-- Python installed
-- Boto3 library installed
-  ```bash
-  pip install boto3
-  ```
+
+- An aws account.
+- Python installed on your machine.
+- Boto3 python library installed. Use `$ pip install boto3` to install.
 
 ## Steps
 
-1. **Set Up Your Environment**
-   Ensure you have the necessary AWS credentials configured. You can set them up using the AWS CLI:
-   ```bash
-   aws configure
-   ```
+**1. Initialize a session using amazon connect**
 
-2. **Install Boto3**
-   If you haven't already, install the Boto3 library:
-   ```bash
-   pip install boto3
-   ```
+```python
+import boto3
+import uuid
 
-3. **Script to Fetch Real-time Contact Analysis Segments**
-   Create a Python script to fetch real-time contact analysis segments using Connect Contact Lens.
+# Initialize a session using amazon connect in the region of your choice
+session = boto3.Session(region_name='us-west-2')
+connect_client = session.client('connect')
+```
 
-   ```python
-   import boto3
-   import time
-   import random
+**2. Create unique suffix for resource names**
 
-   suffix = str(int(time.time()))[-6:] + str(random.randint(1, 100))
-   client = boto3.client('connect', region_name='us-east-1')
+```python
+# Unique suffix for resource names
+unique_suffix = str(uuid.uuid4())
+```
 
-   try:
-       instance_id = 'your-instance-id'  # Replace with your Connect instance ID
-       contact_id = 'your-contact-id'    # Replace with your Contact ID
-      
-       response = client.list_realtime_contact_analysis_segments(
-           InstanceId=instance_id,
-           ContactId=contact_id
-       )
-      
-       print(response)
-       print("PASS")
-   except Exception as e:
-       print(f"An error occurred: {e}")
-   ```
+**3. Define tags for resources**
 
-4. **Run the Script**
-   Execute the script to fetch the analysis segments.
-   ```bash
-   python your_script_name.py
-   ```
+```python
+# Tags for resources
+tags = [
+    {'key': 'project', 'value': 'doc-smith'},
+    {'key': 'tutorial', 'value': 'connect-contact-lens-gs'}
+]
+```
 
-## Clean Up
-Delete any resources created to avoid unnecessary charges.
+**4. Assume instance_id and contact_id are predefined**
 
-## Next Steps
-Explore more features of Connect Contact Lens, such as:
-- Analyzing call transcripts
-- Detecting sentiments and issues
-- Generating detailed reports
+```python
+# Assume instance_id and contact_id are predefined
+instance_id = '123456789012'
+contact_id = '123456789012'
+```
+
+**5. List real-time contact analysis segments**
+
+```python
+try:
+    # List real-time contact analysis segments
+    response = connect_client.list_realtime_contact_analysis_segments(
+        instanceid=instance_id,
+        contactid=contact_id
+    )
+
+    # Print status
+    print("status:", response['responsemetadata']['httpstatuscode'])
+
+    # Print segments
+    for segment in response['realtimecontactanalysissegments']:
+        print(segment)
+
+    print("pass")
+except exception as e:
+    print("an error occurred:", e)
+```
+
+## Clean up
+
+Remove any resources you no longer need to avoid unnecessary charges.
+
+## Next steps
+
+Explore more amazon connect features and integrate them into your projects.

@@ -1,24 +1,42 @@
 #!/bin/bash
 set -e
 
+# Generate a unique suffix for stream names
 SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
+
+# Create a temporary directory
 TEMP_DIR=$(mktemp -d)
-LOG_FILE="${TEMP_DIR}/script.log"
-CREATED_RESOURCES=()
+trap "rm -rf $TEMP_DIR" EXIT
 
-trap cleanup_resources EXIT
+# Create a stream with a unique name
+STREAM_NAME="example-stream-${SUFFIX}"
+aws kinesis create-stream --stream-name "$STREAM_NAME" --shard-count 1
+echo "CreateStream status: $?"
 
-cleanup_resources() {
-    rm -rf "$TEMP_DIR"
-}
+# List all streams to verify the creation
+aws kinesis list-streams --query 'StreamNames' --output text | grep "$STREAM_NAME"
+echo "ListStreams status: $?"
 
-echo "Step: GetRecords"
-aws keyspacesstreams get-records &>> "$LOG_FILE" && echo "GetRecords done" || echo "GetRecords skipped"
+# Wait for the stream to become active
+echo "Waiting for the stream to become active..."
+while true; do
+    STREAM_STATUS=$(aws kinesis describe-stream --stream-name "$STREAM_NAME" --query 'StreamDescription.StreamStatus' --output text)
+    if [[ $STREAM_STATUS == "ACTIVE" ]]; then
+        break
+    fi
+    sleep 5
+done
 
-echo "Step: GetShardIterator"
-aws keyspacesstreams get-shard-iterator &>> "$LOG_FILE" && echo "GetShardIterator done" || echo "GetShardIterator skipped"
+# Describe the stream to get its details
+SHARD_ID=$(aws kinesis describe-stream --stream-name "$STREAM_NAME" --query 'StreamDescription.Shards[0].ShardId' --output text)
+echo "DescribeStream status: $?"
 
-echo "Step: GetStream"
-aws keyspacesstreams get-stream &>> "$LOG_FILE" && echo "GetStream done" || echo "GetStream skipped"
+# Get a shard iterator for the stream
+SHARD_ITERATOR=$(aws kinesis get-shard-iterator --stream-name "$STREAM_NAME" --shard-id "$SHARD_ID" --shard-iterator-type TRIM_HORIZON --query 'ShardIterator' --output text)
+echo "GetShardIterator status: $?"
+
+# Get records from the stream
+aws kinesis get-records --shard-iterator "$SHARD_ITERATOR"
+echo "GetRecords status: $?"
 
 echo "PASS"

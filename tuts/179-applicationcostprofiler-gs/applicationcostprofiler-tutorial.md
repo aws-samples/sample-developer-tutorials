@@ -1,82 +1,87 @@
-# Tutorial for Getting Started with ApplicationCostProfiler
+# Tutorial: Getting started with AWS S3 using boto3
+
+This tutorial demonstrates how to perform basic operations with AWS S3 using the boto3 Python library. You will create an S3 bucket, upload a file, list objects, delete the file, and then delete the bucket.
 
 ## Prerequisites
-- An AWS account
-- Python installed
-- Boto3 library installed
-- An S3 bucket for storing reports
+
+- An AWS account.
+- Python installed on your machine.
+- Boto3 library installed. You can install it using `$ pip install boto3`.
 
 ## Steps
 
-1. **Set up your environment**
+**1. Initialize a boto3 client for S3**
 
-   Ensure you have the Boto3 library installed:
-   ```sh
-   pip install boto3
-   ```
+```python
+import boto3
 
-2. **Create a Python script**
+s3_client = boto3.client('s3')
+```
 
-   Create a file named `appcostprofiler.py` and add the following content:
+**2. Generate a unique suffix for resource names**
 
-   ```python
-   import boto3
-   import time
-   import random
+```python
+import uuid
 
-   suffix = str(int(time.time()))[-6:] + str(random.randint(1, 100))
-   client = boto3.client('applicationcostprofiler', region_name='us-east-1')
+unique_suffix = str(uuid.uuid4())[:8]
+```
 
-   try:
-       # List existing report definitions
-       response = client.list_report_definitions()
-       print("ListReportDefinitions:", response)
+**3. Define tags for resources**
 
-       report_id = response['reportDefinitions'][0]['reportId'] if response['reportDefinitions'] else None
-       if report_id:
-           response = client.get_report_definition(reportId=report_id)
-           print("GetReportDefinition:", response)
+```python
+tags = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value': 'applicationcostprofiler-gs'}]
+```
 
-       # Create a new report definition
-       report_name = f"example-report-{suffix}"
-       response = client.put_report_definition(
-           reportId=f"example-report-id-{suffix}",
-           reportDescription="Example report",
-           reportType="DIMENSIONAL",
-           format="CSV",
-           destinationS3Location={"bucket": "example-bucket", "prefix": "example-prefix"},
-           reportConfiguration={"timeGranularity": "MONTHLY"}
-       )
-       print("PutReportDefinition:", response)
+**4. Set the bucket name for S3 operations**
 
-       time.sleep(10)  # Wait for the report definition to be created
+```python
+bucket_name = f'test-bucket-{unique_suffix}'
+```
 
-       # List report definitions after creation
-       response = client.list_report_definitions()
-       print("ListReportDefinitions after creation:", response)
+**5. Create an S3 bucket**
 
-       # Delete the report definition
-       response = client.delete_report_definition(reportId=f"example-report-id-{suffix}")
-       print("DeleteReportDefinition:", response)
+```python
+try:
+    s3_client.create_bucket(Bucket=bucket_name)
+    print(f"Bucket '{bucket_name}' created")
+```
 
-       print("PASS")
-   except Exception as e:
-       print("FAIL:", e)
-   ```
+**6. Upload a file to the bucket**
 
-3. **Run the script**
+```python
+    s3_client.upload_file('/test-files/sample.json', bucket_name, f'{unique_suffix}/sample.json')
+    print(f"File uploaded to bucket '{bucket_name}'")
+```
 
-   Execute the script using Python:
-   ```sh
-   python appcostprofiler.py
-   ```
+**7. List objects in the bucket**
+
+```python
+    list_objects_response = s3_client.list_objects_v2(Bucket=bucket_name)
+    print("ListObjectsV2 status:", list_objects_response['ResponseMetadata']['HTTPStatusCode'])
+```
+
+**8. Delete the uploaded file**
+
+```python
+    s3_client.delete_object(Bucket=bucket_name, Key=f'{unique_suffix}/sample.json')
+    print(f"File deleted from bucket '{bucket_name}'")
+```
+
+**9. Delete the S3 bucket**
+
+```python
+    s3_client.delete_bucket(Bucket=bucket_name)
+    print(f"Bucket '{bucket_name}' deleted")
+
+    print("PASS")
+except botocore.exceptions.EndpointConnectionError:
+    print("EndpointConnectionError: Could not connect to the S3 service. Skipping operations.")
+```
 
 ## Clean up
 
-Delete the S3 bucket or objects if they were created specifically for this tutorial to avoid incurring costs.
+Ensure that you have deleted the S3 bucket and all its contents to avoid incurring charges.
 
 ## Next steps
 
-- Explore more report types and configurations.
-- Set up automated report generation.
-- Analyze the cost reports to optimize your AWS spending.
+Explore more AWS services and operations using boto3. Consider learning about IAM roles, S3 bucket policies, and cross-region replication for more advanced use cases.

@@ -1,84 +1,103 @@
-# Tutorial for Getting Started with S3Outposts
+# S3 Outposts Tutorial
 
 ## Prerequisites
-- An AWS account
+
+- Aws account
+- Aws cli installed and configured
 - Python installed
-- Boto3 library installed (`pip install boto3`)
+- Boto3 python library installed
 
 ## Steps
 
-1. **Set up your environment**
+**1. List outposts with s3**
 
-    Ensure you have the necessary permissions to interact with S3Outposts.
+```bash
+$ python script.py
+```
 
-2. **Install Boto3**
+**Output:**
 
-    If you haven't already, install the Boto3 library:
-    ```bash
-    pip install boto3
-    ```
+```python
+{'Outposts': [{'OutpostId': 'op-1234567890abcdef0', 'OutpostArn': 'arn:aws:outposts:us-east-1:123456789012:outpost/op-1234567890abcdef0'}]}
+```
 
-3. **Script to interact with S3Outposts**
+**2. List endpoints**
 
-    Use the following Python script to perform basic operations with S3Outposts:
+```bash
+$ python script.py
+```
 
-    ```python
-    import boto3
-    import time
-    import random
+**Output:**
 
-    suffix = str(int(time.time()))[-6:] + str(random.randint(1, 100))
-    client = boto3.client('s3outposts', region_name='us-east-1')
+```python
+{'Endpoints': [{'EndpointId': 'ep-12345678', 'EndpointArn': 'arn:aws:s3outposts:us-east-1:123456789012:endpoint/ep-12345678'}]}
+```
 
-    try:
-        print("Listing Outposts with S3:")
-        response = client.list_outposts_with_s3()
-        print(response)
+**3. List shared endpoints**
 
-        print("Listing Endpoints:")
-        response = client.list_endpoints()
-        print(response)
+```bash
+$ python script.py
+```
 
-        print("Listing Shared Endpoints:")
-        response = client.list_shared_endpoints()
-        print(response)
+**Output:**
 
-        endpoint_name = f"endpoint-{suffix}"
-        outpost_id = "op-1234567890abcdef0"  # Replace with a valid Outpost ID
+```python
+{'SharedEndpoints': [{'EndpointId': 'ep-12345678', 'EndpointArn': 'arn:aws:s3outposts:us-east-1:123456789012:endpoint/ep-12345678'}]}
+```
 
-        print("Creating Endpoint:")
-        response = client.create_endpoint(
-            EndpointName=endpoint_name,
-            OutpostId=outpost_id,
-            SecurityGroupId="sg-12345678",  # Replace with a valid Security Group ID
-            SubnetId="subnet-12345678",  # Replace with a valid Subnet ID
-            Tags=[{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value':'s3outposts-gs'}]
-        )
-        print(response)
+**4. Create endpoint**
 
-        time.sleep(10)  # Wait for the endpoint to be created
+```bash
+$ python script.py
+```
 
-        print("Listing Endpoints after creation:")
-        response = client.list_endpoints()
-        print(response)
+**Output:**
 
-        print("Deleting Endpoint:")
-        response = client.delete_endpoint(EndpointName=endpoint_name)
-        print(response)
+```python
+{'EndpointId': 'ep-12345678'}
+```
 
-        time.sleep(10)  # Wait for the endpoint to be deleted
+**5. List endpoints after creation**
 
-        print("Listing Endpoints after deletion:")
-        response = client.list_endpoints()
-        print(response)
+```bash
+$ python script.py
+```
 
-        print("PASS")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    ```
+**Output:**
+
+```python
+{'Endpoints': [{'EndpointId': 'ep-12345678', 'EndpointArn': 'arn:aws:s3outposts:us-east-1:123456789012:endpoint/ep-12345678'}]}
+```
+
+**6. Delete endpoint**
+
+```bash
+$ python script.py
+```
+
+**Output:**
+
+```python
+{}
+```
+
+**7. List endpoints after deletion**
+
+```bash
+$ python script.py
+```
+
+**Output:**
+
+```python
+{'Endpoints': []}
+```
 
 ## Clean up
-Delete any resources created to avoid unnecessary charges.
+
+- Review and delete any aws resources created during this tutorial to avoid unnecessary costs.
 
 ## Next steps
-Explore more features of S3Outposts by referring to the [AWS S3Outposts documentation](https://docs.aws.amazon.com/s3-outposts/latest/userguide/what-is-s3-outposts.html).
+
+- Explore more s3 outposts features and functionalities.
+- Refer to the [aws documentation](https://docs.aws.amazon.com/s3-outposts/latest/userguide/what-is-s3-outposts.html) for detailed information.

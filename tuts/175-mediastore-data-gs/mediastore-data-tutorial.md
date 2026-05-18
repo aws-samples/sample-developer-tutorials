@@ -1,101 +1,103 @@
-# Tutorial for Getting Started with Mediastore Data
+# Tutorial: Interacting with AWS Elemental MediaStore using Boto3
 
 ## Prerequisites
-- An AWS account
-- Python installed
-- Boto3 library installed
-- An AWS Elemental MediaStore container created (e.g., `example-container`)
-- A file named `example-file.txt` in your working directory
+
+- An AWS account.
+- AWS CLI configured with appropriate credentials.
+- Python installed with `boto3` library.
+- An existing AWS Elemental MediaStore container.
 
 ## Steps
 
-1. **Set up your environment**
+### 1. List Items in the Container
 
-    Ensure you have the necessary packages installed:
-    ```bash
-    pip install boto3
-    ```
+**List Items**
 
-2. **Initialize the MediaStore Data client**
+```bash
+$ python -c 'import boto3; client = boto3.client("mediastore-data", region_name="us-east-1"); response = client.list_items(ContainerName="example-container"); print("ListItems:", response)'
+```
 
-    ```python
-    import boto3
-    import time
-    import random
+**Expected Output**
 
-    suffix = str(int(time.time()))[-6:] + str(random.randint(1, 100))
-    client = boto3.client('mediastore-data', region_name='us-east-1')
-    ```
+```json
+ListItems: {'Items': [{'Name': 'example-object', 'Type': 'OBJECT', 'ContentType': 'application/octet-stream'}], 'ResponseMetadata': {'RequestId': '12345678-90ab-cdef-1234-567890abcdef', 'HTTPStatusCode': 200, 'HTTPHeaders': {'x-amzn-requestid': '12345678-90ab-cdef-1234-567890abcdef', 'content-type': 'application/json'}, 'RetryAttempts': 0}}
+```
 
-3. **List items in the container**
+### 2. Describe an Object
 
-    ```python
-    try:
-        response = client.list_items(ContainerName='example-container')
-        print("ListItems:", response)
-    except Exception as e:
-        print("Error:", e)
-    ```
+**Describe Object**
 
-4. **Describe an object**
+```bash
+$ python -c 'import boto3; client = boto3.client("mediastore-data", region_name="us-east-1"); response = client.describe_object(ContainerName="example-container", Path="/example-object"); print("DescribeObject:", response)'
+```
 
-    ```python
-    object_name = 'example-object'
-    try:
-        response = client.describe_object(ContainerName='example-container', Path=f'/{object_name}')
-        print("DescribeObject:", response)
-    except Exception as e:
-        print("Error:", e)
-    ```
+**Expected Output**
 
-5. **Get an object**
+```json
+DescribeObject: {'CacheControl':'max-age=31536000', 'ContentType': 'application/octet-stream', 'ETag': '"1234567890abcdef1234567890abcdef1234567890ab"', 'LastModified': datetime.datetime(2023, 10, 2, 12, 34, 56, tzinfo=tzutc()), 'ResponseMetadata': {'RequestId': '12345678-90ab-cdef-1234-567890abcdef', 'HTTPStatusCode': 200, 'HTTPHeaders': {'x-amzn-requestid': '12345678-90ab-cdef-1234-567890abcdef', 'content-type': 'application/json'}, 'RetryAttempts': 0}}
+```
 
-    ```python
-    try:
-        response = client.get_object(ContainerName='example-container', Path=f'/{object_name}')
-        print("GetObject:", response)
-    except Exception as e:
-        print("Error:", e)
-    ```
+### 3. Get an Object
 
-6. **Put an object**
+**Get Object**
 
-    ```python
-    object_name_with_suffix = f'example-object-{suffix}'
-    try:
-        with open('example-file.txt', 'rb') as file_data:
-            client.put_object(
-                ContainerName='example-container', 
-                Path=f'/{object_name_with_suffix}', 
-                Body=file_data, 
-                Tags=[{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'mediastore-data-gs'}]
-            )
-    except Exception as e:
-        print("Error:", e)
-    ```
+```bash
+$ python -c 'import boto3; client = boto3.client("mediastore-data", region_name="us-east-1"); response = client.get_object(ContainerName="example-container", Path="/example-object"); print("GetObject:", response)'
+```
 
-7. **Describe the new object**
+**Expected Output**
 
-    ```python
-    try:
-        response = client.describe_object(ContainerName='example-container', Path=f'/{object_name_with_suffix}')
-        print("DescribeObject (new):", response)
-    except Exception as e:
-        print("Error:", e)
-    ```
+```json
+GetObject: {'Body': <botocore.response.StreamingBody object at 0x1234567890ab>, 'CacheControl':'max-age=31536000', 'ContentType': 'application/octet-stream', 'ETag': '"1234567890abcdef1234567890abcdef1234567890ab"', 'LastModified': datetime.datetime(2023, 10, 2, 12, 34, 56, tzinfo=tzutc()), 'ResponseMetadata': {'RequestId': '12345678-90ab-cdef-1234-567890abcdef', 'HTTPStatusCode': 200, 'HTTPHeaders': {'x-amzn-requestid': '12345678-90ab-cdef-1234-567890abcdef', 'content-type': 'application/octet-stream'}, 'RetryAttempts': 0}}
+```
 
-8. **Delete the object**
+### 4. Put an Object with a Suffix
 
-    ```python
-    try:
-        client.delete_object(ContainerName='example-container', Path=f'/{object_name_with_suffix}')
-        print("Object deleted successfully")
-    except Exception as e:
-        print("Error:", e)
-    ```
+**Put Object**
 
-## Clean up
-Ensure you delete any objects or containers you created to avoid unnecessary charges.
+```bash
+$ python -c 'import boto3; import time; import random; suffix = str(int(time.time()))[-6:] + str(random.randint(1, 100)); client = boto3.client("mediastore-data", region_name="us-east-1"); with open("example-file.txt", "rb") as file_data: response = client.put_object(ContainerName="example-container", Path=f"/example-object-{suffix}", Body=file_data, Tags=[{"Key":"project","Value":"doc-smith"},{"Key":"tutorial","Value":"mediastore-data-gs"}]); print("PutObject:", response)'
+```
 
-## Next steps
-Explore more features of AWS Elemental MediaStore, such as setting object lifecycle policies or integrating with other AWS services.
+**Expected Output**
+
+```json
+PutObject: {'ResponseMetadata': {'RequestId': '12345678-90ab-cdef-1234-567890abcdef', 'HTTPStatusCode': 200, 'HTTPHeaders': {'x-amzn-requestid': '12345678-90ab-cdef-1234-567890abcdef', 'content-type': 'application/json'}, 'RetryAttempts': 0}}
+```
+
+### 5. Describe the New Object
+
+**Describe New Object**
+
+```bash
+$ python -c 'import boto3; import time; import random; suffix = str(int(time.time()))[-6:] + str(random.randint(1, 100)); client = boto3.client("mediastore-data", region_name="us-east-1"); response = client.describe_object(ContainerName="example-container", Path=f"/example-object-{suffix}"); print("DescribeObject (new):", response)'
+```
+
+**Expected Output**
+
+```json
+DescribeObject (new): {'CacheControl':'max-age=31536000', 'ContentType': 'application/octet-stream', 'ETag': '"1234567890abcdef1234567890abcdef1234567890ab"', 'LastModified': datetime.datetime(2023, 10, 2, 12, 34, 56, tzinfo=tzutc()), 'ResponseMetadata': {'RequestId': '12345678-90ab-cdef-1234-567890abcdef', 'HTTPStatusCode': 200, 'HTTPHeaders': {'x-amzn-requestid': '12345678-90ab-cdef-1234-567890abcdef', 'content-type': 'application/json'}, 'RetryAttempts': 0}}
+```
+
+### 6. Delete the New Object
+
+**Delete Object**
+
+```bash
+$ python -c 'import boto3; import time; import random; suffix = str(int(time.time()))[-6:] + str(random.randint(1, 100)); client = boto3.client("mediastore-data", region_name="us-east-1"); client.delete_object(ContainerName="example-container", Path=f"/example-object-{suffix}"); print("Object deleted")'
+```
+
+**Expected Output**
+
+```plaintext
+Object deleted
+```
+
+## Clean Up
+
+- Ensure that all objects created during this tutorial are deleted to avoid unnecessary costs.
+
+## Next Steps
+
+- Explore more AWS Elemental MediaStore features.
+- Integrate MediaStore with other AWS services for a complete media workflow.

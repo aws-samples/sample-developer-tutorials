@@ -1,21 +1,50 @@
 import boto3
-import time
-import random
+import uuid
 
-suffix = str(int(time.time()))[-6:] + str(random.randint(1, 100))
-client = boto3.client('ebs', region_name='us-east-1')
+# Initialize a session using Amazon EC2
+ec2 = boto3.client('ec2')
 
-try:
-    response = client.get_snapshot_block()
-    print(f"GetSnapshotBlock: {response}")
+# Unique suffix for resources
+suffix = str(uuid.uuid4())
 
-    response = client.list_changed_blocks()
-    print(f"ListChangedBlocks: {response}")
+# Create and configure a volume in a valid availability zone
+valid_zones = [zone['ZoneName'] for zone in ec2.describe_availability_zones()['AvailabilityZones'] if zone['State'] == 'available' and zone['RegionName'] == 'us-west-2']
+if valid_zones:
+    availability_zone = valid_zones[0]
+    volume_id = ec2.create_volume(
+        AvailabilityZone=availability_zone,
+        Size=1,
+        Encrypted=True,
+        TagSpecifications=[
+            {
+                'ResourceType': 'volume',
+                'Tags': [
+                    {'Key': 'project', 'Value': 'doc-smith'},
+                    {'Key': 'tutorial', 'Value': 'ebs-gs'}
+                ]
+            },
+        ]
+    )['VolumeId']
 
-    response = client.list_snapshot_blocks()
-    print(f"ListSnapshotBlocks: {response}")
+    # Wait until the volume is available
+    ec2.get_waiter('volume_available').wait(VolumeIds=[volume_id])
 
+    # Create and configure a snapshot
+    snapshot_id = ec2.create_snapshot(
+        VolumeId=volume_id,
+        Description='Test snapshot for EBS getting started'
+    )['SnapshotId']
+
+    # Wait until the snapshot is completed
+    ec2.get_waiter('snapshot_completed').wait(SnapshotIds=[snapshot_id])
+
+    # Print statuses
+    print(f"Volume created: {volume_id}")
+    print(f"Snapshot created: {snapshot_id}")
     print("PASS")
-except Exception as e:
-    print(f"Error: {e}")
-    print("PASS")
+
+    # Cleanup
+    ec2.delete_snapshot(SnapshotId=snapshot_id)
+    ec2.delete_volume(VolumeId=volume_id)
+else:
+    print("No valid availability zones found in us-west-2")
