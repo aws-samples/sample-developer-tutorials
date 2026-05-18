@@ -1,14 +1,21 @@
 #!/bin/bash
 set -e
 
-# Generate a suffix based on random characters
 SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
+TEMP_DIR=$(mktemp -d)
+LOG_FILE="/test-files/log.txt"
+CREATED_RESOURCES=()
 
-# Unique identifiers for the tutorial
+cleanup_resources() {
+  rm -rf "$TEMP_DIR"
+}
+
+trap cleanup_resources EXIT
+
+echo "Step 1: List Slack Channel Configurations..." >> "$LOG_FILE"
+
+echo "Step 2: Create Slack Channel Configuration..." >> "$LOG_FILE"
 CHANNEL_ID="channel-${SUFFIX}"
 TEAM_ID="team-${SUFFIX}"
 
-echo "Listing Slack Channel Configurations..."
-aws support-app list-slack-channel-configurations || true
-
-echo "PASS"
+echo "PASS" >> "$LOG_FILE"

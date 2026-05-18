@@ -35,11 +35,19 @@ application_source = {
     ]
 }
 
+tags = [{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'autoscaling-plans-gs'}]
+
 try:
     response = client.create_scaling_plan(
         ScalingPlanName=scaling_plan_name,
         ApplicationSource=application_source,
         ScalingInstructions=scaling_instructions
+    )
+
+    # Tagging the resource as create_scaling_plan API doesn't support Tags parameter directly
+    client.tag_resource(
+        ResourceARN=response['ScalingPlanVersion'],
+        Tags=tags
     )
 
     print("CreateScalingPlan response:", json.dumps(response, indent=2, default=str))

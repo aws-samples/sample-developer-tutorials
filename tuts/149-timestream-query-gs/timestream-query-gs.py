@@ -1,36 +1,44 @@
 import boto3
 import json
 import time
-import uuid
 
 client = boto3.client('timestream-query', region_name='us-east-1')
 suffix = str(int(time.time()))[-6:]
 scheduled_query_name = f"scheduled-query-{suffix}"
 scheduled_query_arn = None
-
-# Create Scheduled Query
-query_string = "SELECT * FROM your_table WHERE time > ago(5m)"
-schedule_configuration = {
-    'ScheduleExpression': 'cron(0/5 * * * ? *)'
-}
-notification_configuration = {
-    'SnsConfiguration': {
-        'TopicArn': 'arn:aws:sns:us-east-1:123456789012:your-sns-topic'
-    }
-}
 tags = [
     {'Key': 'project', 'Value': 'doc-smith'},
     {'Key': 'tutorial', 'Value': 'timestream-query-gs'}
 ]
 
 try:
-    response = client.create_scheduled_query(
-        Name=scheduled_query_name,
-        QueryString=query_string,
-        ScheduleConfiguration=schedule_configuration,
-        NotificationConfiguration=notification_configuration,
-        Tags=tags
-    )
+    query_string = "SELECT * FROM your_table WHERE time > ago(5m)"
+    schedule_configuration = {
+        'ScheduleExpression': 'cron(0/5 * * *? *)'
+    }
+    notification_configuration = {
+        'SnsConfiguration': {
+            'TopicArn': 'arn:aws:sns:us-east-1:123456789012:your-sns-topic'
+        }
+    }
+
+    if 'Tags' in client.create_scheduled_query.__code__.co_varnames:
+        response = client.create_scheduled_query(
+            Name=scheduled_query_name,
+            QueryString=query_string,
+            ScheduleConfiguration=schedule_configuration,
+            NotificationConfiguration=notification_configuration,
+            Tags=tags
+        )
+    else:
+        response = client.create_scheduled_query(
+            Name=scheduled_query_name,
+            QueryString=query_string,
+            ScheduleConfiguration=schedule_configuration,
+            NotificationConfiguration=notification_configuration
+        )
+        client.tag_resource(ResourceARN=response['ScheduledQueryArn'], Tags=tags)
+    
     scheduled_query_arn = response['ScheduledQueryArn']
     print(f"Created Scheduled Query: {scheduled_query_arn}")
 

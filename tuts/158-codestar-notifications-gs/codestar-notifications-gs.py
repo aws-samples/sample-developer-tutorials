@@ -19,6 +19,7 @@ target = {
     'TargetAddress': 'arn:aws:sns:us-east-1:123456789012:your-sns-topic'
 }
 event_type_ids = ['codecommit-repository-pull-request-created']
+tags = {'project': 'doc-smith', 'tutorial': 'codestar-notifications-gs'}
 
 try:
     response = client.create_notification_rule(
@@ -26,7 +27,7 @@ try:
         EventTypeIds=event_type_ids,
         Resource=resource_arn,
         Targets=[target],
-        Tags={'project': 'doc-smith', 'tutorial': 'codestar-notifications-gs'},
+        Tags=tags,
         DetailType='BASIC'
     )
     print(f"Created Notification Rule: {response['Arn']}")
@@ -34,6 +35,14 @@ except client.exceptions.ResourceAlreadyExistsException:
     print("Notification Rule already exists")
 except client.exceptions.AccessDeniedException:
     print("Permission denied to create notification rule. Skipping creation.")
+except TypeError:
+    # Handle case where Tags parameter is not supported
+    arn = f'arn:aws:codestar-notifications:us-east-1:123456789012:notificationrule/example-rule-{suffix}'
+    client.tag_resource(
+        ResourceARN=arn,
+        Tags=tags
+    )
+    print(f"Tagged Notification Rule: {arn}")
 
 # List event types
 event_types = client.list_event_types()

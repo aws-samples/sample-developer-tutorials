@@ -18,19 +18,25 @@ else:
     print("No deployments available to list events for.")
 
 # Example of creating a deployment (uncomment and modify as needed)
-# response = client.create_deployment(
-#     workloadName='example-workload',
-#     deploymentPatternName='example-pattern',
-#     name=f'example-deployment-{suffix}',
-#     specifications=json.dumps({
-#         'key1': 'value1',
-#         'key2': 'value2'
-#     }),
-#     tags=[
-#         {'Key': 'project', 'Value': 'doc-smith'},
-#         {'Key': 'tutorial', 'Value': 'launch-wizard-gs'}
-#     ]
-# )
-# print(f"Created Deployment: {response['id']}")
+response = client.create_deployment(
+    workloadName='example-workload',
+    deploymentPatternName='example-pattern',
+    name=f'example-deployment-{suffix}',
+    specifications=json.dumps({
+        'key1': 'value1',
+        'key2': 'value2'
+    }),
+    tags=[{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'launch-wizard-gs'}]
+)
+print(f"Created Deployment: {response['id']}")
+
+# Tagging the created resource if the create_deployment API doesn't support Tags parameter directly
+client.tag_resource(
+    resourceArn=response['arn'],
+    tags=[
+        {'Key': 'project', 'Value': 'doc-smith'},
+        {'Key': 'tutorial', 'Value': 'launch-wizard-gs'}
+    ]
+)
 
 print("PASS")

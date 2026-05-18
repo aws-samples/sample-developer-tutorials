@@ -20,6 +20,9 @@ try:
     environment_id = f"env-id-{uuid.uuid4()}"
     print(f"Simulated Environment created: {environment_name}, ID: {environment_id}")
 
+    # Tagging the resource as the create_environment API does not support Tags parameter directly
+    client.tag_resource(ResourceARN=f"arn:aws:cloud9:us-east-1:123456789012:environment:{environment_id}", Tags=tags)
+
     time.sleep(10)  
     status ='ready'
     print(f"Environment status: {status}")

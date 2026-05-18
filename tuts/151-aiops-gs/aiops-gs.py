@@ -7,15 +7,23 @@ client = boto3.client('aiops', region_name='us-east-1')
 suffix = str(int(time.time()))[-6:]
 group_name = f'test-group-{suffix}'
 role_arn = 'arn:aws:iam::559823168634:role/doc-babu-aiops-role'
-tags = {'project': 'doc-smith', 'tutorial': 'aiops-gs'}
+tags = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value': 'aiops-gs'}]
 
 try:
     # Attempt to create Investigation Group
-    response = client.create_investigation_group(
-        name=group_name,
-        roleArn=role_arn,
-        tags=tags
-    )
+    if hasattr(client.create_investigation_group, 'tags'):
+        response = client.create_investigation_group(
+            name=group_name,
+            roleArn=role_arn,
+            tags=tags
+        )
+    else:
+        response = client.create_investigation_group(
+            name=group_name,
+            roleArn=role_arn
+        )
+        client.tag_resource(resourceArn=response['identifier'], tags=tags)
+
     group_identifier = response['identifier']
     print(f"Created Investigation Group: {group_identifier}")
 

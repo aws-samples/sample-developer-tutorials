@@ -56,6 +56,16 @@ try:
     cost_category_arn = response['CostCategoryArn']
     print(f"Cost Category created with ARN: {cost_category_arn}")
 
+    # Tag the Cost Category since create_cost_category_definition does not support Tags parameter
+    client.tag_resource(
+        ResourceArn=cost_category_arn,
+        Tags=[
+            {'Key': 'project', 'Value': 'doc-smith'},
+            {'Key': 'tutorial', 'Value': 'bcm-dashboards-gs'}
+        ]
+    )
+    print(f"Tagged cost category with ARN: {cost_category_arn}")
+
     # Verify Cost Category Creation
     get_response = client.describe_cost_category_definition(CostCategoryArn=cost_category_arn)
     print(f"Retrieved cost category: {get_response['CostCategoryArn']}")

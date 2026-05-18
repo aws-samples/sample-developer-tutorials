@@ -2,6 +2,17 @@
 set -e
 
 SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
+TEMP_DIR=$(mktemp -d)
+LOG_FILE="$TEMP_DIR/script.log"
+CREATED_RESOURCES=()
+
+cleanup_resources() {
+    rm -rf "$TEMP_DIR"
+}
+
+trap cleanup_resources EXIT
+
+# Step 1: Check Investigation Group
 GROUP_NAME="test-group-${SUFFIX}"
 ROLE_ARN="arn:aws:iam::559823168634:role/doc-babu-aiops-role"
 

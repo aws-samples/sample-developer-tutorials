@@ -5,6 +5,8 @@ import time
 client = boto3.client('iotdeviceadvisor', region_name='us-east-1')
 suffix = str(int(time.time()))[-6:]
 
+tags = [{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'iotdeviceadvisor-gs'}]
+
 # Create Suite Definition
 suite_definition_configuration = {
    'suiteDefinitionName': f'TestSuite{suffix}',
@@ -24,6 +26,7 @@ try:
     response = client.create_suite_definition(suiteDefinitionConfiguration=suite_definition_configuration)
     suite_definition_id = response['suiteDefinitionId']
     print(f"Suite Definition created with ID: {suite_definition_id}")
+    client.tag_resource(resourceArn=f'arn:aws:iotdeviceadvisor:us-east-1:123456789012:suitedefinition/{suite_definition_id}', tags=tags)
 
     # Verify Suite Definition
     response = client.get_suite_definition(suiteDefinitionId=suite_definition_id)
@@ -37,6 +40,7 @@ try:
     response = client.create_suite_run(suiteDefinitionId=suite_definition_id)
     suite_run_id = response['suiteRunId']
     print(f"Suite Run created with ID: {suite_run_id}")
+    client.tag_resource(resourceArn=f'arn:aws:iotdeviceadvisor:us-east-1:123456789012:suiterun/{suite_run_id}', tags=tags)
 
     # Get Suite Run
     response = client.get_suite_run(suiteDefinitionId=suite_definition_id, suiteRunId=suite_run_id)

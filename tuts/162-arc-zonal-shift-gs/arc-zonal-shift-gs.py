@@ -1,5 +1,6 @@
-import boto3, json, time
-suffix = str(int(time.time()))[-6:]
+import boto3, json, time, random
+
+suffix = str(int(time.time()))[-6:] + str(random.randint(100, 999))
 client = boto3.client('arc-zonal-shift', region_name='us-east-1')
 
 print("=== ARC Zonal Shift Tutorial ===")

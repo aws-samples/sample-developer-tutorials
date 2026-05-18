@@ -2,6 +2,18 @@
 set -e
 
 SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
+TEMP_DIR=$(mktemp -d)
+LOG_FILE="$TEMP_DIR/arc-zonal-shift-tutorial.log"
+CREATED_RESOURCES=()
+
+cleanup_resources() {
+  for ARN in "${CREATED_RESOURCES[@]}"; do
+    aws arc-zonal-shift delete-managed-resource --resource-arn "$ARN" || true
+  done
+  rm -rf "$TEMP_DIR"
+}
+
+trap cleanup_resources EXIT
 
 echo "=== ARC Zonal Shift Tutorial ==="
 echo "ARC Zonal Shift lets you temporarily move traffic away from an"

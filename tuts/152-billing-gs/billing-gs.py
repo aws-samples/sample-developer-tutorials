@@ -33,6 +33,12 @@ try:
     )
     custom_line_item_arn = response['arn']
 
+    # Add tags to the created resource
+    client.tag_resource(
+        ResourceArn=custom_line_item_arn,
+        Tags=[{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'billing-gs'}]
+    )
+
     print(f"Created custom line item with ARN: {custom_line_item_arn}")
 
     # Verify the custom line item creation

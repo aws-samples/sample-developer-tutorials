@@ -44,8 +44,18 @@ try:
     savings_plan_id = create_response['savingsPlanId']
     print("Created Savings Plan ID:", savings_plan_id)
 except client.exceptions.ClientError as e:
-    print("Failed to create Savings Plan:", e)
-    exit()
+    if 'UnknownParameter' in str(e):
+        create_response = client.create_savings_plan(
+            savingsPlanOfferingId=savings_plan_offering_id,
+            commitment='2000',
+            clientToken=str(uuid.uuid4())
+        )
+        savings_plan_id = create_response['savingsPlanId']
+        client.tag_resource(resourceArn=f"arn:aws:savingsplans:us-east-1:559823168634:savingsplan/{savings_plan_id}", tags=tags)
+        print("Created and Tagged Savings Plan ID:", savings_plan_id)
+    else:
+        print("Failed to create Savings Plan:", e)
+        exit()
 
 # Step 3: Describe Savings Plans
 describe_response = client.describe_savings_plans(savingsPlanIds=[savings_plan_id])
