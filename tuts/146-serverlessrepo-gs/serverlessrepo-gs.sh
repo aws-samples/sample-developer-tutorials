@@ -16,7 +16,7 @@ trap cleanup_resources EXIT
 
 # Step 1: Create Application
 APPLICATION_NAME="doc-smith-app-${SUFFIX}"
-VERSION="1.0.$(echo ${SUFFIX:0:4} | sed's/[^0-9]//g')"
+VERSION="1.0.0"
 TEMPLATE_BODY='{"Transform": "AWS::Serverless-2016-10-31","Resources": {"SampleResource": {"Type": "AWS::S3::Bucket","Properties": {"BucketName": "doc-smith-bucket-'"${SUFFIX}"'"}}}}'
 
 APPLICATION_ID=$(aws serverlessrepo create-application \
@@ -26,7 +26,6 @@ APPLICATION_ID=$(aws serverlessrepo create-application \
     --labels 'project:doc-smith' 'tutorial:serverlessrepo-gs' \
     --query 'ApplicationId' --output text)
 CREATED_RESOURCES+=("$APPLICATION_ID")
-aws serverlessrepo tag-resource --resource-arn "$APPLICATION_ID" --tags Key=project,Value=doc-smith Key=tutorial,Value=serverlessrepo-gs
 
 echo "Application created: ${APPLICATION_ID}"
 
