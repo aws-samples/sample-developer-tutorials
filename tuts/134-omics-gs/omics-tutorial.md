@@ -1,84 +1,116 @@
-# Omics Sequence Store Tutorial
+# Getting started with Amazon Omics
 
 ## Prerequisites
 
-- Install and configure the AWS CLI.
-- Ensure you have the necessary permissions to create and delete sequence stores in AWS Omics.
+Before you begin, ensure you have the following:
 
-## Steps
+- AWS CLI installed and configured
+- Appropriate IAM permissions to create and delete Amazon Omics resources
+- An AWS CloudFormation stack with necessary IAM roles if required
 
-### Step 1: Creating Sequence Store
+## Step 1: Create Reference Store
 
-**Command:**
+**Create a reference store**
 
-```sh
-$ aws omics create-sequence-store \
-    --tags '{"project": "doc-smith", "tutorial": "omics-gs"}' \
-    --name "test-sequence-store-xmpl" \
-    --description "Test sequence store for demonstration" \
-    --client-token "xmpl" \
-    --query 'id' \
-    --output text
+The following script creates a reference store in Amazon Omics.
+
+```bash
+$ aws omics create-reference-store --name "ref-store-abc123" --tags '[{"Key":"project","Value":"doc-smith"},{"Key":"tutorial","Value":"omics-gs"}]'
 ```
 
-**Output:**
+**Expected result**
 
-```sh
-Sequence store created with ID: 123456789012
+You should see an output similar to:
+
+```json
+{
+    "id": "abc123",
+    "arn": "arn:aws:omics:us-east-1:123456789012:referenceStore/ref-store-abc123"
+}
 ```
 
-### Step 2: Verifying Sequence Store Creation
+## Step 2: Create Sequence Store
 
-**Command:**
+**Create a sequence store**
 
-```sh
-$ aws omics get-sequence-store \
-    --id "123456789012" \
-    --query 'name' \
-    --output text
+The following script creates a sequence store in Amazon Omics.
+
+```bash
+$ aws omics create-sequence-store --name "seq-store-abc123" --tags '[{"Key":"project","Value":"doc-smith"},{"Key":"tutorial","Value":"omics-gs"}]'
 ```
 
-**Output:**
+**Expected result**
 
-```sh
-Retrieved sequence store: test-sequence-store-xmpl
+You should see an output similar to:
+
+```json
+{
+    "id": "abc123",
+    "arn": "arn:aws:omics:us-east-1:123456789012:sequenceStore/seq-store-abc123"
+}
 ```
 
-### Step 3: Listing Sequence Stores
+## Step 3: Create Configuration
 
-**Command:**
+**Create a configuration**
 
-```sh
-$ aws omics list-sequence-stores \
-    --max-results 10
+The following script creates a configuration in Amazon Omics.
+
+```bash
+$ aws omics create-configuration --name "config-abc123" --computeType "ON_DEMAND" --tags '[{"Key":"project","Value":"doc-smith"},{"Key":"tutorial","Value":"omics-gs"}]'
 ```
 
-**Output:**
+**Expected result**
 
-```sh
-List of sequence stores: {"sequenceStores": [{"id": "123456789012", "name": "test-sequence-store-xmpl", "description": "Test sequence store for demonstration", "creationTime": "2023-10-02T12:00:00Z"}]}
+You should see an output similar to:
+
+```json
+{
+    "id": "abc123",
+    "arn": "arn:aws:omics:us-east-1:123456789012:configuration/config-abc123"
+}
 ```
 
-### Step 4: Deleting Sequence Store
+## Step 4: Create Annotation Store
 
-**Command:**
+**Create an annotation store**
 
-```sh
-$ aws omics delete-sequence-store \
-    --id "123456789012"
+The following script creates an annotation store in Amazon Omics.
+
+```bash
+$ aws omics create-annotation-store --name "annot-store-abc123" --storeFormat "VCF" --reference "abc123" --tags '[{"Key":"project","Value":"doc-smith"},{"Key":"tutorial","Value":"omics-gs"}]'
 ```
 
-**Output:**
+**Expected result**
 
-```sh
-Sequence store deleted
+You should see an output similar to:
+
+```json
+{
+    "id": "abc123",
+    "arn": "arn:aws:omics:us-east-1:123456789012:annotationStore/annot-store-abc123"
+}
 ```
 
-## Clean Up
+## Clean up
 
-All created resources are automatically cleaned up at the end of the script.
+The following script deletes the created resources to avoid unnecessary charges.
 
-## Next Steps
+**Delete resources**
 
-- Explore more AWS Omics features.
-- Refer to the [AWS Omics documentation](https://docs.aws.amazon.com/omics/) for advanced use cases.
+```bash
+$ aws omics delete-annotation-store --name "annot-store-abc123"
+$ aws omics delete-configuration --id "abc123"
+$ aws omics delete-sequence-store --id "abc123"
+$ aws omics delete-reference-store --id "abc123"
+```
+
+**Expected result**
+
+Each command should execute without errors, indicating the resources have been successfully deleted.
+
+## Next steps
+
+- Explore [Amazon Omics documentation](https://docs.aws.amazon.com/omics/) for more detailed information.
+- Learn how to [import data into Amazon Omics](https://docs.aws.amazon.com/omics/latest/dev/importing-data.html).
+- Discover [best practices for using Amazon Omics](https://docs.aws.amazon.com/omics/latest/dev/best-practices.html).

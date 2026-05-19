@@ -1,108 +1,143 @@
-# Iotevents Tutorial
+# Getting started with AWS IoT Events
 
 ## Prerequisites
 
-- An aws account.
-- Aws cli installed and configured.
-- Iam role with necessary permissions (arn:aws:iam::123456789012:role/tutorial-iotevents-role).
-- SNS topic created (arn:aws:sns:us-east-1:123456789012:test-topic).
+Before you begin, ensure you have the following:
 
-## Steps
+- AWS CLI installed and configured
+- Appropriate IAM permissions to create and manage AWS IoT Events resources
+- An IAM role with necessary permissions (if using the Python script)
 
-1.  **Creating detector model**
+If you need to create an IAM role, you can use the following CloudFormation stack:
 
-    ```bash
-    SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
-    DETECTOR_MODEL_NAME="TestDetectorModel${SUFFIX}"
-    ROLE_ARN="${TUTORIAL_ROLE_ARN:?Set TUTORIAL_ROLE_ARN to an IAM role ARN with iotevents permissions}"
-    TEMP_DIR=$(mktemp -d)
-    LOG_FILE="$TEMP_DIR/script.log"
-    CREATED_RESOURCES=()
+```yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  IoTEventsRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service: 'iotevents.amazonaws.com'
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: 'IoTEventsPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'sns:Publish'
+                Resource: '*'
+```
 
-    cleanup_resources() {
-      for resource in "${CREATED_RESOURCES[@]}"; do
-        aws iotevents delete-detector-model --detector-model-name "$resource" || true
-      done
-      rm -rf "$TEMP_DIR"
+## Step 1: Create an Input
+
+**Create an Input resource**
+
+This step creates an Input resource in AWS IoT Events. An Input represents the data stream that your detector model will process.
+
+```bash
+$ aws iotevents create-input \
+  --input-name "tutorial-input-abc123" \
+  --input-definition file://input-definition.json \
+  --tags '{"Environment":"Tutorial","Project":"GettingStarted"}'
+```
+
+**Expected result**
+
+You should see output similar to:
+
+```json
+{
+    "inputConfiguration": {
+        "inputName": "tutorial-input-abc123",
+        "inputArn": "arn:aws:iotevents:us-west-2:123456789012:input/tutorial-input-abc123",
+        "inputDescription": "Tutorial Input",
+        "creationTime": "2023-04-01T12:00:00Z",
+        "lastUpdateTime": "2023-04-01T12:00:00Z"
     }
+}
+```
 
-    trap cleanup_resources EXIT
+## Step 2: Create a Detector Model
 
-    echo "Creating detector model..."
-    DETECTOR_MODEL_DEFINITION='{
-      "states": [
-        {
-          "stateName": "InitialState",
-          "onInput": {
-            "events": [
-              {
-                "eventName": "testEvent",
-                "condition": "${sensorData.temperature} > 30",
-                "actions": [
-                  {
-                    "sns": {
-                      "targetArn": "arn:aws:sns:us-east-1:123456789012:test-topic"
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          "onEnter": {
-            "events": [
-              {
-                "eventName": "EnterEvent",
-                "condition": "true",
-                "actions": [
-                  {
-                    "setVariable": {
-                      "variableName": "temp",
-                      "value": "${sensorData.temperature}"
-                    }
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      ]
-    }'
+**Create a Detector Model resource**
 
-    aws iotevents create-detector-model \
-      --detector-model-name "$DETECTOR_MODEL_NAME" \
-      --detector-model-definition "$DETECTOR_MODEL_DEFINITION" \
-      --role-arn "$ROLE_ARN" \
-      --tags Key=project,Value=doc-smith Key=tutorial,Value=iotevents-gs && echo "Created detector model: $DETECTOR_MODEL_NAME" >> "$LOG_FILE"
-    CREATED_RESOURCES+=("$DETECTOR_MODEL_NAME")
-    ```
+This step creates a Detector Model resource in AWS IoT Events. A Detector Model defines the states, transitions, and actions for processing input data.
 
-    This script generates a random suffix, sets the detector model name and role ARN, creates a temporary directory for logging, and defines a cleanup function to delete created resources. It then creates a detector model with the specified definition, role ARN, and tags.
+```bash
+$ aws iotevents create-detector-model \
+  --detector-model-name "tutorial-detector-abc123" \
+  --detector-model-definition file://detector-model-definition.json \
+  --role-arn "arn:aws:iam::123456789012:role/IoTEventsRole" \
+  --tags '{"Environment":"Tutorial","Project":"GettingStarted"}'
+```
 
-2.  **Describing detector model**
+**Expected result**
 
-    ```bash
-    echo "Describing detector model..."
-    aws iotevents describe-detector-model \
-      --detector-model-name "$DETECTOR_MODEL_NAME" && echo "Described detector model: $DETECTOR_MODEL_NAME" >> "$LOG_FILE"
-    ```
+You should see output similar to:
 
-    This command describes the created detector model and logs the output.
+```json
+{
+    "detectorModelConfiguration": {
+        "detectorModelName": "tutorial-detector-abc123",
+        "detectorModelArn": "arn:aws:iotevents:us-west-2:123456789012:detector-model/tutorial-detector-abc123",
+        "detectorModelDescription": "",
+        "detectorModelVersion": "1",
+        "creationTime": "2023-04-01T12:00:00Z",
+        "lastUpdateTime": "2023-04-01T12:00:00Z",
+        "status": "ACTIVE",
+        "key": ""
+    }
+}
+```
 
-3.  **Deleting detector model**
+## Step 3: Create an Alarm Model
 
-    ```bash
-    echo "Deleting detector model..."
-    aws iotevents delete-detector-model \
-      --detector-model-name "$DETECTOR_MODEL_NAME" && echo "Deleted detector model: $DETECTOR_MODEL_NAME" >> "$LOG_FILE"
-    ```
+**Create an Alarm Model resource**
 
-    This command deletes the created detector model and logs the output.
+This step creates an Alarm Model resource in AWS IoT Events. An Alarm Model defines the conditions under which an alarm is triggered and the actions to be taken.
+
+```bash
+$ aws iotevents create-alarm-model \
+  --alarm-model-name "tutorial-alarm-abc123" \
+  --alarm-model-description "Tutorial Alarm Model" \
+  --role-arn "arn:aws:iam::123456789012:role/IoTEventsRole" \
+  --severity 1 \
+  --alarm-rule file://alarm-rule.json \
+  --tags '{"Environment":"Tutorial","Project":"GettingStarted"}'
+```
+
+**Expected result**
+
+You should see output similar to:
+
+```json
+{
+    "alarmModelVersion": "1",
+    "alarmModelArn": "arn:aws:iotevents:us-west-2:123456789012:alarm-model/tutorial-alarm-abc123",
+    "status": "ACTIVE",
+    "creationTime": "2023-04-01T12:00:00Z",
+    "lastUpdateTime": "2023-04-01T12:00:00Z"
+}
+```
 
 ## Clean up
 
-The script includes a cleanup function that deletes the created detector model and removes the temporary directory.
+To avoid unnecessary charges, delete the resources you created:
+
+```bash
+$ aws iotevents delete-input --input-name "tutorial-input-abc123"
+$ aws iotevents delete-detector-model --detector-model-name "tutorial-detector-abc123"
+$ aws iotevents delete-alarm-model --alarm-model-name "tutorial-alarm-abc123"
+```
 
 ## Next steps
 
-- Explore aws iotevents documentation for more advanced use cases.
-- Integrate iotevents with other aws services for comprehensive iot solutions.
+- Explore [AWS IoT Events documentation](https://docs.aws.amazon.com/iotevents/) for more advanced features.
+- Learn how to [integrate AWS IoT Events with other AWS services](https://docs.aws.amazon.com/iotevents/latest/developerguide/what-is-iotevents.html).
+- Check out [AWS IoT Events pricing](https://aws.amazon.com/iot-events/pricing/) to understand the costs associated with using this service.

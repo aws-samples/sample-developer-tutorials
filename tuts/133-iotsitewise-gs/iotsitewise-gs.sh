@@ -1,60 +1,56 @@
 #!/bin/bash
 set -e
 
-REGION_NAME="us-east-1"
-SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
-TEMP_DIR=$(mktemp -d)
-LOG_FILE="${TEMP_DIR}/script.log"
-CREATED_RESOURCES=()
-
 cleanup_resources() {
-    for resource in "${CREATED_RESOURCES[@]}"; do
-        aws iotsitewise delete-asset-model --asset-model-id "$resource" --client-token "$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 36 | head -n 1)" || true
-    done
-    rm -rf "${TEMP_DIR}"
+  for resource in "${CREATED_RESOURCES[@]}"; do
+    echo "Cleaning up: $resource"
+    case $resource in
+      "asset-model:"*)
+        asset_model_id=$(echo $resource | cut -d ':' -f 2-)
+        aws iotsitewise delete-asset-model --asset-model-id $asset_model_id || true
+        ;;
+      "asset:"*)
+        asset_id=$(echo $resource | cut -d ':' -f 2-)
+        aws iotsitewise delete-asset --asset-id $asset_id || true
+        ;;
+      "access-policy:"*)
+        access_policy_id=$(echo $resource | cut -d ':' -f 2-)
+        aws iotsitewise delete-access-policy --access-policy-id $access_policy_id || true
+        ;;
+      *)
+        echo "Unknown resource type: $resource"
+        ;;
+    esac
+  done
 }
 
 trap cleanup_resources EXIT
 
-# Create Asset Model
-ASSET_MODEL_NAME="asset-model-${SUFFIX}"
-ASSET_MODEL_ID=$(aws iotsitewise create-asset-model \
-    --asset-model-name "${ASSET_MODEL_NAME}" \
-    --asset-model-type ASSET_MODEL \
-    --asset-model-properties '[{"name": "property1", "dataType": "STRING", "type": {"attribute": {}}, "unit": "none"}]' \
-    --client-token "$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 36 | head -n 1)" \
-    --tags '{"project": "doc-smith", "tutorial": "iotsitewise-gs"}' \
-    --query 'assetModelId' --output text)
-CREATED_RESOURCES+=("${ASSET_MODEL_ID}")
-echo "Asset Model created: ${ASSET_MODEL_NAME}"
+SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
+TEMP_DIR=$(mktemp -d)
+CREATED_RESOURCES=()
 
-# Describe Asset Model
-DESCRIBE_ASSET_MODEL_RESPONSE=$(aws iotsitewise describe-asset-model \
-    --asset-model-id "${ASSET_MODEL_ID}" \
-    --query 'assetModelName' --output text)
-echo "Described Asset Model: ${DESCRIBE_ASSET_MODEL_RESPONSE}"
+echo "Creating an asset model..."
+ASSET_MODEL_NAME="TutorialAssetModel$SUFFIX"
+ASSET_MODEL_ID=$(aws iotsitewise create-asset-model --asset-model-name $ASSET_MODEL_NAME --tags '{"Environment":"Tutorial"}' --query 'assetModelId' --output text)
+CREATED_RESOURCES+=("asset-model:$ASSET_MODEL_ID")
 
-# List Asset Models
-LIST_ASSET_MODELS_RESPONSE_COUNT=$(aws iotsitewise list-asset-models \
-    --query 'assetModelSummaries|[].id' --output text | wc -w)
-echo "Listed Asset Models: ${LIST_ASSET_MODELS_RESPONSE_COUNT}"
+echo "Verifying the created asset model..."
+aws iotsitewise describe-asset-model --asset-model-id $ASSET_MODEL_ID
 
-# Wait for Asset Model to become ACTIVE
-while true; do
-    ASSET_MODEL_STATUS=$(aws iotsitewise describe-asset-model \
-        --asset-model-id "${ASSET_MODEL_ID}" \
-        --query 'assetModelStatus.state' --output text)
-    if [ "${ASSET_MODEL_STATUS}" == "ACTIVE" ]; then
-        break
-    fi
-    sleep 1
-done
+echo "Creating an asset from the asset model..."
+ASSET_NAME="TutorialAsset$SUFFIX"
+ASSET_ID=$(aws iotsitewise create-asset --asset-name $ASSET_NAME --asset-model-id $ASSET_MODEL_ID --tags '{"Environment":"Tutorial"}' --query 'assetId' --output text)
+CREATED_RESOURCES+=("asset:$ASSET_ID")
 
-# Delete Asset Model
-aws iotsitewise delete-asset-model \
-    --asset-model-id "${ASSET_MODEL_ID}" \
-    --client-token "$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 36 | head -n 1)" || true
+echo "Verifying the created asset..."
+aws iotsitewise describe-asset --asset-id $ASSET_ID
 
-echo "Asset Model deleted: ${ASSET_MODEL_NAME}"
+echo "Creating an access policy for the asset..."
+ACCESS_POLICY_ID=$(aws iotsitewise create-access-policy --access-policy-permission 'ADMIN' --access-policy-identity-type 'IAM' --access-policy-resource-type 'ASSET' --access-policy-resource-id $ASSET_ID --access-policy-identity-id $ROLE_ARN --tags '{"Environment":"Tutorial"}' --query 'accessPolicyId' --output text)
+CREATED_RESOURCES+=("access-policy:$ACCESS_POLICY_ID")
+
+echo "Verifying the created access policy..."
+aws iotsitewise describe-access-policy --access-policy-id $ACCESS_POLICY_ID
 
 echo "PASS"

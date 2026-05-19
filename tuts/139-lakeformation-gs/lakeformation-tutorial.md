@@ -1,71 +1,100 @@
-# Tutorial: Interacting with AWS Lake Formation using AWS CLI
+# Getting started with AWS Lake Formation
+
+This tutorial will guide you through the basics of using AWS Lake Formation to manage and secure your data lakes.
 
 ## Prerequisites
 
-- Install and configure the AWS CLI.
-- Ensure you have the necessary permissions to interact with AWS Lake Formation.
+Before you begin, ensure you have the following:
 
-## Steps
+- AWS Command Line Interface (CLI) installed and configured.
+- Necessary IAM permissions to create and manage Lake Formation resources.
+- A CloudFormation stack with required IAM roles if you need to set up roles specifically for this tutorial.
 
-1. **Generate a unique suffix and temporary directory**
+## Step 1: Set up your environment
 
-    ```bash
-    SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
-    TEMP_DIR=$(mktemp -d)
-    LOG_FILE="${TEMP_DIR}/script_log_${SUFFIX}.txt"
-    ```
+**Guidance:** Set environment variables and ensure your AWS CLI is configured with the appropriate permissions.
 
-2. **Set up a trap for cleanup**
+```bash
+$ export AWS_PROFILE=your_profile_name
+$ export TUTORIAL_ROLE_ARN=your_role_arn_here
+```
 
-    ```bash
-    trap cleanup_resources EXIT
-    ```
+## Step 2: Create an LF-Tag
 
-3. **Log the start of the script**
+**Guidance:** Use the Python script to create an LF-Tag for categorizing your resources.
 
-    ```bash
-    echo "Script started" > "${LOG_FILE}"
-    echo "-------------------------" >> "${LOG_FILE}"
-    ```
+```python
+import boto3
+import time
+import os
 
-4. **List Lake Formation resources**
+ROLE_ARN = os.getenv('TUTORIAL_ROLE_ARN')
+suffix = str(int(time.time()))[-6:]
+tags = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value': 'lakeformation-gs'}]
 
-    ```bash
-    echo "Step 1: Listing Lake Formation resources..."
-    aws lakeformation list-resources --query 'ResourceInfoList[0].ResourceArn' --output text || echo "No resources"
-    echo "Step 1: Listing Lake Formation resources... Done" >> "${LOG_FILE}"
-    ```
+lakeformation = boto3.client('lakeformation')
 
-5. **Get data lake settings**
+# Create LF-Tag
+print("Creating LF-Tag to categorize resources.")
+tag_name = f'tutorial-tag-{suffix}'
+response = lakeformation.create_lf_tag(CatalogId='123456789012', TagKey=tag_name, TagValues=['value1', 'value2'], Tags=tags)
+print(f"LF-Tag created with key: {tag_name}")
+```
 
-    ```bash
-    echo "Step 2: Getting data lake settings..."
-    aws lakeformation get-data-lake-settings --query 'DataLakeSettings.DataLakeAdmins' --output text || echo "No admins"
-    echo "Step 2: Getting data lake settings... Done" >> "${LOG_FILE}"
-    ```
+**Expected Output:**
+```
+Creating LF-Tag to categorize resources.
+LF-Tag created with key: tutorial-tag-123456
+```
 
-6. **Mark the script as successful**
+## Step 3: Create a Data Cells Filter
 
-    ```bash
-    echo "PASS"
-    ```
+**Guidance:** Use the Python script to create a Data Cells Filter to control data access.
+
+```python
+import boto3
+import time
+import os
+
+ROLE_ARN = os.getenv('TUTORIAL_ROLE_ARN')
+suffix = str(int(time.time()))[-6:]
+
+lakeformation = boto3.client('lakeformation')
+
+# Create Data Cells Filter
+print("Creating Data Cells Filter to control data access.")
+filter_name = f'tutorial-filter-{suffix}'
+response = lakeformation.create_data_cells_filter(
+    TableData={
+        'DatabaseName': 'example_db',
+        'TableName': 'example_table',
+        'Name': filter_name,
+        'RowFilter': {
+            'FilterExpression': "column1 = 'value1'"
+        },
+        'ColumnNames': ['column1', 'column2'],
+        'ColumnWildcard': {'ExcludedColumnNames': ['column3']}
+    }
+)
+print(f"Data Cells Filter created with name: {filter_name}")
+```
+
+**Expected Output:**
+```
+Creating Data Cells Filter to control data access.
+Data Cells Filter created with name: tutorial-filter-123456
+```
 
 ## Clean up
 
-The script includes a cleanup function to remove any created resources and the temporary directory.
+**Guidance:** Delete the resources you created to avoid unnecessary charges.
 
 ```bash
-cleanup_resources() {
-  echo "Cleaning up created resources..."
-  for resource in "${CREATED_RESOURCES[@]}"; do
-    echo "Deleting resource: $resource"
-    # Add appropriate AWS CLI delete command here if needed
-  done
-  rm -rf "${TEMP_DIR}"
-}
+$ python cleanup_script.py
 ```
 
 ## Next steps
 
-- Review the log file `${TEMP_DIR}/script_log_${SUFFIX}.txt` for detailed output.
-- Extend the script to include additional Lake Formation operations as needed.
+- Explore more Lake Formation features such as [Lake Formation permissions](https://docs.aws.amazon.com/lake-formation/latest/dg/permissions.html).
+- Learn how to [integrate Lake Formation with AWS Glue](https://docs.aws.amazon.com/lake-formation/latest/dg/glue-integration.html).
+- Discover how to [use Lake Formation with Amazon Athena](https://docs.aws.amazon.com/lake-formation/latest/dg/athena-integration.html).

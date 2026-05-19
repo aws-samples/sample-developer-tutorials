@@ -1,54 +1,145 @@
-# Tutorial: Setting Up AWS EventBridge Pipes
+# Getting started with Amazon EventBridge Pipes
 
 ## Prerequisites
 
-- Ensure you have the AWS CLI installed and configured with the necessary permissions.
-- Basic understanding of AWS services, particularly SQS and CloudWatch Logs.
+Before you begin, ensure you have the following prerequisites in place:
 
-## Steps
+- AWS CLI installed and configured.
+- Appropriate IAM permissions to create and manage EventBridge Pipes.
+- An IAM role with the necessary permissions for EventBridge Pipes. If you don't have one, you can create it using AWS CloudFormation or the AWS Management Console.
 
-### 1. Create an SQS Queue
+## Step 1: Create a Pipe
 
-**Command:**
+**Create a Pipe using Python**
 
-```bash
-$ aws sqs create-queue --tags '{"project":"doc-smith","tutorial":"pipes-gs"}' --queue-name "pipe-queue-$SUFFIX" --query 'QueueUrl' --output text
+This script creates a new EventBridge Pipe with a unique name, using an IAM role for permissions. It also adds tags to the pipe for categorization.
+
+```python
+import boto3
+import json
+import time
+import os
+import sys
+
+ROLE_ARN = os.environ.get('TUTORIAL_ROLE_ARN')
+suffix = str(int(time.time()))[-6:]
+tags = [{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'pipes-gs'}]
+
+client = boto3.client('pipes')
+
+# Step 1: Create Pipe
+print("Step 1: Creating a Pipe...")
+pipe_name = f"tutorial-pipe-{suffix}"
+response = client.create_pipe(
+    Name=pipe_name,
+    RoleArn=ROLE_ARN if ROLE_ARN else f"arn:aws:iam::{boto3.client('sts').get_caller_identity().get('Account')}:role/service-role/EventBridgePipesRole",
+    Source='ExampleSource',
+    Target='ExampleTarget',
+    Description='Tutorial Pipe',
+    Tags=tags
+)
+pipe_arn = response['Arn']
+print(f"Pipe created with ARN: {pipe_arn}")
 ```
 
-**Guidance:**
+After running the script, you should see output similar to this:
 
-This command creates an SQS queue with a unique name and tags for project and tutorial identification. The output is the queue URL, which is stored for later use.
-
-### 2. Create a CloudWatch Log Group
-
-**Commands:**
-
-```bash
-$ aws logs create-log-group --log-group-name "/aws/pipes/pipe-$SUFFIX"
-$ aws logs tag-resource --resource-arn "arn:aws:logs:us-east-1:123456789012:log-group:/aws/pipes/pipe-$SUFFIX" --tags '{"project":"doc-smith","tutorial":"pipes-gs"}'
+```
+Step 1: Creating a Pipe...
+Pipe created with ARN: arn:aws:pipes:us-east-1:123456789012:pipe/tutorial-pipe-abc123
 ```
 
-**Guidance:**
+## Step 2: Verify Pipe Creation
 
-These commands create a CloudWatch Log Group with a unique name and apply tags for project and tutorial identification. The resource ARN is used to tag the log group.
+**Verify the Pipe Creation using Python**
 
-### 3. List Existing Pipes
+This script verifies that the pipe was created successfully by describing the pipe.
 
-**Command:**
-
-```bash
-$ aws pipes list-pipes --query 'Pipes[].Name' --output text || echo "No pipes"
+```python
+# Step 2: Verify Pipe Creation
+print("Step 2: Verifying Pipe creation...")
+response = client.describe_pipe(Name=pipe_name)
+print(f"Pipe description: {json.dumps(response, indent=2)}")
 ```
 
-**Guidance:**
+The output should display the details of the created pipe:
 
-This command lists the names of existing pipes. If no pipes exist, it outputs "No pipes".
+```json
+{
+  "Name": "tutorial-pipe-abc123",
+  "Arn": "arn:aws:pipes:us-east-1:123456789012:pipe/tutorial-pipe-abc123",
+  "RoleArn": "arn:aws:iam::123456789012:role/service-role/EventBridgePipesRole",
+  "Source": "ExampleSource",
+  "Target": "ExampleTarget",
+  "Description": "Tutorial Pipe",
+  "Tags": {
+    "project": "doc-smith",
+    "tutorial": "pipes-gs"
+  }
+}
+```
 
-## Clean Up
+## Step 3: List Pipes
 
-All created resources are automatically cleaned up at the end of the tutorial to avoid unnecessary charges. This includes deleting the SQS queue and the CloudWatch Log Group.
+**List all Pipes using Python**
 
-## Next Steps
+This script lists all the pipes in your account to ensure the new pipe appears in the list.
 
-- Explore creating an EventBridge Pipe using the SQS queue and CloudWatch Log Group created in this tutorial.
-- Review the [AWS EventBridge Pipes documentation](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-pipes.html) for more advanced configurations and use cases.
+```python
+# Step 3: List Pipes
+print("Step 3: Listing Pipes...")
+response = client.list_pipes()
+print(f"List of Pipes: {json.dumps(response, indent=2)}")
+```
+
+The output should include the newly created pipe in the list:
+
+```json
+{
+  "Pipes": [
+    {
+      "Name": "tutorial-pipe-abc123",
+      "Arn": "arn:aws:pipes:us-east-1:123456789012:pipe/tutorial-pipe-abc123",
+      "RoleArn": "arn:aws:iam::123456789012:role/service-role/EventBridgePipesRole",
+      "Source": "ExampleSource",
+      "Target": "ExampleTarget",
+      "Description": "Tutorial Pipe",
+      "Tags": {
+        "project": "doc-smith",
+        "tutorial": "pipes-gs"
+      }
+    }
+  ]
+}
+```
+
+## Clean up
+
+**Clean up resources using Python**
+
+This script deletes the created pipe to ensure no unnecessary resources remain.
+
+```python
+# Step 4: Clean up
+print("Step 4: Cleaning up resources...")
+print("Deleting Pipe...")
+client.delete_pipe(Name=pipe_name)
+print("Wait for Pipe to be deleted...")
+time.sleep(10)  # Wait for deletion to complete
+print('PASS')
+```
+
+After running the cleanup script, the pipe will be deleted, and you should see:
+
+```
+Step 4: Cleaning up resources...
+Deleting Pipe...
+Wait for Pipe to be deleted...
+PASS
+```
+
+## Next steps
+
+- Explore more complex EventBridge Pipes configurations.
+- Integrate EventBridge Pipes with other AWS services.
+- Monitor your pipes using CloudWatch.

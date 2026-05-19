@@ -1,46 +1,49 @@
 #!/bin/bash
 set -e
 
-TEMP_DIR=$(mktemp -d)
-LOG_FILE="${TEMP_DIR}/script.log"
-CREATED_RESOURCES=()
-
 cleanup_resources() {
-    for resource in "${CREATED_RESOURCES[@]}"; do
-        echo "Cleaning up: $resource"
-        aws mediapackagev2 delete-channel-group --channel-group-name "$resource" || true
-    done
-    rm -rf "$TEMP_DIR"
+  for resource in "${CREATED_RESOURCES[@]}"; do
+    case "$resource" in
+      channel-*)
+        aws mediapackagev2 delete-channel --channel-id "${resource#channel-}" || true
+        ;;
+      channel-group-*)
+        aws mediapackagev2 delete-channel-group --channel-group-name "${resource#channel-group-}" || true
+        ;;
+      origin-endpoint-*)
+        aws mediapackagev2 delete-origin-endpoint --channel-group-name "${resource#origin-endpoint-}" || true
+        ;;
+      *)
+        echo "Unknown resource type: $resource"
+        ;;
+    esac
+  done
 }
 
 trap cleanup_resources EXIT
 
 SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
-CHANNEL_GROUP_NAME="test-channel-group-${SUFFIX}"
-CLIENT_TOKEN=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
+TEMP_DIR=$(mktemp -d)
+CREATED_RESOURCES=()
 
-# Create Channel Group
-echo "Step 1: Creating Channel Group..."
-aws mediapackagev2 create-channel-group \
-    --channel-group-name "$CHANNEL_GROUP_NAME" \
-    --client-token "$CLIENT_TOKEN" \
-    --description "Test Channel Group" \
-    --tags '{"project": "doc-smith", "tutorial": "mediapackagev2-gs", "Environment": "Test"}' 2>>"$LOG_FILE"
-CREATED_RESOURCES+=("$CHANNEL_GROUP_NAME")
+ROLE_ARN=${TUTORIAL_ROLE_ARN}
 
-# Verify Channel Group Creation
-echo "Step 2: Verifying Channel Group Creation..."
-aws mediapackagev2 get-channel-group \
-    --channel-group-name "$CHANNEL_GROUP_NAME" 2>>"$LOG_FILE"
+echo "Creating a channel group"
+CHANNEL_GROUP_NAME="tutorial-channel-group-$SUFFIX"
+CHANNEL_GROUP_ID=$(aws mediapackagev2 create-channel-group --channel-group-name "$CHANNEL_GROUP_NAME" --tags '{"Environment":"Tutorial"}' --query 'channelGroupName' --output text)
+CREATED_RESOURCES+=("channel-group-$CHANNEL_GROUP_ID")
+echo "Created channel group: $CHANNEL_GROUP_ID"
 
-# List Channel Groups
-echo "Step 3: Listing Channel Groups..."
-aws mediapackagev2 list-channel-groups \
-    --max-results 10 2>>"$LOG_FILE"
+echo "Creating a channel"
+CHANNEL_NAME="tutorial-channel-$SUFFIX"
+CHANNEL_ID=$(aws mediapackagev2 create-channel --channel-group-name "$CHANNEL_GROUP_NAME" --channel-name "$CHANNEL_NAME" --tags '{"Environment":"Tutorial"}' --query 'channelName' --output text)
+CREATED_RESOURCES+=("channel-$CHANNEL_ID")
+echo "Created channel: $CHANNEL_ID"
 
-# Delete Channel Group
-echo "Step 4: Deleting Channel Group..."
-aws mediapackagev2 delete-channel-group \
-    --channel-group-name "$CHANNEL_GROUP_NAME" 2>>"$LOG_FILE"
+echo "Creating an origin endpoint"
+ORIGIN_ENDPOINT_NAME="tutorial-origin-endpoint-$SUFFIX"
+ORIGIN_ENDPOINT_ID=$(aws mediapackagev2 create-origin-endpoint --channel-group-name "$CHANNEL_GROUP_NAME" --origin-endpoint-name "$ORIGIN_ENDPOINT_NAME" --container-type "HLS" --tags '{"Environment":"Tutorial"}' --query 'originEndpointName' --output text)
+CREATED_RESOURCES+=("origin-endpoint-$ORIGIN_ENDPOINT_ID")
+echo "Created origin endpoint: $ORIGIN_ENDPOINT_ID"
 
 echo "PASS"

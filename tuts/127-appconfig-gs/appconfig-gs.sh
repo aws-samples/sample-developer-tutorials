@@ -1,39 +1,39 @@
 #!/bin/bash
 set -e
 
-SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
-TEMP_DIR=$(mktemp -d)
-LOG_FILE="${TEMP_DIR}/script.log"
-CREATED_RESOURCES=()
-
 cleanup_resources() {
   for resource in "${CREATED_RESOURCES[@]}"; do
-    aws appconfig delete-application --application-id "${resource}" || true
+    echo "Cleaning up resource: $resource"
+    case $resource in
+      application/*) aws appconfig delete-application --application-id "${resource#application/}" || true ;;
+      configuration-profile/*) aws appconfig delete-configuration-profile --application-id "${resource#configuration-profile/}" || true ;;
+      deployment-strategy/*) aws appconfig delete-deployment-strategy --deployment-strategy-id "${resource#deployment-strategy/}" || true ;;
+      environment/*) aws appconfig delete-environment --application-id "${resource#environment/}" || true ;;
+      extension/*) aws appconfig delete-extension --extension-id "${resource#extension/}" || true ;;
+    esac
   done
-  rm -rf "${TEMP_DIR}"
 }
 
 trap cleanup_resources EXIT
 
-# Create Application
-APPLICATION_NAME="appconfig-app-${SUFFIX}"
-APPLICATION_ID=$(aws appconfig create-application --name "${APPLICATION_NAME}" --description "Test Application" --tags '{"project": "doc-smith", "tutorial": "appconfig-gs"}' --query 'Id' --output text)
-echo "Created Application: ${APPLICATION_NAME}" >> "${LOG_FILE}"
-CREATED_RESOURCES+=("${APPLICATION_ID}")
+SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
+TEMP_DIR=$(mktemp -d)
+CREATED_RESOURCES=()
 
-# Create Environment
-ENVIRONMENT_NAME="appconfig-env-${SUFFIX}"
-ENVIRONMENT_ID=$(aws appconfig create-environment --application-id "${APPLICATION_ID}" --name "${ENVIRONMENT_NAME}" --description "Test Environment" --tags '{"project": "doc-smith", "tutorial": "appconfig-gs"}' --query 'Id' --output text)
-echo "Created Environment: ${ENVIRONMENT_NAME}" >> "${LOG_FILE}"
-CREATED_RESOURCES+=("${ENVIRONMENT_ID}")
+echo "Creating an application..."
+APPLICATION_ID=$(aws appconfig create-application --name "app-$SUFFIX" --tags '{"Project":"Tutorial","Environment":"Dev"}' --query 'Id' --output text)
+CREATED_RESOURCES+=("application/$APPLICATION_ID")
 
-# Skip creating Configuration Profile due to role assumption error
-CONFIG_PROFILE_NAME="appconfig-config-${SUFFIX}"
-LOCATION_URI="ssm-parameter://appconfig-test-parameter"
-echo "Skipped creating Configuration Profile: ${CONFIG_PROFILE_NAME} due to role assumption error" >> "${LOG_FILE}"
+echo "Creating a configuration profile..."
+CONFIG_PROFILE_ID=$(aws appconfig create-configuration-profile --application-id "$APPLICATION_ID" --name "config-$SUFFIX" --location-uri "ssm-parameter://tutorial-param" --retrieval-role-arn "$ROLE_ARN" --tags '{"Project":"Tutorial","Environment":"Dev"}' --query 'Id' --output text)
+CREATED_RESOURCES+=("configuration-profile/$CONFIG_PROFILE_ID")
 
-# Verify Application
-GET_APPLICATION_RESPONSE=$(aws appconfig get-application --application-id "${APPLICATION_ID}" --query 'Name' --output text)
-echo "Verified Application: ${GET_APPLICATION_RESPONSE}" >> "${LOG_FILE}"
+echo "Creating a deployment strategy..."
+DEPLOYMENT_STRATEGY_ID=$(aws appconfig create-deployment-strategy --name "strategy-$SUFFIX" --deployment-duration-in-minutes 15 --final-bake-time-in-minutes 30 --growth-factor 25 --growth-type LINEAR --tags '{"Project":"Tutorial","Environment":"Dev"}' --query 'Id' --output text)
+CREATED_RESOURCES+=("deployment-strategy/$DEPLOYMENT_STRATEGY_ID")
 
-echo "PASS" >> "${LOG_FILE}"
+echo "Creating an environment..."
+ENVIRONMENT_ID=$(aws appconfig create-environment --application-id "$APPLICATION_ID" --name "env-$SUFFIX" --tags '{"Project":"Tutorial","Environment":"Dev"}' --query 'Id' --output text)
+CREATED_RESOURCES+=("environment/$ENVIRONMENT_ID")
+
+echo "PASS"

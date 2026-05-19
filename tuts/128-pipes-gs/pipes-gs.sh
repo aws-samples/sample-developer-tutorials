@@ -1,29 +1,34 @@
 #!/bin/bash
 set -e
+
+cleanup_resources() {
+  for resource in "${CREATED_RESOURCES[@]}"; do
+    echo "Cleaning up: $resource"
+    aws pipes delete-pipe --name "$resource" || true
+  done
+}
+
+trap cleanup_resources EXIT
+
 SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
 TEMP_DIR=$(mktemp -d)
-declare -a CREATED_RESOURCES=()
-cleanup_resources() {
-    for ((i=${#CREATED_RESOURCES[@]}-1; i>=0; i--)); do
-        IFS=: read -r type id <<< "${CREATED_RESOURCES[$i]}"
-        case $type in
-            queue) aws sqs delete-queue --queue-url "$id" 2>/dev/null || true ;;
-            loggroup) aws logs delete-log-group --log-group-name "$id" 2>/dev/null || true ;;
-        esac
-    done
-    rm -rf "$TEMP_DIR"
-}
-trap cleanup_resources EXIT
-echo "=== Creating SQS Queue ==="
-QUEUE_URL=$(aws sqs create-queue --tags '{"project":"doc-smith","tutorial":"pipes-gs"}' --queue-name "pipe-queue-$SUFFIX" --query 'QueueUrl' --output text)
-echo "Queue: $QUEUE_URL"
-CREATED_RESOURCES+=("queue:$QUEUE_URL")
-echo "=== Creating Log Group ==="
-LOG_GROUP_NAME="/aws/pipes/pipe-$SUFFIX"
-aws logs create-log-group --log-group-name "$LOG_GROUP_NAME"
-ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-aws logs tag-resource --resource-arn "arn:aws:logs:us-east-1:${ACCOUNT_ID}:log-group:$LOG_GROUP_NAME" --tags '{"project":"doc-smith","tutorial":"pipes-gs"}'
-CREATED_RESOURCES+=("loggroup:$LOG_GROUP_NAME")
-echo "=== Listing Pipes ==="
-aws pipes list-pipes --query 'Pipes[].Name' --output text || echo "No pipes"
-echo "=== Tutorial Complete ==="
+CREATED_RESOURCES=()
+
+echo "Creating a new EventBridge Pipe."
+PIPE_NAME="tutorial-pipe-$SUFFIX"
+RESPONSE=$(aws pipes create-pipe \
+  --name "$PIPE_NAME" \
+  --role-arn "${TUTORIAL_ROLE_ARN}" \
+  --source "ExampleSource" \
+  --source-parameters '{"DynamicPath": "example"}' \
+  --target "ExampleTarget" \
+  --target-parameters '{"DynamicPath": "example"}' \
+  --tags '{"Environment": "Tutorial"}' \
+  --query 'PipeArn' --output text)
+CREATED_RESOURCES+=("$PIPE_NAME")
+echo "Created EventBridge Pipe with ARN: $RESPONSE"
+
+echo "Verifying the creation of the EventBridge Pipe."
+aws pipes describe-pipe --name "$PIPE_NAME"
+
+echo "PASS"

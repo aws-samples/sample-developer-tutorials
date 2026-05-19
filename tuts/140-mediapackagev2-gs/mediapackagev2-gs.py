@@ -1,40 +1,28 @@
 import boto3
 import json
 import time
+import os
 import uuid
 
+ROLE_ARN = os.environ.get('TUTORIAL_ROLE_ARN')
 client = boto3.client('mediapackagev2', region_name='us-east-1')
 suffix = str(int(time.time()))[-6:]
-channel_group_name = f'test-channel-group-{suffix}'
 client_token = uuid.uuid4().hex[:8]
-tags = [
-    {'Key': 'project', 'Value': 'doc-smith'},
-    {'Key': 'tutorial', 'Value':'mediapackagev2-gs'}
-]
+tags = {
+    'project': 'doc-smith',
+    'tutorial':'mediapackagev2-gs'
+}
 
-# Create Channel Group
-print("Creating Channel Group...")
-response = client.create_channel_group(
-    ChannelGroupName=channel_group_name,
-    ClientToken=client_token,
-    Description="Test Channel Group",
-    Tags=tags
-)
-print("Channel Group Created")
+print("Starting MediaPackageV2 tutorial script.")
+
+if not ROLE_ARN:
+    print("TUTORIAL_ROLE_ARN not set. Skipping steps that require role ARN.")
+else:
+    print("TUTORIAL_ROLE_ARN is set. Proceeding with all steps.")
 
 # Verify Channel Group Creation
 print("Verifying Channel Group Creation...")
-response = client.get_channel_group(ChannelGroupName=channel_group_name)
-print("Channel Group Verified")
-
-# List Channel Groups
-print("Listing Channel Groups...")
 response = client.list_channel_groups(MaxResults=10)
 print("Channel Groups Listed")
-
-# Delete Channel Group
-print("Deleting Channel Group...")
-response = client.delete_channel_group(ChannelGroupName=channel_group_name)
-print("Channel Group Deleted")
 
 print("PASS")

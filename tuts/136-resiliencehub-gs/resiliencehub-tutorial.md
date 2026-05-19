@@ -1,81 +1,152 @@
-# Resilience Hub Application Creation Tutorial
+# Getting started with AWS Resilience Hub
+
+This tutorial guides you through the process of getting started with AWS Resilience Hub using both Python and CLI scripts.
 
 ## Prerequisites
 
-- Install and configure the AWS CLI.
-- Ensure you have the necessary permissions to create and manage Resilience Hub applications.
+Before you begin, ensure you have met the following requirements:
 
-## Steps
+- AWS CLI installed and configured with appropriate credentials.
+- Necessary IAM permissions to create and manage Resilience Hub applications and policies.
+- Optionally, a CloudFormation stack if specific IAM roles are required.
 
-1. **Generate a unique suffix**
+## Step 1: Create an application
 
-    ```bash
-    $ SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
-    ```
+**Python Script**
 
-2. **Create a temporary directory**
+Before running the script, ensure you have set the `TUTORIAL_ROLE_ARN` environment variable.
 
-    ```bash
-    $ TEMP_DIR=$(mktemp -d)
-    ```
+```python
+import boto3
+import json
+import time
+import os
+import sys
 
-3. **Create the Resilience Hub application**
+ROLE_ARN = os.environ.get('TUTORIAL_ROLE_ARN')
+client = boto3.client('resiliencehub')
+suffix = str(int(time.time()))[-6:]
+tags = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value':'resiliencehub-gs'}]
 
-    ```bash
-    $ echo "=== Creating App ==="
-    $ APP_ARN=$(aws resiliencehub create-app --name "app-$SUFFIX" --tags '{"project": "doc-smith", "tutorial": "resiliencehub-gs"}' --query 'app.appArn' --output text)
-    $ echo "App: $APP_ARN"
-    ```
-
-    This command creates a new Resilience Hub application with a unique name and tags it for identification.
-
-4. **Store the application ARN for cleanup**
-
-    ```bash
-    $ CREATED_RESOURCES+=("app:$APP_ARN")
-    ```
-
-5. **Describe the newly created application**
-
-    ```bash
-    $ echo "=== Describing App ==="
-    $ aws resiliencehub describe-app --app-arn "$APP_ARN" --query 'app.name' --output text
-    ```
-
-    This command retrieves and displays the name of the created application.
-
-6. **List all Resilience Hub applications**
-
-    ```bash
-    $ echo "=== Listing Apps ==="
-    $ aws resiliencehub list-apps --query 'appSummaries[].name' --output text
-    ```
-
-    This command lists the names of all applications in your Resilience Hub.
-
-## Clean up
-
-To clean up the resources created during this tutorial, the script includes a cleanup function that deletes the created application and removes the temporary directory.
-
-```bash
-$ trap cleanup_resources EXIT
+print("Step 1: Creating an application.")
+app_name = f'tutorial-app-{suffix}'
+response = client.create_app(name=app_name, tags=tags)
+app_arn = response['app']['appArn']
+print(f"Application created with ARN: {app_arn}")
 ```
 
-The `cleanup_resources` function iterates through the created resources and deletes them:
+After running the script, you should see an output similar to:
+
+```
+Application created with ARN: arn:aws:resiliencehub:us-west-2:123456789012:app/tutorial-app-123456
+```
+
+**CLI Script**
+
+Run the following CLI command to create an application:
 
 ```bash
-$ cleanup_resources() {
-    for ((i=${#CREATED_RESOURCES[@]}-1; i>=0; i--)); do
-        IFS=: read -r type id <<< "${CREATED_RESOURCES[$i]}"
-        case $type in
-            app) aws resiliencehub delete-app --app-arn "$id" --force-delete 2>/dev/null || true ;;
-        esac
-    done
-    rm -rf "$TEMP_DIR"
+$ APP_NAME="app-$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)"
+$ APP_ARN=$(create-app --name $APP_NAME --assessment-schedule Disabled)
+```
+
+You should see an output similar to:
+
+```
+APP_ARN=arn:aws:resiliencehub:us-west-2:123456789012:app/app-abcdef12
+```
+
+## Step 2: Create an app version resource
+
+**Python Script**
+
+Continue with the Python script to create an app version resource.
+
+```python
+print("Step 2: Creating an app version resource.")
+response = client.create_app_version_resource(
+    appArn=app_arn,
+    appComponents=[{'id': 'test-component', 'name': 'test-component', 'type': 'AWS::EC2::Instance'}],
+    logicalResourceId={'identifier': 'test-resource', 'logicalStackName': 'test-stack','resourceGroupName': 'test-group', 'terraformSourceName': 'test-tf-source'},
+    physicalResourceId={'identifier': 'test-physical-id', 'awsAccountId': 'test-account-id', 'awsRegion': 'us-west-2'},
+    resourceType='AWS::EC2::Instance'
+)
+print("App version resource created.")
+```
+
+After running the script, you should see:
+
+```
+App version resource created.
+```
+
+**CLI Script**
+
+This step is not directly translatable to CLI as the CLI script provided focuses on creating an application and policy. However, you can manually add resources to your application via the AWS Management Console.
+
+## Step 3: Describe the application
+
+**Python Script**
+
+Verify the creation of the application by describing it.
+
+```python
+print("Step 3: Describing the application to verify creation.")
+response = client.describe_app(appArn=app_arn)
+print(f"Application description retrieved: {response['app']}")
+```
+
+After running the script, you should see an output similar to:
+
+```
+Application description retrieved: {'appArn': 'arn:aws:resiliencehub:us-west-2:123456789012:app/tutorial-app-123456',...}
+```
+
+**CLI Script**
+
+Describe the application using the following CLI command:
+
+```bash
+$ describe-app --app-arn $APP_ARN
+```
+
+You should see an output similar to:
+
+```
+{
+  "appArn": "arn:aws:resiliencehub:us-west-2:123456789012:app/app-abcdef12",
+ ...
 }
+```
+
+## Step 4: Clean up
+
+**Python Script**
+
+Clean up by deleting the application.
+
+```python
+print("Step 4: Cleaning up - Deleting the application.")
+client.delete_app(appArn=app_arn)
+print("Application deleted.")
+```
+
+After running the script, you should see:
+
+```
+Application deleted.
+```
+
+**CLI Script**
+
+The cleanup function in the CLI script ensures that the application and policy are deleted upon script exit.
+
+```bash
+trap cleanup EXIT
 ```
 
 ## Next steps
 
-- Explore additional Resilience Hub features such as assessing application resilience or creating resiliency policies.
-- Review the [AWS Resilience Hub documentation](https://docs.aws.amazon.com/resilience-hub/latest/userguide/what-is.html) for more detailed information and advanced use cases.
+- Explore additional Resilience Hub features such as assessment templates and resiliency policies.
+- Integrate Resilience Hub with your CI/CD pipeline for automated resiliency assessments.
+- Review the [AWS Resilience Hub documentation](https://docs.aws.amazon.com/resilience-hub/latest/userguide/what-is.html) for more advanced use cases and best practices.

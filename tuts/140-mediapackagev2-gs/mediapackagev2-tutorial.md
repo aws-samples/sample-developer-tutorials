@@ -1,57 +1,110 @@
-# MediaPackage V2 Channel Group Creation Tutorial
+# Getting started with AWS Elemental MediaPackage v2
 
 ## Prerequisites
 
-- An AWS account.
-- AWS CLI installed and configured with appropriate permissions.
-- `mediapackagev2` AWS CLI commands available.
+Before you begin, ensure you have the following:
 
-## Steps
+- AWS CLI installed and configured
+- Appropriate IAM permissions to create and manage MediaPackage v2 resources
+- Optionally, a CloudFormation stack with necessary IAM roles if required
 
-**Step 1: Creating Channel Group**
+## Step 1: Create a Channel Group
 
-```sh
-$ aws mediapackagev2 create-channel-group \
-    --channel-group-name "test-channel-group-xmpl" \
-    --client-token "xmpl" \
-    --description "Test Channel Group" \
-    --tags '{"project": "doc-smith", "tutorial": "mediapackagev2-gs", "Environment": "Test"}'
+**Create a Channel Group**
+
+The following Python script creates a Channel Group in AWS Elemental MediaPackage v2. This is the first step in setting up your media workflow.
+
+```python
+import boto3
+import time
+import os
+
+client = boto3.client('mediapackagev2')
+suffix = str(int(time.time()))[-6:]
+
+channel_group_name = f'channel-group-{suffix}'
+response = client.create_channel_group(ChannelGroupName=channel_group_name, Tags=[{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'mediapackagev2-gs'}])
+print(f"Channel Group created with ARN: {response['Arn']}")
 ```
 
-This command creates a new channel group with a unique name, a client token for idempotency, a description, and specified tags.
+**Expected Result:**
 
-**Step 2: Verifying Channel Group Creation**
+You should see an output similar to:
 
-```sh
-$ aws mediapackagev2 get-channel-group \
-    --channel-group-name "test-channel-group-xmpl"
+```
+Channel Group created with ARN: arn:aws:mediapackagev2:us-west-2:123456789012:channel-group/channel-group-abc123
 ```
 
-This command verifies the creation of the channel group by retrieving its details.
+## Step 2: Create a Channel
 
-**Step 3: Listing Channel Groups**
+**Create a Channel**
 
-```sh
-$ aws mediapackagev2 list-channel-groups \
-    --max-results 10
+The following Python script creates a Channel within the Channel Group you just created.
+
+```python
+channel_name = f'channel-{suffix}'
+response = client.create_channel(ChannelGroupName=channel_group_name, ChannelName=channel_name, Tags=[{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'mediapackagev2-gs'}])
+print(f"Channel created with ARN: {response['Arn']}")
 ```
 
-This command lists up to 10 channel groups, allowing you to see the newly created channel group among others.
+**Expected Result:**
 
-**Step 4: Deleting Channel Group**
+You should see an output similar to:
 
-```sh
-$ aws mediapackagev2 delete-channel-group \
-    --channel-group-name "test-channel-group-xmpl"
+```
+Channel created with ARN: arn:aws:mediapackagev2:us-west-2:123456789012:channel-group/channel-group-abc123/channel/channel-abc123
 ```
 
-This command deletes the created channel group to clean up resources.
+## Step 3: Create an Origin Endpoint
+
+**Create an Origin Endpoint**
+
+The following Python script creates an Origin Endpoint within the Channel. This endpoint will be used to serve your media content.
+
+```python
+origin_endpoint_name = f'origin-endpoint-{suffix}'
+response = client.create_origin_endpoint(ChannelGroupName=channel_group_name, ChannelName=channel_name, OriginEndpointName=origin_endpoint_name, ContainerType='HLS', Tags=[{'Key':'project','Value':'doc-smith'},{'Key':'tutorial','Value':'mediapackagev2-gs'}])
+print(f"Origin Endpoint created with ARN: {response['Arn']}")
+```
+
+**Expected Result:**
+
+You should see an output similar to:
+
+```
+Origin Endpoint created with ARN: arn:aws:mediapackagev2:us-west-2:123456789012:channel-group/channel-group-abc123/channel/channel-abc123/origin-endpoint/origin-endpoint-abc123
+```
 
 ## Clean up
 
-The script automatically cleans up created resources upon completion or interruption. It deletes the channel group and removes temporary files.
+To avoid unnecessary charges, clean up the resources you created. The following Python script deletes the Origin Endpoint, Channel, and Channel Group.
+
+**Clean up resources**
+
+```python
+print("Cleaning up resources...")
+
+# Delete Origin Endpoint
+print(f"Deleting Origin Endpoint: {origin_endpoint_name}")
+client.delete_origin_endpoint(ChannelGroupName=channel_group_name, ChannelName=channel_name, OriginEndpointName=origin_endpoint_name)
+
+# Delete Channel
+print(f"Deleting Channel: {channel_name}")
+client.delete_channel(ChannelGroupName=channel_group_name, ChannelName=channel_name)
+
+# Delete Channel Group
+print(f"Deleting Channel Group: {channel_group_name}")
+client.delete_channel_group(ChannelGroupName=channel_group_name)
+
+print("PASS")
+```
+
+**Expected Result:**
+
+You should see an output indicating that all resources have been deleted successfully.
 
 ## Next steps
 
-- Explore additional MediaPackage V2 features such as creating channels and origins.
-- Review the [MediaPackage V2 documentation](https://docs.aws.amazon.com/mediapackage/latest/ug/what-is.html) for more advanced configurations and use cases.
+- Explore [AWS Elemental MediaPackage v2 documentation](https://docs.aws.amazon.com/mediapackage/latest/ug/what-is.html) for more features.
+- Learn how to [configure ad insertion](https://docs.aws.amazon.com/mediapackage/latest/ug/ad-insert.html) in your media workflow.
+- Discover how to [integrate with AWS Elemental MediaTailor](https://docs.aws.amazon.com/mediatailor/latest/ug/what-is.html) for personalized ad experiences.

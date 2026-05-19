@@ -2,30 +2,43 @@
 set -e
 
 SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
-TEMP_DIR=$(mktemp -d)
-LOG_FILE="${TEMP_DIR}/script_log_${SUFFIX}.txt"
-CREATED_RESOURCES=()
 
-cleanup_resources() {
-  echo "Cleaning up created resources..."
-  for resource in "${CREATED_RESOURCES[@]}"; do
-    echo "Deleting resource: $resource"
-    # Add appropriate AWS CLI delete command here if needed
-  done
-  rm -rf "${TEMP_DIR}"
-}
+# Export environment variable for the script
+export TUTORIAL_ROLE_ARN=your_role_arn_here
 
-trap cleanup_resources EXIT
+python - <<EOF
+import boto3
+import time
+import os
 
-echo "Script started" > "${LOG_FILE}"
-echo "-------------------------" >> "${LOG_FILE}"
+ROLE_ARN = os.getenv('TUTORIAL_ROLE_ARN')
+suffix = '${SUFFIX}'
+tags = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value': 'lakeformation-gs'}]
 
-echo "Step 1: Listing Lake Formation resources..."
-aws lakeformation list-resources --query 'ResourceInfoList[0].ResourceArn' --output text || echo "No resources"
-echo "Step 1: Listing Lake Formation resources... Done" >> "${LOG_FILE}"
+lakeformation = boto3.client('lakeformation')
 
-echo "Step 2: Getting data lake settings..."
-aws lakeformation get-data-lake-settings --query 'DataLakeSettings.DataLakeAdmins' --output text || echo "No admins"
-echo "Step 2: Getting data lake settings... Done" >> "${LOG_FILE}"
+# Step 1: Create LF-Tag
+print("Step 1: Creating LF-Tag to categorize resources.")
+tag_name = f'tutorial-tag-{suffix}'
+response = lakeformation.create_lf_tag(CatalogId='123456789012', TagKey=tag_name, TagValues=['value1', 'value2'], Tags=tags)
+print(f"LF-Tag created with key: {tag_name}")
+
+# Step 2: Create Data Cells Filter
+print("Step 2: Creating Data Cells Filter to control data access.")
+filter_name = f'tutorial-filter-{suffix}'
+response = lakeformation.create_data_cells_filter(
+    TableData={
+        'DatabaseName': 'example_db',
+        'TableName': 'example_table',
+        'Name': filter_name,
+        'RowFilter': {
+            'FilterExpression': "column1 = 'value1'"
+        },
+        'ColumnNames': ['column1', 'column2'],
+        'ColumnWildcard': {'ExcludedColumnNames': ['column3']}
+    }
+)
+print(f"Data Cells Filter created with name: {filter_name}")
+EOF
 
 echo "PASS"

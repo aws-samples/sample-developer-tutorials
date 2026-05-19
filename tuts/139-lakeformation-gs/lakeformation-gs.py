@@ -7,7 +7,7 @@ import uuid
 client = boto3.client('lakeformation', region_name='us-east-1')
 suffix = str(int(time.time()))[-6:] + "-" + str(uuid.uuid4())[:8]
 resource_name = f"lf-resource-{suffix}"
-resource_arn = f"arn:aws:lakeformation:us-east-1:{os.environ.get('AWS_ACCOUNT_ID', '123456789012')}:resource/{resource_name}"
+resource_arn = f"arn:aws:lakeformation:us-east-1:{os.environ.get('AWS_ACCOUNT_ID')}:resource/{resource_name}"
 role_arn = os.environ['TUTORIAL_ROLE_ARN']
 
 tags = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value': 'lakeformation-gs'}]
