@@ -58,7 +58,7 @@ Creating a schedule allows you to define when and how often a task should run. T
 ```bash
 SCHEDULE_NAME="schedule-$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)"
 echo "Creating schedule: ${SCHEDULE_NAME}"
-SCHEDULE_ARN=$(aws scheduler create-schedule --name ${SCHEDULE_NAME} --schedule-expression 'rate(5 minutes)' --target '{"Arn": "arn:aws:lambda:us-east-1:123456789012:function:MyFunction", "RoleArn": "arn:aws:iam::559823168634:role/doc-babu-scheduler-role"}' --flexible-time-window '{"Mode": "OFF"}' --query 'ScheduleArn' --output text)
+SCHEDULE_ARN=$(aws scheduler create-schedule --name ${SCHEDULE_NAME} --schedule-expression 'rate(5 minutes)' --target '{"Arn": "arn:aws:lambda:us-east-1:123456789012:function:MyFunction", "RoleArn": "arn:aws:iam::123456789012:role/tutorial-scheduler-role"}' --flexible-time-window '{"Mode": "OFF"}' --query 'ScheduleArn' --output text)
 echo "Schedule created: ${SCHEDULE_ARN}"
 ```
 

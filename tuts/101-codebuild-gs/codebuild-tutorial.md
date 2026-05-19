@@ -69,7 +69,7 @@ $ cat > "$TEMP_DIR/create.json" << 'ENDJSON'
     "image": "aws/codebuild/standard:7.0",
     "computeType": "BUILD_GENERAL1_SMALL"
   },
-  "serviceRole": "arn:aws:iam::123456789012:role/doc-babu-codebuild-role"
+  "serviceRole": "arn:aws:iam::123456789012:role/tutorial-codebuild-role"
 }
 ENDJSON
 ```

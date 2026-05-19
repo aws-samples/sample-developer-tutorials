@@ -1,6 +1,14 @@
 import boto3
 import time
 
+import os, sys
+ROLE_ARN = os.environ.get('TUTORIAL_ROLE_ARN') or (sys.argv[1] if len(sys.argv) > 1 else None)
+if not ROLE_ARN:
+    print('Usage: python3 script.py <role-arn>')
+    print('Or set TUTORIAL_ROLE_ARN environment variable')
+    print('Create the role with: aws cloudformation deploy --template-file prereqs.yaml --stack-name tutorial-prereqs --capabilities CAPABILITY_NAMED_IAM')
+    sys.exit(1)
+
 suffix = str(int(time.time()))[-6:]
 
 client = boto3.client('codebuild', region_name='us-east-1')
@@ -21,7 +29,7 @@ r = client.create_project(
         'image': 'aws/codebuild/standard:7.0',
         'computeType': 'BUILD_GENERAL1_SMALL'
     },
-    serviceRole='arn:aws:iam::559823168634:role/doc-babu-codebuild-role',
+    serviceRole=ROLE_ARN,
     tags=[{'key':'project','value':'doc-smith'},{'key':'tutorial','value':'codebuild-gs'}]
 )
 

@@ -1,0 +1,90 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: IAM roles for tutorial scripts
+Resources:
+  SchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: tutorial-scheduler-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: SchedulerAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: ['sqs:SendMessage', 'sns:Publish', 'lambda:InvokeFunction']
+                Resource: '*'
+  FirehoseRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: tutorial-firehose-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: firehose.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: FirehoseAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: ['s3:PutObject', 's3:GetBucketLocation', 's3:ListBucket']
+                Resource: '*'
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: tutorial-codebuild-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: tutorial-codepipeline-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: PipelineAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: ['s3:*', 'codebuild:*']
+                Resource: '*'
+Outputs:
+  SchedulerRoleArn:
+    Value: !GetAtt SchedulerRole.Arn
+    Export:
+      Name: tutorial-scheduler-role-arn
+  FirehoseRoleArn:
+    Value: !GetAtt FirehoseRole.Arn
+    Export:
+      Name: tutorial-firehose-role-arn
+  CodeBuildRoleArn:
+    Value: !GetAtt CodeBuildRole.Arn
+    Export:
+      Name: tutorial-codebuild-role-arn
+  CodePipelineRoleArn:
+    Value: !GetAtt CodePipelineRole.Arn
+    Export:
+      Name: tutorial-codepipeline-role-arn

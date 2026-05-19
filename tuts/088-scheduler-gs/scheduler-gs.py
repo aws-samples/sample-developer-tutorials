@@ -2,7 +2,13 @@ import boto3
 import time
 
 region = 'us-east-1'
-iam_role_arn = 'arn:aws:iam::559823168634:role/doc-babu-scheduler-role'
+import os, sys
+ROLE_ARN = os.environ.get('TUTORIAL_ROLE_ARN') or (sys.argv[1] if len(sys.argv) > 1 else None)
+if not ROLE_ARN:
+    print('Usage: python3 script.py <role-arn>')
+    print('Or set TUTORIAL_ROLE_ARN environment variable')
+    print('Create the role with: aws cloudformation deploy --template-file prereqs.yaml --stack-name tutorial-prereqs --capabilities CAPABILITY_NAMED_IAM')
+    sys.exit(1)
 suffix = str(int(time.time()))[-6:]
 scheduler = boto3.client('scheduler', region_name=region)
 
@@ -21,8 +27,8 @@ def create_schedule(group_arn, name):
             Name=name,
             ScheduleExpression='rate(5 minutes)',
             Target= {
-                'Arn': iam_role_arn,
-                'RoleArn': iam_role_arn
+                'Arn': iam_ROLE_ARN,
+                'RoleArn': iam_ROLE_ARN
             },
             ScheduleExpressionTimezone='America/New_York',
             State='ENABLED',

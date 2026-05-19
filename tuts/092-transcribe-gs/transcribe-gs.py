@@ -3,7 +3,13 @@ import time
 import random
 
 region = 'us-east-1'
-role_arn = 'arn:aws:iam::559823168634:role/doc-babu-transcribe-role'
+import os, sys
+ROLE_ARN = os.environ.get('TUTORIAL_ROLE_ARN') or (sys.argv[1] if len(sys.argv) > 1 else None)
+if not ROLE_ARN:
+    print('Usage: python3 script.py <role-arn>')
+    print('Or set TUTORIAL_ROLE_ARN environment variable')
+    print('Create the role with: aws cloudformation deploy --template-file prereqs.yaml --stack-name tutorial-prereqs --capabilities CAPABILITY_NAMED_IAM')
+    sys.exit(1)
 suffix = str(int(time.time()))[-6:] + str(random.randint(100, 999))
 
 transcribe = boto3.client('transcribe', region_name=region)

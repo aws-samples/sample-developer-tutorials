@@ -28,11 +28,11 @@ We are creating an AWS Firehose delivery stream to transport data to an S3 bucke
 
 ```bash
 $ STREAM="test-stream-xmpl"
-$ ROLE_ARN="arn:aws:iam::123456789012:role/doc-babu-firehose-role"
+$ ROLE_ARN="arn:aws:iam::123456789012:role/tutorial-firehose-role"
 $ aws firehose create-delivery-stream \
   --delivery-stream-name "$STREAM" \
   --delivery-stream-type DirectPut \
-  --extended-s3-destination-configuration "RoleARN=$ROLE_ARN,BucketARN=arn:aws:s3:::doc-babu-test-bucket,Prefix=firehose-xmpl/"
+  --extended-s3-destination-configuration "RoleARN=$ROLE_ARN,BucketARN=arn:aws:s3:::my-tutorial-bucket,Prefix=firehose-xmpl/"
 ```
 
 Result: Delivery stream created with name `test-stream-xmpl`

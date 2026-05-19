@@ -30,12 +30,12 @@ echo "We are creating an AWS Firehose delivery stream to transport data to an S3
 echo "The delivery stream is named uniquely to avoid conflicts and is configured to use DirectPut for simplicity."
 echo ""
 STREAM="test-stream-${SUFFIX}"
-ROLE_ARN="arn:aws:iam::559823168634:role/doc-babu-firehose-role"
+ROLE_ARN="${TUTORIAL_ROLE_ARN:?Set TUTORIAL_ROLE_ARN or pass as argument}"
 aws firehose create-delivery-stream \
   --tags Key=project,Value=doc-smith Key=tutorial,Value=firehose-gs \
   --delivery-stream-name "$STREAM" \
   --delivery-stream-type DirectPut \
-  --extended-s3-destination-configuration "RoleARN=$ROLE_ARN,BucketARN=arn:aws:s3:::doc-babu-test-bucket,Prefix=firehose-${SUFFIX}/"
+  --extended-s3-destination-configuration "RoleARN=$ROLE_ARN,BucketARN=arn:aws:s3:::${TUTORIAL_BUCKET:?Set TUTORIAL_BUCKET},Prefix=firehose-${SUFFIX}/"
 CREATED_RESOURCES+=("stream:$STREAM")
 echo "Result: Delivery stream created with name $STREAM"
 echo ""

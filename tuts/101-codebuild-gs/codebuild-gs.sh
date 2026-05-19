@@ -42,7 +42,7 @@ echo "We create a JSON file that defines the CodeBuild project configuration."
 echo "This includes the project name, source details, artifacts, environment, and service role."
 echo ""
 cat > "$TEMP_DIR/create.json" << 'ENDJSON'
-{"name":"build-PLACEHOLDER","source":{"type":"NO_SOURCE","buildspec":"version: 0.2\nphases:\n  build:\n    commands:\n      - echo hello"},"artifacts":{"type":"NO_ARTIFACTS"},"environment":{"type":"LINUX_CONTAINER","image":"aws/codebuild/standard:7.0","computeType":"BUILD_GENERAL1_SMALL"},"serviceRole":"arn:aws:iam::559823168634:role/doc-babu-codebuild-role"}
+{"name":"build-PLACEHOLDER","source":{"type":"NO_SOURCE","buildspec":"version: 0.2\nphases:\n  build:\n    commands:\n      - echo hello"},"artifacts":{"type":"NO_ARTIFACTS"},"environment":{"type":"LINUX_CONTAINER","image":"aws/codebuild/standard:7.0","computeType":"BUILD_GENERAL1_SMALL"},"serviceRole":"${TUTORIAL_ROLE_ARN:?Set TUTORIAL_ROLE_ARN}"}
 ENDJSON
 echo "Result: Configuration file created at $TEMP_DIR/create.json"
 echo ""

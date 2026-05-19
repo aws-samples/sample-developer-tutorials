@@ -2,7 +2,13 @@ import boto3
 import time
 
 region = 'us-east-1'
-role_arn = 'arn:aws:iam::559823168634:role/doc-babu-codepipeline-role'
+import os, sys
+ROLE_ARN = os.environ.get('TUTORIAL_ROLE_ARN') or (sys.argv[1] if len(sys.argv) > 1 else None)
+if not ROLE_ARN:
+    print('Usage: python3 script.py <role-arn>')
+    print('Or set TUTORIAL_ROLE_ARN environment variable')
+    print('Create the role with: aws cloudformation deploy --template-file prereqs.yaml --stack-name tutorial-prereqs --capabilities CAPABILITY_NAMED_IAM')
+    sys.exit(1)
 suffix = str(int(time.time()))[-6:]
 pipeline_name = f'pipeline-{suffix}'
 custom_action_name = f'custom-action-{suffix}'
@@ -42,7 +48,7 @@ try:
     response = client.create_pipeline(
         pipeline={
             'name': pipeline_name,
-            'roleArn': role_arn,
+            'roleArn': ROLE_ARN,
            'stages': [
                 {
                     'name': 'Source',
