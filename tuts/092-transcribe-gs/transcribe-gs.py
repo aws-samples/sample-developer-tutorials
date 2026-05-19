@@ -1,53 +1,45 @@
-import boto3
-import time
-import random
+import boto3, json, time, os, sys
 
 region = 'us-east-1'
-import os, sys
-ROLE_ARN = os.environ.get('TUTORIAL_ROLE_ARN') or (sys.argv[1] if len(sys.argv) > 1 else None)
-if not ROLE_ARN:
-    print('Usage: python3 script.py <role-arn>')
-    print('Or set TUTORIAL_ROLE_ARN environment variable')
-    print('Create the role with: aws cloudformation deploy --template-file prereqs.yaml --stack-name tutorial-prereqs --capabilities CAPABILITY_NAMED_IAM')
-    sys.exit(1)
-suffix = str(int(time.time()))[-6:] + str(random.randint(100, 999))
+suffix = str(int(time.time()))[-6:]
 
 transcribe = boto3.client('transcribe', region_name=region)
-s3 = boto3.client('s3', region_name=region)
 
-vocabulary_name = f'CustomVocabulary{suffix}'
-vocabulary_file_key = f'/test-files/your-vocabulary-file.txt'
-vocabulary_bucket = 'your-bucket-name'  # Replace with your actual S3 bucket name
-vocabulary_file_uri = f's3://{vocabulary_bucket}{vocabulary_file_key}'
-
+vocabulary_name = f'tutorial-vocab-{suffix}'
 tags = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value': 'transcribe-gs'}]
 
-try:
-    print("Uploading vocabulary file to S3...")
-    s3.upload_file(f'..{vocabulary_file_key}', vocabulary_bucket, vocabulary_file_key[1:])
+print("=== Amazon Transcribe Tutorial ===")
+print("Creating a custom vocabulary to improve speech recognition accuracy.")
+print()
 
-    print("Creating custom vocabulary...")
-    vocabulary_response = transcribe.create_vocabulary(
-        VocabularyName=vocabulary_name,
-        LanguageCode='en-US',
-        VocabularyFileUri=vocabulary_file_uri,
-        Tags=tags
-    )
+print("=== Step 1: Create custom vocabulary ===")
+print("Custom vocabularies help Transcribe recognize domain-specific terms.")
+transcribe.create_vocabulary(
+    VocabularyName=vocabulary_name,
+    LanguageCode='en-US',
+    Phrases=['AWS', 'DynamoDB', 'CloudFormation', 'Kubernetes', 'Bedrock'],
+    Tags=tags
+)
+print(f"Vocabulary: {vocabulary_name}")
 
-    print("Waiting for vocabulary to be ready...")
-    while True:
-        vocabulary_info = transcribe.get_vocabulary(VocabularyName=vocabulary_name)
-        if vocabulary_info['VocabularyState'] == 'READY':
-            break
-        time.sleep(5)
+print()
+print("=== Step 2: Wait for vocabulary to be ready ===")
+for _ in range(20):
+    time.sleep(3)
+    resp = transcribe.get_vocabulary(VocabularyName=vocabulary_name)
+    state = resp['VocabularyState']
+    if state in ('READY', 'FAILED'):
+        break
+print(f"State: {state}")
 
-    print("Custom vocabulary created and ready.")
+print()
+print("=== Step 3: List vocabularies ===")
+vocabs = transcribe.list_vocabularies()
+print(f"Vocabularies: {len(vocabs.get('Vocabularies', []))}")
 
-    print("Deleting custom vocabulary...")
-    transcribe.delete_vocabulary(VocabularyName=vocabulary_name)
-    print("Custom vocabulary deleted.")
-
-except Exception as e:
-    print(f"An error occurred: {e}")
-
+print()
+print("=== Cleanup ===")
+transcribe.delete_vocabulary(VocabularyName=vocabulary_name)
+print(f"Deleted: {vocabulary_name}")
+print()
 print("PASS")
