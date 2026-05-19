@@ -1,5 +1,6 @@
 import boto3
 import json
+import os
 import time
 import uuid
 
@@ -8,7 +9,7 @@ suffix = str(int(time.time()))[-6:]
 unique_id = uuid.uuid4().hex[:6]
 
 detector_model_name = f'TestDetectorModel{unique_id}'
-role_arn = 'arn:aws:iam::559823168634:role/doc-babu-iotevents-role'
+role_arn = os.environ['TUTORIAL_ROLE_ARN']
 
 tags = [
     {'Key': 'project', 'Value': 'doc-smith'},

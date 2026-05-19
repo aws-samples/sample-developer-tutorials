@@ -40,7 +40,7 @@ location_uri = "ssm-parameter://appconfig-test-parameter"
 #     Name=config_profile_name,
 #     Description="Test Configuration Profile",
 #     LocationUri=location_uri,
-#     RetrievalRoleArn="arn:aws:iam::559823168634:role/doc-babu-appconfig-role",
+#     RetrievalRoleArn="arn:aws:iam::123456789012:role/tutorial-appconfig-role",
 #     Tags=tags
 # )
 # config_profile_id = config_profile_response['Id']

@@ -3,7 +3,7 @@ set -e
 
 SUFFIX=$(head -c 20 /dev/urandom | base64 | tr -dc a-z0-9 | head -c 8 || true)
 DETECTOR_MODEL_NAME="TestDetectorModel${SUFFIX}"
-ROLE_ARN="arn:aws:iam::559823168634:role/doc-babu-iotevents-role"
+ROLE_ARN="${TUTORIAL_ROLE_ARN:?Set TUTORIAL_ROLE_ARN to an IAM role ARN with iotevents permissions}"
 TEMP_DIR=$(mktemp -d)
 LOG_FILE="$TEMP_DIR/script.log"
 CREATED_RESOURCES=()

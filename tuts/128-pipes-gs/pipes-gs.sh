@@ -21,7 +21,8 @@ CREATED_RESOURCES+=("queue:$QUEUE_URL")
 echo "=== Creating Log Group ==="
 LOG_GROUP_NAME="/aws/pipes/pipe-$SUFFIX"
 aws logs create-log-group --log-group-name "$LOG_GROUP_NAME"
-aws logs tag-resource --resource-arn "arn:aws:logs:us-east-1:559823168634:log-group:$LOG_GROUP_NAME" --tags '{"project":"doc-smith","tutorial":"pipes-gs"}'
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+aws logs tag-resource --resource-arn "arn:aws:logs:us-east-1:${ACCOUNT_ID}:log-group:$LOG_GROUP_NAME" --tags '{"project":"doc-smith","tutorial":"pipes-gs"}'
 CREATED_RESOURCES+=("loggroup:$LOG_GROUP_NAME")
 echo "=== Listing Pipes ==="
 aws pipes list-pipes --query 'Pipes[].Name' --output text || echo "No pipes"

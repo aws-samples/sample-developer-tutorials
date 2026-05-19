@@ -8,7 +8,7 @@ tags = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value':'s
 print("Getting Data Lake sources...")
 # Skipping get_data_lake_sources due to UnauthorizedException
 # get_data_lake_sources_response = client.get_data_lake_sources(
-#     accounts=['559823168634'],
+#     accounts=['123456789012'],
 #     maxResults=10,
 #     tags=tags  # Added tags here
 # )

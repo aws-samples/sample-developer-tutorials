@@ -1,13 +1,14 @@
 import boto3
 import json
+import os
 import time
 import uuid
 
 client = boto3.client('lakeformation', region_name='us-east-1')
 suffix = str(int(time.time()))[-6:] + "-" + str(uuid.uuid4())[:8]
 resource_name = f"lf-resource-{suffix}"
-resource_arn = f"arn:aws:lakeformation:us-east-1:559823168634:resource/{resource_name}"
-role_arn = "arn:aws:iam::559823168634:role/doc-babu-lakeformation-role"
+resource_arn = f"arn:aws:lakeformation:us-east-1:{os.environ.get('AWS_ACCOUNT_ID', '123456789012')}:resource/{resource_name}"
+role_arn = os.environ['TUTORIAL_ROLE_ARN']
 
 tags = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value': 'lakeformation-gs'}]
 
