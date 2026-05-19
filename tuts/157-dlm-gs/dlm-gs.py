@@ -1,3 +1,4 @@
+import os
 import boto3
 import json
 import time
@@ -9,7 +10,7 @@ suffix = str(int(time.time()))[-6:]
 client = boto3.client('dlm', region_name='us-east-1')
 
 # Define the execution role ARN required by DLM
-execution_role_arn = 'arn:aws:iam::559823168634:role/doc-babu-dlm-role'
+execution_role_arn = os.environ['TUTORIAL_ROLE_ARN']
 
 # Create a lifecycle policy
 r = client.create_lifecycle_policy(

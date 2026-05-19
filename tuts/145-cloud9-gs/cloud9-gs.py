@@ -8,7 +8,7 @@ suffix = str(int(time.time()))[-6:]
 environment_name = f'cloud9-env-{suffix}'
 instance_type = 't2.micro'
 image_id = 'amazonlinux-2-x86_64'  # Example image ID, replace with actual ID if needed
-user_arn = 'arn:aws:iam::559823168634:user/example-user'  # Replace with actual user ARN
+user_arn = f"arn:aws:iam::{boto3.client('sts').get_caller_identity()['Account']}:user/example-user"
 tags = [
     {'Key': 'project', 'Value': 'doc-smith'},
     {'Key': 'tutorial', 'Value': 'cloud9-gs'}

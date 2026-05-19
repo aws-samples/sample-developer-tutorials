@@ -18,7 +18,8 @@ trap cleanup_resources EXIT
 ENVIRONMENT_NAME="cloud9-env-${SUFFIX}"
 INSTANCE_TYPE="t2.micro"
 IMAGE_ID="amazonlinux-2-x86_64"
-USER_ARN="arn:aws:iam::559823168634:user/example-user"
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+USER_ARN="arn:aws:iam::${ACCOUNT_ID}:user/example-user"
 
 echo "Step 1: Create Environment"
 # Skipping due to AccessDeniedException

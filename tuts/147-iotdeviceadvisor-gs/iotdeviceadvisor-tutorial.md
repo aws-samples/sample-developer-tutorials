@@ -36,7 +36,7 @@ suite_definition_configuration = {
    'intendedForQualification': False,
    'isLongDurationTest': False,
    'protocol': 'Mqtt',
-   'devicePermissionRoleArn': 'arn:aws:iam::559823168634:role/doc-babu-iotdeviceadvisor-role'
+   'devicePermissionRoleArn': 'arn:aws:iam::123456789012:role/tutorial-iotdeviceadvisor-role'
 }
 
 try:

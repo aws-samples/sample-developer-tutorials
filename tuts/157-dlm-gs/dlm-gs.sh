@@ -16,7 +16,7 @@ cleanup_resources() {
 trap cleanup_resources EXIT
 
 # Step 1: Create execution role ARN
-EXECUTION_ROLE_ARN='arn:aws:iam::559823168634:role/doc-babu-dlm-role'
+EXECUTION_ROLE_ARN="${TUTORIAL_ROLE_ARN:?Set TUTORIAL_ROLE_ARN to an IAM role ARN with dlm permissions}"
 
 # Step 2: Create lifecycle policy
 POLICY_ID=$(aws dlm create-lifecycle-policy \

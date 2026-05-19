@@ -30,7 +30,7 @@ client = boto3.client('mwaa', region_name='us-east-1')
 suffix = str(int(time.time()))[-6:]
 workflow_name = f'workflow-{suffix}'
 definition_s3_location = {'Bucket': 'your-bucket', 'Key': 'your-workflow-definition.yaml'}
-role_arn = 'arn:aws:iam::559823168634:role/doc-babu-mwaa-serverless-role'
+role_arn = 'arn:aws:iam::123456789012:role/tutorial-mwaa-serverless-role'
 tags = {'project': 'doc-smith', 'tutorial':'mwaa-serverless-gs'}
 ```
 

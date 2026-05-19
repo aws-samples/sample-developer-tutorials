@@ -14,7 +14,7 @@ trap cleanup_resources EXIT
 
 # Step 1: Check Investigation Group
 GROUP_NAME="test-group-${SUFFIX}"
-ROLE_ARN="arn:aws:iam::559823168634:role/doc-babu-aiops-role"
+ROLE_ARN="${TUTORIAL_ROLE_ARN:?Set TUTORIAL_ROLE_ARN to an IAM role ARN with aiops permissions}"
 
 if [[ $(aws aiops list-investigation-groups --query "investigationGroups[?name==\`$GROUP_NAME\`] | length(@)" --output text) -eq 0 ]]; then
     echo "Service quota exceeded. Skipping creation of Investigation Group."

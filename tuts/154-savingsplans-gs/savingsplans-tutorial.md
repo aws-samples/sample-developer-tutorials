@@ -79,7 +79,7 @@ $ python -c 'import boto3; client = boto3.client("savingsplans"); offering_rates
 ### **10. List Tags for Resource**
 
 ```bash
-$ python -c 'import boto3; client = boto3.client("savingsplans"); list_tags_response = client.list_tags_for_resource(resourceArn="arn:aws:savingsplans:us-east-1:559823168634:savingsplan/savings_plan_id"); print(list_tags_response)'
+$ python -c 'import boto3; client = boto3.client("savingsplans"); list_tags_response = client.list_tags_for_resource(resourceArn="arn:aws:savingsplans:us-east-1:123456789012:savingsplan/savings_plan_id"); print(list_tags_response)'
 ```
 
 ## Clean up

@@ -14,7 +14,7 @@ trap cleanup_resources EXIT
 
 WORKFLOW_NAME="workflow-${SUFFIX}"
 DEFINITION_S3_LOCATION="{\"Bucket\": \"your-bucket\", \"ObjectKey\": \"your-workflow-definition.yaml\"}"
-ROLE_ARN="arn:aws:iam::559823168634:role/doc-babu-mwaa-serverless-role"
+ROLE_ARN="${TUTORIAL_ROLE_ARN:?Set TUTORIAL_ROLE_ARN to an IAM role ARN with mwaa permissions}"
 
 # Step 1: Create Workflow
 echo "Step 1: Creating Workflow"

@@ -29,7 +29,7 @@ import botocore
 client = boto3.client('aiops', region_name='us-east-1')
 suffix = str(int(time.time()))[-6:]
 group_name = f'test-group-{suffix}'
-role_arn = 'arn:aws:iam::559823168634:role/doc-babu-aiops-role'
+role_arn = 'arn:aws:iam::123456789012:role/tutorial-aiops-role'
 tags = {'project': 'doc-smith', 'tutorial': 'aiops-gs'}
 
 try:

@@ -1,3 +1,4 @@
+import os
 import boto3
 import json
 import time
@@ -19,7 +20,7 @@ suite_definition_configuration = {
    'intendedForQualification': False,
    'isLongDurationTest': False,
    'protocol': 'Mqtt',
-   'devicePermissionRoleArn': 'arn:aws:iam::559823168634:role/doc-babu-iotdeviceadvisor-role'
+   'devicePermissionRoleArn': os.environ['TUTORIAL_ROLE_ARN']
 }
 
 try:

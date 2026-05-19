@@ -5,6 +5,7 @@ import uuid
 
 # Initialize the Savings Plans client
 client = boto3.client('savingsplans', region_name='us-east-1')
+account_id = boto3.client("sts").get_caller_identity()["Account"]
 
 # Generate a unique suffix for resource names
 suffix = str(int(time.time()))[-6:]
@@ -51,7 +52,7 @@ except client.exceptions.ClientError as e:
             clientToken=str(uuid.uuid4())
         )
         savings_plan_id = create_response['savingsPlanId']
-        client.tag_resource(resourceArn=f"arn:aws:savingsplans:us-east-1:559823168634:savingsplan/{savings_plan_id}", tags=tags)
+        client.tag_resource(resourceArn=f"arn:aws:savingsplans:us-east-1:{account_id}:savingsplan/{savings_plan_id}", tags=tags)
         print("Created and Tagged Savings Plan ID:", savings_plan_id)
     else:
         print("Failed to create Savings Plan:", e)
@@ -72,7 +73,7 @@ offering_rates_response = client.describe_savings_plans_offering_rates(
 print("Described Savings Plans Offering Rates:", json.dumps(offering_rates_response, indent=2))
 
 # Step 6: List Tags for Resource
-list_tags_response = client.list_tags_for_resource(resourceArn=f"arn:aws:savingsplans:us-east-1:559823168634:savingsplan/{savings_plan_id}")
+list_tags_response = client.list_tags_for_resource(resourceArn=f"arn:aws:savingsplans:us-east-1:{account_id}:savingsplan/{savings_plan_id}")
 print("Listed Tags for Resource:", json.dumps(list_tags_response, indent=2))
 
 # Step 7: Clean up - Delete the Savings Plan
