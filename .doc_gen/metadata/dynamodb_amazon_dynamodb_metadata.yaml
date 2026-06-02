@@ -1,6 +1,6 @@
 dynamodb_GettingStarted_070:
-  title: Getting started with DynamoDB
-  title_abbrev: Getting started with DynamoDB
+  title: Getting started with NoSQL databases
+  title_abbrev: Getting started with NoSQL databases
   synopsis_list:
     - Create a table in DynamoDB
     - Update data in a DynamoDB table

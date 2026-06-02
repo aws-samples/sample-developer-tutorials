@@ -1,6 +1,6 @@
 ec2_GettingStarted_030:
-  title: Get started with Marketplace Buyer using the CLI
-  title_abbrev: Get started with Marketplace Buyer
+  title: Get started with software marketplace purchasing using the CLI
+  title_abbrev: Get started with software marketplace purchasing
   synopsis_list:
     - Use ec2 AuthorizeSecurityGroupIngress
     - Use ec2 CreateKeyPair

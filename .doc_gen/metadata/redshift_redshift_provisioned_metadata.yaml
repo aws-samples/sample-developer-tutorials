@@ -1,6 +1,6 @@
 redshift_GettingStarted_039:
-  title: Getting started with Amazon Redshift provisioned clusters
-  title_abbrev: Getting started with Amazon Redshift provisioned clusters
+  title: Getting started with provisioned data warehouse clusters
+  title_abbrev: Getting started with provisioned data warehouse clusters
   synopsis_list:
     - Create a Redshift cluster
     - Create an IAM role for S3 access

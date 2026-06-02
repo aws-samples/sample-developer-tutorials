@@ -1,6 +1,6 @@
 ses_GettingStarted_033:
-  title: Setting up Amazon Simple Email Service (SES)
-  title_abbrev: Setting up Amazon Simple Email Service (SES)
+  title: Setting up email sending services
+  title_abbrev: Setting up email sending services
   synopsis_list:
     - Verify an email address
     - Verify a domain (optional)

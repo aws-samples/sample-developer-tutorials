@@ -1,6 +1,6 @@
 lambda_GettingStarted_019:
-  title: Creating your first Lambda function
-  title_abbrev: Creating your first Lambda function
+  title: Creating your first serverless function
+  title_abbrev: Creating your first serverless function
   synopsis_list:
     - Create an IAM role for Lambda
     - Create function code

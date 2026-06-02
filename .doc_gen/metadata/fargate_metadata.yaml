@@ -1,6 +1,6 @@
 fargate_GettingStarted:
-  title: Getting started with Batch and Fargate
-  title_abbrev: Getting started with Batch and Fargate
+  title: Getting started with batch processing and serverless containers
+  title_abbrev: Getting started with batch processing and serverless containers
   synopsis_list:
     - Create an IAM execution role
     - Create a compute environment

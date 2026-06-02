@@ -1,6 +1,6 @@
 ecs_GettingStarted_018:
-  title: Creating an Amazon ECS service for the EC2 launch type
-  title_abbrev: Creating an Amazon ECS service for the EC2 launch type
+  title: Creating a container service for virtual machine instances
+  title_abbrev: Creating a container service for virtual machine instances
   synopsis_list:
     - Create an ECS cluster
     - Create and monitor a service

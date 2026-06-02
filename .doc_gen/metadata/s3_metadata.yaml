@@ -1,6 +1,6 @@
 s3_GettingStarted:
-  title: Getting started with Amazon S3
-  title_abbrev: Getting started with Amazon S3
+  title: Getting started with object storage
+  title_abbrev: Getting started with object storage
   synopsis_list:
     - Create your first S3 bucket
     - Upload an object

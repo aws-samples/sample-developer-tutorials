@@ -1,6 +1,6 @@
 ecr_GettingStarted_078:
-  title: Getting started with Amazon ECR
-  title_abbrev: Getting started with Amazon ECR
+  title: Getting started with container registries
+  title_abbrev: Getting started with container registries
   synopsis_list:
     - Create a Docker image
     - Create an Amazon ECR repository

@@ -1,6 +1,6 @@
 iam_GettingStarted_032:
-  title: Using property variables in CloudWatch dashboards to monitor multiple Lambda functions 
-  title_abbrev: Using property variables in CloudWatch dashboards to monitor multiple Lambda functions 
+  title: Using property variables in monitoring dashboards to monitor multiple serverless functions 
+  title_abbrev: Using property variables in monitoring dashboards to monitor multiple serverless functions 
   synopsis_list:
     - Create Lambda functions for monitoring
     - Create a CloudWatch dashboard

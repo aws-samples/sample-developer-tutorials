@@ -1,6 +1,6 @@
 lightsail_GettingStarted:
-  title: Getting started with Amazon Lightsail
-  title_abbrev: Getting started with Amazon Lightsail
+  title: Getting started with simple virtual private servers
+  title_abbrev: Getting started with simple virtual private servers
   synopsis_list:
     - Create an instance
     - Add storage to your instance

@@ -1,6 +1,6 @@
 api_gateway_GettingStarted_087:
-  title: Create a REST API with Lambda proxy integration
-  title_abbrev: Create a REST API with Lambda proxy integration
+  title: Create a rest API with function proxy integration
+  title_abbrev: Create a rest API with function proxy integration
   synopsis_list:
     - Create an IAM role for Lambda execution
     - Create and deploy a Lambda function

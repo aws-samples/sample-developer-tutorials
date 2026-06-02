@@ -1,6 +1,6 @@
 ec2_GettingStarted_013:
-  title: Getting started with Amazon EC2
-  title_abbrev: Getting started with Amazon EC2
+  title: Getting started with virtual machines
+  title_abbrev: Getting started with virtual machines
   synopsis_list:
     - Create a key pair
     - Create a security group

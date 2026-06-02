@@ -1,6 +1,6 @@
 iam_GettingStarted_044:
-  title: Creating an Amazon Managed Grafana workspace
-  title_abbrev: Creating an Amazon Managed Grafana workspace
+  title: Creating a managed monitoring workspace
+  title_abbrev: Creating a managed monitoring workspace
   synopsis_list:
     - Create an IAM role for your workspace
     - Create a Grafana workspace

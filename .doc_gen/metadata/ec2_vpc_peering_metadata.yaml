@@ -1,6 +1,6 @@
 ec2_GettingStarted_015:
-  title: Working with VPC peering connections
-  title_abbrev: Working with VPC peering connections
+  title: Working with network peering connections
+  title_abbrev: Working with network peering connections
   synopsis_list:
     - Create VPCs for peering
     - Create a VPC peering connection

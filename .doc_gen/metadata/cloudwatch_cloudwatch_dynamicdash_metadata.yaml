@@ -1,6 +1,6 @@
 cloudwatch_GettingStarted_031:
-  title: Creating a CloudWatch dashboard with function name as a variable
-  title_abbrev: Creating a CloudWatch dashboard with function name as a variable
+  title: Creating a monitoring dashboard with function name as a variable
+  title_abbrev: Creating a monitoring dashboard with function name as a variable
   synopsis_list:
     - Create a CloudWatch dashboard
     - Add Lambda metrics widgets with a function name variable

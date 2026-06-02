@@ -1,6 +1,6 @@
 emr_GettingStarted_037:
-  title: Getting started with Amazon EMR
-  title_abbrev: Getting started with Amazon EMR
+  title: Getting started with big data processing clusters
+  title_abbrev: Getting started with big data processing clusters
   synopsis_list:
     - Create an EC2 key pair
     - Set up storage and prepare your application

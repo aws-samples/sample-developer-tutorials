@@ -1,6 +1,6 @@
 vpc_TransitGatewayGettingStarted:
-  title: Getting started with Amazon VPC Transit Gateway
-  title_abbrev: Getting started with Amazon VPC Transit Gateway
+  title: Getting started with network transit gateways
+  title_abbrev: Getting started with network transit gateways
   synopsis_list:
     - Create a transit gateway
     - Attach your VPCs to your transit gateway

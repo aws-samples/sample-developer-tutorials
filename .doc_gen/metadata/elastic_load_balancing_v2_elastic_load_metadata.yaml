@@ -1,6 +1,6 @@
 elastic_load_balancing_v2_GettingStarted_058:
-  title: Getting started with Elastic Load Balancing
-  title_abbrev: Getting started with Elastic Load Balancing
+  title: Getting started with load balancing
+  title_abbrev: Getting started with load balancing
   synopsis_list:
     - Create an Application Load Balancer
     - Create a target group

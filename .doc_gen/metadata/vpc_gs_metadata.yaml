@@ -1,6 +1,6 @@
 vpc_GettingStartedCLI:
-  title: Getting started with Amazon VPC
-  title_abbrev: Create a basic VPC
+  title: Getting started with virtual private networks
+  title_abbrev: Create a basic virtual private network
   synopsis_list:
     - Create a VPC
     - Create subnets
@@ -25,8 +25,8 @@ vpc_GettingStartedCLI:
       AllocateAddress, AssociateRouteTable, AttachInternetGateway, AuthorizeSecurityGroupIngress, CreateInternetGateway, CreateKeyPair, CreateNatGateway, CreateRoute, CreateRouteTable, CreateSecurityGroup, CreateSubnet, CreateVpc, DeleteInternetGateway, DeleteKeyPair, DeleteNatGateway, DeleteRouteTable, DeleteSecurityGroup, DeleteSubnet, DeleteVpc, DescribeAvailabilityZones, DescribeImages, DescribeInstances, DescribeInternetGateways, DescribeNatGateways, DescribeRouteTables, DescribeSecurityGroups, DescribeSubnets, DescribeVpcs, DetachInternetGateway, DisassociateRouteTable, ModifySubnetAttribute, ModifyVpcAttribute, ReleaseAddress, RunInstances, TerminateInstances}
 
 vpc_GettingStartedIpam:
-  title: Get started using Amazon VPC IPAM using the CLI
-  title_abbrev: VPC with IPAM
+  title: Get started using IP address management using the CLI
+  title_abbrev: Virtual private network with IP address management
   synopsis_list:
   - Set up and configure Amazon VPC IP Address Manager (IPAM) using the CLI.
   - Create an IPAM with operating regions (e.g., us-east-1, us-west-2).
@@ -54,8 +54,8 @@ vpc_GettingStartedIpam:
       CreateIpam, CreateIpamPool, CreateVpc, DeleteIpam, DeleteIpamPool, DeleteVpc, DeprovisionIpamPoolCidr, DescribeIpamPools, DescribeIpams, DescribeVpcs, GetIpamPoolAllocations, GetIpamPoolCidrs, ProvisionIpamPoolCidr}
 
 vpc_GettingStartedPrivate:
-  title: Create a VPC with private subnets and NAT gateways using the CLI
-  title_abbrev: VPC with private servers
+  title: Create a virtual private network with private subnets and network address translation gateways using the CLI
+  title_abbrev: Virtual private network with private servers
   synopsis_list:
   - Create a VPC with private subnets and NAT gateways using the CLI.
   - Set up the necessary components including VPC, subnets, route tables, and NAT gateways.

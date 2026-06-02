@@ -1,6 +1,6 @@
 opensearch_GettingStarted_016:
-  title: Getting started with Amazon OpenSearch Service
-  title_abbrev: Getting started with Amazon OpenSearch Service
+  title: Getting started with search and analytics engines
+  title_abbrev: Getting started with search and analytics engines
   synopsis_list:
     - Create an OpenSearch Service domain
     - Upload data to your domain

@@ -1,6 +1,6 @@
 cloudfront_GettingStarted:
-  title: Get started with a basic CloudFront distribution
-  title_abbrev: Get started with a basic CloudFront distribution
+  title: Get started with a basic content distribution network
+  title_abbrev: Get started with a basic content distribution network
   synopsis_list:
     - Create an Amazon S3 bucket
     - Upload content to the bucket

@@ -1,6 +1,6 @@
 directconnect_GettingStarted_051:
-  title: Get started with Aws Direct Connect using the CLI
-  title_abbrev: Get started with Aws Direct Connect
+  title: Get started with dedicated network connections using the CLI
+  title_abbrev: Get started with dedicated network connections
   synopsis_list:
     - Use ec2 CreateVpnGateway
     - Use ec2 DeleteVpnGateway

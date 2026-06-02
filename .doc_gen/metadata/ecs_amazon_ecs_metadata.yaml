@@ -1,6 +1,6 @@
 ecs_GettingStarted_086:
-  title: Create an Amazon ECS Linux task for the Fargate launch type
-  title_abbrev: Create an Amazon ECS Linux task for the Fargate launch type
+  title: Create a container task for the serverless launch type
+  title_abbrev: Create a container task for the serverless launch type
   synopsis_list:
     - Create the cluster
     - Create a task definition

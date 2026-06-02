@@ -1,6 +1,6 @@
 redshift_GettingStarted_038:
-  title: Get started with Redshift Serverless using the CLI
-  title_abbrev: Get started with Redshift Serverless
+  title: Get started with serverless data warehouses using the CLI
+  title_abbrev: Get started with serverless data warehouses
   synopsis_list:
     - Use secrets-manager CreateSecret
     - Use secrets-manager DeleteSecret

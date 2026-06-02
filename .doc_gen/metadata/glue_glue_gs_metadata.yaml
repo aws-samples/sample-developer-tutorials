@@ -1,6 +1,6 @@
 glue_GettingStarted_024:
-  title: Getting started with the Glue Data Catalog
-  title_abbrev: Getting started with the Glue Data Catalog
+  title: Getting started with the data catalog
+  title_abbrev: Getting started with the data catalog
   synopsis_list:
     - Create a database
     - Create a table

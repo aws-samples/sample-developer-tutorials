@@ -1,6 +1,6 @@
 workspaces_GettingStarted_035:
-  title: Creating and managing Amazon WorkSpaces Personal
-  title_abbrev: Creating and managing Amazon WorkSpaces Personal
+  title: Creating and managing personal virtual desktops
+  title_abbrev: Creating and managing personal virtual desktops
   synopsis_list:
     - Verify WorkSpaces availability in your region
     - List available WorkSpaces bundles

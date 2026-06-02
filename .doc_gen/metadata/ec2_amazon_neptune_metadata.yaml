@@ -1,6 +1,6 @@
 ec2_GettingStarted_064:
-  title: Getting started with Amazon Neptune
-  title_abbrev: Getting started with Amazon Neptune
+  title: Getting started with graph databases
+  title_abbrev: Getting started with graph databases
   synopsis_list:
     - Create a VPC for your Neptune database
     - Create subnets in multiple availability zones

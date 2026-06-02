@@ -1,6 +1,6 @@
 wafv2_GettingStarted_052:
-  title: Getting started with WAF
-  title_abbrev: Getting started with WAF
+  title: Getting started with web application firewalls
+  title_abbrev: Getting started with web application firewalls
   synopsis_list:
     - Create a web ACL
     - Add a string match rule

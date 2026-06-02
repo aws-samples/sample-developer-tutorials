@@ -1,6 +1,6 @@
 sns_GettingStarted_048:
-  title: Create an Amazon SNS topic and publish messages
-  title_abbrev: Create an Amazon SNS topic and publish messages
+  title: Create a messaging topic and publish messages
+  title_abbrev: Create a messaging topic and publish messages
   synopsis_list:
     - Create an Amazon SNS topic
     - Subscribe an email endpoint to the topic

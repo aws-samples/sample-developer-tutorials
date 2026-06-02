@@ -1,6 +1,6 @@
 pinpoint_GettingStarted_049:
-  title: Getting started with End User Messaging Push
-  title_abbrev: Getting started with End User Messaging Push
+  title: Getting started with push notifications
+  title_abbrev: Getting started with push notifications
   synopsis_list:
     - Create an application
     - Enable push notification channels

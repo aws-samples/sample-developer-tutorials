@@ -1,6 +1,6 @@
 cloudformation_GettingStarted_021:
-  title: Creating your first CloudFormation stack
-  title_abbrev: Creating your first CloudFormation stack
+  title: Creating your first infrastructure stack
+  title_abbrev: Creating your first infrastructure stack
   synopsis_list:
     - Create a CloudFormation template
     - Test the web server

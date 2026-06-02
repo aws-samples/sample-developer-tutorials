@@ -1,6 +1,6 @@
 polly_GettingStarted_082:
-  title: Getting started with Amazon Polly
-  title_abbrev: Getting started with Amazon Polly
+  title: Getting started with text-to-speech synthesis
+  title_abbrev: Getting started with text-to-speech synthesis
   synopsis_list:
     - Clean up resources
   category: Scenarios

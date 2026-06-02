@@ -1,6 +1,6 @@
 payment_cryptography_GettingStarted_067:
-  title: Getting started with Payment Cryptography
-  title_abbrev: Getting started with Payment Cryptography
+  title: Getting started with payment security cryptography
+  title_abbrev: Getting started with payment security cryptography
   synopsis_list:
     - Create a key
     - Verify the CVV2 value

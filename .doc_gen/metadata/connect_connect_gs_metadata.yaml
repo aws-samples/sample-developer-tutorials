@@ -1,6 +1,6 @@
 connect_GettingStarted_027:
-  title: Creating an Amazon Connect instance
-  title_abbrev: Creating an Amazon Connect instance
+  title: Creating a contact center instance
+  title_abbrev: Creating a contact center instance
   synopsis_list:
     - Create an Amazon Connect instance
     - Configure an administrator user

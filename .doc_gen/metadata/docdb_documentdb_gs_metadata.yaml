@@ -1,6 +1,6 @@
 docdb_GettingStarted_025:
-  title: Getting started with Amazon DocumentDB
-  title_abbrev: Getting started with Amazon DocumentDB
+  title: Getting started with document databases
+  title_abbrev: Getting started with document databases
   synopsis_list:
     - Create a DB subnet group
     - Create a DocumentDB cluster

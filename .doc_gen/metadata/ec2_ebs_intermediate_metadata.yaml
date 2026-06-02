@@ -1,6 +1,6 @@
 ec2_GettingStarted_022:
-  title: Working with Amazon EBS encryption, snapshots, and volume initialization
-  title_abbrev: Working with Amazon EBS encryption, snapshots, and volume initialization
+  title: Working with block storage encryption, snapshots, and volume initialization
+  title_abbrev: Working with block storage encryption, snapshots, and volume initialization
   synopsis_list:
     - Enable Amazon EBS encryption by default
     - Create an EBS snapshot

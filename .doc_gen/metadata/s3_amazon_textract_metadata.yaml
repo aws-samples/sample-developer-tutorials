@@ -1,6 +1,6 @@
 s3_GettingStarted_074:
-  title: Getting started with Amazon Textract
-  title_abbrev: Getting started with Amazon Textract
+  title: Getting started with document text extraction
+  title_abbrev: Getting started with document text extraction
   synopsis_list:
     - Create an S3 bucket
     - Upload a document to S3

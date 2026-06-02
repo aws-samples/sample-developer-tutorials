@@ -1,6 +1,6 @@
 vpc_lattice_GettingStarted_055:
-  title: Creating and managing a VPC Lattice service network
-  title_abbrev: Creating and managing a VPC Lattice service network
+  title: Creating and managing a service networking mesh
+  title_abbrev: Creating and managing a service networking mesh
   synopsis_list:
     - Create a service network
     - Create a service

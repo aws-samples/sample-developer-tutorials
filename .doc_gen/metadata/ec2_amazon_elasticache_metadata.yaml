@@ -1,6 +1,6 @@
 ec2_GettingStarted_065:
-  title: Getting started with Amazon ElastiCache
-  title_abbrev: Getting started with Amazon ElastiCache
+  title: Getting started with in-memory caching
+  title_abbrev: Getting started with in-memory caching
   synopsis_list:
     - Set up security group for ElastiCache access
     - Create a Valkey serverless cache

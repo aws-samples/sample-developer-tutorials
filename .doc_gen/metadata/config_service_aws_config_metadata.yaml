@@ -1,6 +1,6 @@
 config_service_GettingStarted_053:
-  title: Getting started with Config
-  title_abbrev: Getting started with Config
+  title: Getting started with configuration management
+  title_abbrev: Getting started with configuration management
   synopsis_list:
     - Create an Amazon S3 bucket
     - Create an Amazon SNS topic

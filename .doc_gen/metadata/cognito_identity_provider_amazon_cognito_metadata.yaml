@@ -1,6 +1,6 @@
 cognito_identity_provider_GettingStarted_066:
-  title: Getting started with Amazon Cognito user pools
-  title_abbrev: Getting started with Amazon Cognito user pools
+  title: Getting started with user pools
+  title_abbrev: Getting started with user pools
   synopsis_list:
     - Create a user pool
     - Create an app client
