@@ -1,0 +1,14 @@
+{
+  "name": "tutorial-cloudfront",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cloudfront": "latest"
+  },
+  "devDependencies": {
+    "vitest": "latest",
+    "aws-sdk-client-mock": "latest"
+  }
+}

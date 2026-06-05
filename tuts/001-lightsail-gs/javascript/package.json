@@ -1,0 +1,14 @@
+{
+  "name": "tutorial-lightsail",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@aws-sdk/client-lightsail": "latest"
+  },
+  "devDependencies": {
+    "vitest": "latest",
+    "aws-sdk-client-mock": "latest"
+  }
+}
