@@ -1,0 +1,26 @@
+mq_GettingStarted_043:
+  title: Getting started with Amazon MQ for ActiveMQ and Secrets Manager
+  title_abbrev: Getting started with Amazon MQ for ActiveMQ and Secrets Manager
+  synopsis_list:
+    - Store broker credentials in Secrets Manager
+    - Create an Amazon MQ broker
+    - Wait for the broker to be in RUNNING state
+    - Get broker connection details
+    - Configure security group for the broker
+    - Create a Java application to connect to the broker
+    - Build and run the application
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/043-amazon-mq-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/043-amazon-mq-gs/amazon-mq-gs.sh
+  services:
+    ec2: {AuthorizeSecurityGroupIngress}
+    mq: {CreateBroker, DeleteBroker, DescribeBroker}
+    secrets-manager: {CreateSecret, DeleteSecret}

@@ -1,0 +1,22 @@
+kinesisvideo_GettingStarted_054:
+  title: Getting started with Amazon Kinesis Video Streams
+  title_abbrev: Getting started with Amazon Kinesis Video Streams
+  synopsis_list:
+    - Create a Kinesis video stream
+    - Verify stream creation
+    - Get data endpoints
+    - Send data to your Kinesis video stream
+    - Clean up resources
+  category: Scenarios
+  languages:
+    Bash:
+      versions:
+        - sdk_version: 2
+          github_name: "Sample developer tutorials"
+          github: https://github.com/aws-samples/sample-developer-tutorials/tree/main/tuts/054-amazon-kinesis-video-streams-gs
+          excerpts:
+            - description:
+              snippet_files:
+                - tuts/054-amazon-kinesis-video-streams-gs/amazon-kinesis-video-streams-gs.sh
+  services:
+    kinesisvideo: {CreateStream, DeleteStream, DescribeStream, GetDataEndpoint, ListStreams}
