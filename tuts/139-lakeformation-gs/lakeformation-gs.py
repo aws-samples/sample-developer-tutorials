@@ -1,0 +1,33 @@
+import boto3
+import json
+import os
+import time
+import uuid
+
+client = boto3.client('lakeformation', region_name='us-east-1')
+suffix = str(int(time.time()))[-6:] + "-" + str(uuid.uuid4())[:8]
+resource_name = f"lf-resource-{suffix}"
+resource_arn = f"arn:aws:lakeformation:us-east-1:{os.environ.get('AWS_ACCOUNT_ID')}:resource/{resource_name}"
+role_arn = os.environ['TUTORIAL_ROLE_ARN']
+
+tags = [{'Key': 'project', 'Value': 'doc-smith'}, {'Key': 'tutorial', 'Value': 'lakeformation-gs'}]
+
+print("Listing resources to verify existing resources...")
+response = client.list_resources()
+resources = response.get('ResourceInfoList', [])
+existing_resource_found = any(resource['ResourceArn'] == resource_arn for resource in resources)
+if existing_resource_found:
+    print("Existing resource found. No need to register.")
+else:
+    print("No existing resource found. Proceeding with verification.")
+
+    print("Registering resource with tags...")
+    client.register_resource(
+        ResourceArn=resource_arn,
+        RoleArn=role_arn,
+        UseServiceLinkedRole=False,
+        HybridAccessEnabled=False,
+        Tags=tags
+    )
+
+print("PASS")
